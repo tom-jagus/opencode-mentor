@@ -189,8 +189,7 @@ Initial skills:
 
 Initial agent decisions:
 
-- retain built-in `explore` for read-only repository investigation;
-- retain built-in `scout` for read-only external documentation and dependency
+- retain built-in `explore` for read-only repository investigation and external documentation and dependency;
   research;
 - disable built-in `build`;
 - disable built-in `general`;
@@ -399,7 +398,7 @@ The `/develop` workflow must:
 1. read the approved project definition and relevant project instructions;
 2. inspect relevant source files;
 3. load the `development` skill;
-4. use `explore` or `scout` only when useful;
+4. use `explore` only when useful;
 5. propose one coherent implementation unit;
 6. show source changes in code blocks;
 7. explain important design choices;
@@ -805,7 +804,7 @@ The project is successful when:
 
 1. OpenCode starts with `lead` as the only normal user-facing primary agent.
 2. `build` and `general` are disabled.
-3. `explore` and `scout` remain available for read-only delegation.
+3. `explore` remain available for read-only delegation.
 4. `lead` selects workflows without repeatedly reopening approved scope.
 5. explicit commands override automatic routing.
 6. source files cannot be modified through built-in edit tools or permitted shell

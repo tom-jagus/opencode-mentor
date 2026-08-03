@@ -61,7 +61,7 @@ serve as the base for all later workflows.
 - define the `lead` primary agent;
 - set `lead` as the default agent;
 - disable `build` and `general`;
-- retain `explore` and `scout`;
+- retain `explore`;
 - establish the initial permission baseline;
 - create an isolated test launch using a branch or worktree;
 - prevent accidental use of an unsafe fallback agent;
@@ -77,8 +77,8 @@ The milestone is complete when:
 3. an isolated OpenCode instance starts from the repository configuration;
 4. `lead` is the only normal user-facing primary agent;
 5. `build` and `general` are unavailable;
-6. `explore` and `scout` can be used for read-only delegation;
-7. generic source editing is denied;
+6. 'explore' can be used for read-only repository delegation; external research
+remains with lead until a stable or justified specialist is available7. generic source editing is denied;
 8. known shell mutation paths are blocked or permission-gated;
 9. a misconfigured default agent cannot silently expose unsafe behaviour;
 10. the setup and validation process are documented;

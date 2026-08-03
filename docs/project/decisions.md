@@ -97,7 +97,7 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
 ## DEC-009 — Built-In Agent Policy
 
 - **Date:** 2026-08-03
-- **Status:** accepted
+- **Status:** superseded bu DEC-036
 - **Decision:** Disable `build` and `general`; retain `explore` and `scout`
   initially.
 - **Rationale:** Broad modifying agents conflict with the safety model, while the
@@ -381,3 +381,23 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
   artifacts, safety principles, phases, and acceptance criteria are agreed.
 - **Consequences:** Remaining questions are implementation details to resolve
   within the planned milestones rather than blockers requiring more definition.
+
+## DEC-036 — Revised Built-In Agent Policy
+
+* **Date:** 2026-08-03
+* **Status:** accepted
+* **Supersedes:** DEC-009
+* **Decision:**
+
+  * disable built-in `build`, `plan`, and `general`;
+  * retain built-in `explore` for constrained repository investigation;
+  * do not configure `scout` because it is unavailable in OpenCode `1.18.10`;
+  * reconsider `scout` only when it is available in a stable release or a custom
+    research agent provides a justified material benefit.
+* **Rationale:** Implementation validation showed that the approved configuration
+  assumed the existence of a built-in `scout` agent that is not present in the
+  installed stable OpenCode version. Creating a custom replacement solely to
+  preserve that assumption would introduce unnecessary complexity.
+* **Consequences:** External documentation and dependency research remains the
+  responsibility of `lead`. The agent architecture retains one read-only
+  repository specialist rather than inventing an unsupported equivalent.
