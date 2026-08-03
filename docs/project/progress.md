@@ -11,22 +11,14 @@ updated_at: 2026-08-03
 ## Current State
 
 - **Definition status:** approved
-- **Definition version:** 1
+- **Definition version:** 2
 - **Current phase:** Development
 - **Active milestone:** Configuration Foundation
 - **Repository status:** created and version-controlled
-- **Implementation status:** in progress
-- **Completed units:**
-  - repository bootstrap;
-  - minimal global configuration;
-  - `lead` primary agent;
-  - constrained `explore` agent;
-  - isolated development launcher;
-  - managed guardrails;
-  - adversarial configuration validation.
+ **Implementation status:** implementation complete; PR pending
 - **Blocking issues:** none
-- **Next action:** convert the validated permission and hostile-configuration
-  scenarios into a repeatable automated test suite.
+- **Next action:** perform final branch validation and open the Configuration
+  Foundation pull request.
 
 ## Phase Transition
 

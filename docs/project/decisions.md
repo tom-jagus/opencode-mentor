@@ -423,3 +423,38 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
   * the eventual Linux deployment will install the managed configuration under
     `/etc/opencode/`;
   * OpenCode upgrades that introduce or remove agents require explicit review.
+
+## DEC-038 — OpenCode Mentor Project Identity
+
+* **Date:** 2026-08-03
+* **Status:** accepted
+* **Decision:** Name the project **OpenCode Mentor** and use
+  `opencode-mentor` as the repository name.
+* **Rationale:** The project is an opinionated guidance and workflow system, not
+  an OpenCode fork or a collection of ordinary dotfiles. The name reflects the
+  proposal-only relationship in which the LLM guides and reviews while the user
+  retains ownership of source implementation.
+* **Consequences:** Repository documentation, examples, paths, and future release
+  metadata use the OpenCode Mentor identity.
+
+## DEC-039 — Defer Live Deployment and Dotfiles Linkage
+
+* **Date:** 2026-08-03
+* **Status:** accepted
+* **Decision:** Complete and merge the isolated Configuration Foundation before
+  implementing live OpenCode deployment and dotfiles linkage. Move live
+  deployment into a later dedicated milestone after the first usable OpenCode
+  Mentor configuration has been established.
+* **Rationale:** Linking an incomplete configuration into
+  `~/.config/opencode` would introduce live-system risk without improving
+  isolated development. The hardened launcher already provides a reproducible
+  environment for configuration and workflow development.
+* **Consequences:**
+
+  * Configuration Foundation is completed through isolated execution,
+    guardrails, validation, tests, and documentation;
+  * the live OpenCode configuration remains unchanged;
+  * `/etc/opencode` deployment, dotfiles integration, Herdr restoration, and
+    live testing are delivered in the later deployment milestone;
+  * final project acceptance still requires non-duplicating dotfiles
+    integration.

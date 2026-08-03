@@ -738,12 +738,14 @@ The final model must be tested adversarially.
 ### Phase 1 — Configuration foundation
 
 - repository structure;
-- dotfiles linkage approach;
 - global `AGENTS.md`;
 - `lead` primary agent;
-- built-in agent disable/retain rules;
-- isolated configuration testing;
-- initial permission baseline.
+- built-in agent restrictions;
+- isolated development launcher;
+- managed permission guardrails;
+- resolved-configuration validation;
+- adversarial integration tests;
+- development documentation.
 
 ### Phase 2 — Project workflows
 
@@ -790,7 +792,17 @@ The final model must be tested adversarially.
 - mediated project access;
 - `/note`.
 
-### Phase 6 — Research
+### Phase 6 — Live deployment and dotfiles integration
+
+- accepted configuration revision;
+- managed configuration deployment under `/etc/opencode`;
+- live `~/.config/opencode` linkage;
+- dotfiles or chezmoi integration;
+- Herdr integration restoration;
+- deployed-topology guardrail validation;
+- controlled live testing.
+
+### Phase 7 — Research
 
 - general research methodology;
 - source provenance;
