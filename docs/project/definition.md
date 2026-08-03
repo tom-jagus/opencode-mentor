@@ -1,7 +1,7 @@
 ---
-title: OpenCode Workflow Configuration
+title: OpenCode Mentor Project Progress
 status: approved
-version: 1
+version: 2
 approved_at: 2026-08-03
 ---
 

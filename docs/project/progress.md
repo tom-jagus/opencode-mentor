@@ -1,8 +1,8 @@
 ---
-title: OpenCode Workflow Progress
+title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
-active_milestone: configuration-foundation
+active_milestone: project-workflows
 updated_at: 2026-08-03
 ---
 
@@ -234,20 +234,10 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Start the Configuration Foundation milestone with:
+Implement and validate the first read-only Project Workflows vertical slice:
 
-```text
-/start configuration-foundation
-```
-
-The first implementation unit should establish:
-
-1. repository structure;
-2. isolated launch path;
-3. minimal global `AGENTS.md`;
-4. minimal `lead` definition;
-5. built-in agent disable/retain settings;
-6. initial safe permission baseline.
-
-Do not begin command, vault, or Git automation implementation before the isolated
-foundation is working and tested.
+1. establish the global command and skill directory structure;
+2. add the `project-progress` skill;
+3. add `/status`;
+4. validate command and skill discovery;
+5. test the command against complete, missing, and inconsistent project state.
