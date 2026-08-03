@@ -1,0 +1,21 @@
+# OpenCode-generated dependencies and package metadata
+node_modules/
+package.json
+package-lock.json
+bun.lock
+
+# Managed integrations
+plugins/herdr-agent-state.js
+
+# Migration files and backups
+*.bak
+
+# Environment and local runtime files
+.env
+.env.*
+!.env.example
+*.log
+
+# Operating-system files
+.DS_Store
+Thumbs.db
