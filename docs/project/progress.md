@@ -13,12 +13,13 @@ updated_at: 2026-08-03
 - **Definition status:** approved
 - **Definition version:** 2
 - **Current phase:** Development
-- **Active milestone:** Configuration Foundation
-- **Repository status:** created and version-controlled
- **Implementation status:** implementation complete; PR pending
+- **Completed milestone:** Configuration Foundation
+- **Active milestone:** Project Workflows
+- **Implementation status:** Configuration Foundation merged through PR #1;
+  Project Workflows started
 - **Blocking issues:** none
-- **Next action:** perform final branch validation and open the Configuration
-  Foundation pull request.
+- **Next action:** establish the project workflow command structure and implement
+  the first workflow command.
 
 ## Phase Transition
 
@@ -45,60 +46,18 @@ The project is ready to move into Development because the following are agreed:
 Remaining unknowns are implementation-level decisions and do not block
 Development.
 
-## Active Milestone — Configuration Foundation
-
-### Objective
-
-Create the smallest working and safely isolated OpenCode configuration that can
-serve as the base for all later workflows.
-
-### Planned outcomes
-
-- create the dedicated OpenCode configuration repository;
-- decide and implement the dotfiles linkage mechanism;
-- define the initial repository layout;
-- create the global `AGENTS.md`;
-- define the `lead` primary agent;
-- set `lead` as the default agent;
-- disable `build` and `general`;
-- retain `explore`;
-- establish the initial permission baseline;
-- create an isolated test launch using a branch or worktree;
-- prevent accidental use of an unsafe fallback agent;
-- document bootstrap and validation steps;
-- create initial adversarial permission tests.
-- Dotfiles linkage and live configuration deployment are deferred until the
-  isolated configuration reaches a stable first version suitable for live
-  testing.
-
-### Completion criteria
-
-The milestone is complete when:
-
-1. the repository exists and is version-controlled;
-2. the dotfiles integration approach is implemented without file duplication;
-3. an isolated OpenCode instance starts from the repository configuration;
-4. `lead` is the only normal user-facing primary agent;
-5. `build` and `general` are unavailable;
-6. 'explore' can be used for read-only repository delegation; external research
-remains with lead until a stable or justified specialist is available7. generic source editing is denied;
-8. known shell mutation paths are blocked or permission-gated;
-9. a misconfigured default agent cannot silently expose unsafe behaviour;
-10. the setup and validation process are documented;
-11. the initial change is checkpointed through a feature branch and PR.
-
 ## Planned Milestones
 
 ### 1. Configuration Foundation
 
-Status: active
+Status: completed
 
 Deliver the repository, `lead`, base configuration, dotfiles linkage, isolated
 testing, and initial permission controls.
 
 ### 2. Project Workflows
 
-Status: planned
+Status: active
 
 Deliver:
 
