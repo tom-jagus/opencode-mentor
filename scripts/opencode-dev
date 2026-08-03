@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly script_dir="$(
+  CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd
+)"
+readonly repo_root="$(
+  CDPATH='' cd -- "$script_dir/.." && pwd
+)"
+readonly runtime_root="${OPENCODE_DEV_RUNTIME:-$HOME/.local/share/opencode-workflow-dev}"
+readonly guardrails_file="$repo_root/managed/opencode.json"
+readonly validator="$script_dir/validate-opencode-config"
+
+fail() {
+  printf 'Error: %s\n' "$1" >&2
+  exit 1
+}
+
+if ! command -v opencode >/dev/null 2>&1; then
+  fail "opencode is not available in PATH"
+fi
+
+if [[ ! -r "$guardrails_file" ]]; then
+  fail "managed guardrails are missing: $guardrails_file"
+fi
+
+if [[ ! -x "$validator" ]]; then
+  fail "configuration validator is unavailable: $validator"
+fi
+
+for argument in "$@"; do
+  case "$argument" in
+    --auto | --auto=*)
+      fail "--auto is prohibited by the hardened launcher"
+      ;;
+    --agent | --agent=*)
+      fail "agent selection is controlled by the hardened configuration"
+      ;;
+  esac
+done
+
+mkdir -p \
+  "$runtime_root/config" \
+  "$runtime_root/data" \
+  "$runtime_root/cache" \
+  "$runtime_root/state"
+
+export XDG_CONFIG_HOME="$runtime_root/config"
+export XDG_DATA_HOME="$runtime_root/data"
+export XDG_CACHE_HOME="$runtime_root/cache"
+export XDG_STATE_HOME="$runtime_root/state"
+
+unset OPENCODE_CONFIG
+
+export OPENCODE_CONFIG_DIR="$repo_root"
+export OPENCODE_CONFIG_CONTENT
+OPENCODE_CONFIG_CONTENT="$(<"$guardrails_file")"
+
+export OPENCODE_DISABLE_CLAUDE_CODE=1
+
+"$validator"
+
+exec opencode --pure "$@"

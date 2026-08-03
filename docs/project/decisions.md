@@ -97,7 +97,7 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
 ## DEC-009 — Built-In Agent Policy
 
 - **Date:** 2026-08-03
-- **Status:** accepted
+- **Status:** superseded bu DEC-036
 - **Decision:** Disable `build` and `general`; retain `explore` and `scout`
   initially.
 - **Rationale:** Broad modifying agents conflict with the safety model, while the
@@ -381,3 +381,80 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
   artifacts, safety principles, phases, and acceptance criteria are agreed.
 - **Consequences:** Remaining questions are implementation details to resolve
   within the planned milestones rather than blockers requiring more definition.
+
+## DEC-036 — Revised Built-In Agent Policy
+
+* **Date:** 2026-08-03
+* **Status:** accepted
+* **Supersedes:** DEC-009
+* **Decision:**
+
+  * disable built-in `build`, `plan`, and `general`;
+  * retain built-in `explore` for constrained repository investigation;
+  * do not configure `scout` because it is unavailable in OpenCode `1.18.10`;
+  * reconsider `scout` only when it is available in a stable release or a custom
+    research agent provides a justified material benefit.
+* **Rationale:** Implementation validation showed that the approved configuration
+  assumed the existence of a built-in `scout` agent that is not present in the
+  installed stable OpenCode version. Creating a custom replacement solely to
+  preserve that assumption would introduce unnecessary complexity.
+* **Consequences:** External documentation and dependency research remains the
+  responsibility of `lead`. The agent architecture retains one read-only
+  repository specialist rather than inventing an unsupported equivalent.
+
+## DEC-037 — Managed Guardrails and Fail-Closed Launch
+
+* **Date:** 2026-08-03
+* **Status:** accepted
+* **Decision:** Separate normal OpenCode configuration from immutable safety
+  guardrails. Store guardrails in `managed/opencode.json`, apply them through
+  runtime inline configuration during development, and validate the fully
+  resolved configuration before OpenCode starts.
+* **Rationale:** Adversarial testing proved that project configuration could
+  override global agent permissions, restore source-editing tools on `lead`, and
+  introduce unrestricted user-facing primary agents.
+* **Consequences:**
+
+  * `opencode.json` contains normal configurable preferences only;
+  * `managed/opencode.json` contains non-overridable safety policy;
+  * the development launcher fails closed when the resolved agent surface or
+    permissions differ from the approved baseline;
+  * `--auto` and explicit agent selection are rejected by the hardened launcher;
+  * the eventual Linux deployment will install the managed configuration under
+    `/etc/opencode/`;
+  * OpenCode upgrades that introduce or remove agents require explicit review.
+
+## DEC-038 — OpenCode Mentor Project Identity
+
+* **Date:** 2026-08-03
+* **Status:** accepted
+* **Decision:** Name the project **OpenCode Mentor** and use
+  `opencode-mentor` as the repository name.
+* **Rationale:** The project is an opinionated guidance and workflow system, not
+  an OpenCode fork or a collection of ordinary dotfiles. The name reflects the
+  proposal-only relationship in which the LLM guides and reviews while the user
+  retains ownership of source implementation.
+* **Consequences:** Repository documentation, examples, paths, and future release
+  metadata use the OpenCode Mentor identity.
+
+## DEC-039 — Defer Live Deployment and Dotfiles Linkage
+
+* **Date:** 2026-08-03
+* **Status:** accepted
+* **Decision:** Complete and merge the isolated Configuration Foundation before
+  implementing live OpenCode deployment and dotfiles linkage. Move live
+  deployment into a later dedicated milestone after the first usable OpenCode
+  Mentor configuration has been established.
+* **Rationale:** Linking an incomplete configuration into
+  `~/.config/opencode` would introduce live-system risk without improving
+  isolated development. The hardened launcher already provides a reproducible
+  environment for configuration and workflow development.
+* **Consequences:**
+
+  * Configuration Foundation is completed through isolated execution,
+    guardrails, validation, tests, and documentation;
+  * the live OpenCode configuration remains unchanged;
+  * `/etc/opencode` deployment, dotfiles integration, Herdr restoration, and
+    live testing are delivered in the later deployment milestone;
+  * final project acceptance still requires non-duplicating dotfiles
+    integration.

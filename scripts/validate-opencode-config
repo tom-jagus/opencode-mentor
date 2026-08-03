@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+fail() {
+  printf 'OpenCode guardrail validation failed: %s\n' "$1" >&2
+  exit 1
+}
+
+if ! command -v opencode >/dev/null 2>&1; then
+  fail "opencode is not available in PATH"
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  fail "jq is not available in PATH"
+fi
+
+resolved_config="$(opencode --pure debug config)"
+
+jq -e '
+  .default_agent == "lead"
+  and .permission.edit == "deny"
+  and .permission.bash == "ask"
+  and .permission.task["*"] == "deny"
+  and .permission.task.explore == "allow"
+  and .agent.build.disable == true
+  and .agent.plan.disable == true
+  and .agent.general.disable == true
+' <<<"$resolved_config" >/dev/null ||
+  fail "managed configuration values were weakened"
+
+actual_agents="$(
+  opencode --pure agent list |
+    grep -E '^[[:alnum:]_-]+ \((primary|subagent)\)$' |
+    sort
+)"
+
+expected_agents="$(
+  printf '%s\n' \
+    'compaction (primary)' \
+    'explore (subagent)' \
+    'lead (primary)' \
+    'summary (primary)' \
+    'title (primary)' |
+    sort
+)"
+
+if [[ "$actual_agents" != "$expected_agents" ]]; then
+  printf '%s\n' \
+    'Expected agents:' \
+    "$expected_agents" \
+    '' \
+    'Resolved agents:' \
+    "$actual_agents" >&2
+
+  fail "unexpected or missing agents"
+fi
+
+effective_permission_filter='
+  def effective($tool; $pattern):
+    [
+      .permission[]
+      | select(.permission == "*" or .permission == $tool)
+      | select(.pattern == "*" or .pattern == $pattern)
+    ]
+    | last
+    | .action;
+'
+
+lead_config="$(opencode --pure debug agent lead)"
+
+jq -e "$effective_permission_filter"'
+  .name == "lead"
+  and .mode == "primary"
+  and effective("edit"; "any-path") == "deny"
+  and effective("bash"; "any-command") == "ask"
+  and effective("task"; "explore") == "allow"
+  and effective("task"; "unexpected-agent") == "deny"
+  and .tools.edit == false
+  and .tools.write == false
+  and (.tools.apply_patch // false) == false
+' <<<"$lead_config" >/dev/null ||
+  fail "lead permissions are unsafe"
+
+explore_config="$(opencode --pure debug agent explore)"
+
+jq -e "$effective_permission_filter"'
+  .name == "explore"
+  and .mode == "subagent"
+  and effective("read"; "any-path") == "allow"
+  and effective("glob"; "any-pattern") == "allow"
+  and effective("grep"; "any-pattern") == "allow"
+  and effective("list"; "any-path") == "allow"
+  and effective("edit"; "any-path") == "deny"
+  and effective("bash"; "any-command") == "deny"
+  and effective("task"; "any-agent") == "deny"
+  and .tools.edit == false
+  and .tools.write == false
+  and .tools.bash == false
+  and .tools.task == false
+' <<<"$explore_config" >/dev/null ||
+  fail "explore permissions are unsafe"
+
+for agent in compaction summary title; do
+  agent_config="$(opencode --pure debug agent "$agent")"
+
+  jq -e "$effective_permission_filter"'
+    effective("edit"; "any-path") == "deny"
+  ' <<<"$agent_config" >/dev/null ||
+    fail "$agent unexpectedly permits editing"
+done
+
+printf 'OpenCode configuration guardrails: PASS\n'

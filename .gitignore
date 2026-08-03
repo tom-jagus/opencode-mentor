@@ -1,11 +1,11 @@
 # OpenCode-generated dependencies and package metadata
-node_modules/
-package.json
-package-lock.json
-bun.lock
+/node_modules/
+/package.json
+/package-lock.json
+/bun.lock
 
 # Managed integrations
-plugins/herdr-agent-state.js
+/plugins/herdr-agent-state.js
 
 # Migration files and backups
 *.bak
