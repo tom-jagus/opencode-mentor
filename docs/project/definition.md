@@ -1,7 +1,7 @@
 ---
 title: OpenCode Mentor Project Progress
 status: approved
-version: 2
+version: 3
 approved_at: 2026-08-03
 ---
 
@@ -248,7 +248,7 @@ invalidates approved scope.
 /resume
 /develop
 /docs
-/status
+/state
 /milestone
 /decision
 /start
@@ -261,21 +261,21 @@ invalidates approved scope.
 
 ### 8.1 Command contracts
 
-| Command | Responsibility |
-|---|---|
-| `/define` | Create or materially revise the project definition and related artifacts |
-| `/resume` | Reconstruct enough project context to continue work |
-| `/develop` | Propose and review source changes without writing them |
-| `/docs` | Create, review, revise, approve, and apply documentation |
-| `/status` | Report current project and repository state without modifying it |
-| `/milestone` | Start, complete, block, or otherwise transition a milestone |
-| `/decision` | Record, reject, or supersede a durable decision |
-| `/start` | Begin a policy-compliant unit of work on a feature branch |
-| `/checkpoint` | Validate, commit, and push a coherent unit of work |
-| `/finish` | Finalise the current branch and prepare a pull request |
-| `/release` | Merge, version, tag, and publish according to policy |
-| `/note` | Create or update an approved Obsidian vault note |
-| `/research` | Perform structured research without automatic publication |
+| Command       | Responsibility                                                           |
+| ------------- | ------------------------------------------------------------------------ |
+| `/define`     | Create or materially revise the project definition and related artifacts |
+| `/resume`     | Reconstruct enough project context to continue work                      |
+| `/develop`    | Propose and review source changes without writing them                   |
+| `/docs`       | Create, review, revise, approve, and apply documentation                 |
+| `/state`      | Report current project and repository state without modifying it         |
+| `/milestone`  | Start, complete, block, or otherwise transition a milestone              |
+| `/decision`   | Record, reject, or supersede a durable decision                          |
+| `/start`      | Begin a policy-compliant unit of work on a feature branch                |
+| `/checkpoint` | Validate, commit, and push a coherent unit of work                       |
+| `/finish`     | Finalise the current branch and prepare a pull request                   |
+| `/release`    | Merge, version, tag, and publish according to policy                     |
+| `/note`       | Create or update an approved Obsidian vault note                         |
+| `/research`   | Perform structured research without automatic publication                |
 
 Commands use short names because their descriptions and definitions provide the
 execution contract.
@@ -444,11 +444,11 @@ The apply tool must reject:
 
 The Project Progress capability includes:
 
-- `/status`
+- `/state`
 - `/milestone`
 - `/decision`
 
-### 13.1 `/status`
+### 13.1 `/state`
 
 Read-only report of:
 
@@ -478,7 +478,7 @@ Records durable decisions with:
 
 - identifier;
 - date;
-- status;
+- state;
 - context;
 - decision;
 - rationale;
@@ -512,7 +512,7 @@ It returns:
 - uncommitted changes;
 - recommended next action.
 
-`/status` remains lightweight; `/resume` restores working context.
+`/state` remains lightweight; `/resume` restores working context.
 
 ## 15. Git and GitHub Workflow
 
@@ -756,7 +756,7 @@ The final model must be tested adversarially.
 - `/define`;
 - `/resume`;
 - `/develop`;
-- `/status`;
+- `/state`;
 - `/milestone`;
 - `/decision`.
 

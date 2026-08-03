@@ -243,7 +243,7 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
 ## DEC-023 — Simplified Command Names
 
 - **Date:** 2026-08-03
-- **Status:** accepted
+- **Status:** partially superseded
 - **Decision:** Use the compact command catalogue:
   `/define`, `/resume`, `/develop`, `/docs`, `/status`, `/milestone`,
   `/decision`, `/start`, `/checkpoint`, `/finish`, `/release`, `/note`,
@@ -458,3 +458,20 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
     live testing are delivered in the later deployment milestone;
   * final project acceptance still requires non-duplicating dotfiles
     integration.
+
+## DEC-040 — Rename Project State Command
+
+- **Date:** 2026-08-04
+- **Status:** accepted
+- **Partially supersedes:** DEC-023
+- **Decision:** Rename the read-only Project Progress command from `/status` to
+  `/state`. All other command names accepted by DEC-023 remain unchanged.
+- **Rationale:** `/status` already exists in the installed OpenCode environment.
+  Reusing it would override or obscure existing behavior. `/state` more precisely
+  describes the command's responsibility: reporting durable project state from
+  authoritative artifacts and read-only repository inspection.
+- **Consequences:**
+  - the custom command file is `commands/state.md`;
+  - the `project-progress` skill exposes a State procedure;
+  - project documentation and tests use `/state`;
+  - OpenCode's existing `/status` behavior remains untouched.
