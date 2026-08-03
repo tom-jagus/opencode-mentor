@@ -401,3 +401,25 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
 * **Consequences:** External documentation and dependency research remains the
   responsibility of `lead`. The agent architecture retains one read-only
   repository specialist rather than inventing an unsupported equivalent.
+
+## DEC-037 — Managed Guardrails and Fail-Closed Launch
+
+* **Date:** 2026-08-03
+* **Status:** accepted
+* **Decision:** Separate normal OpenCode configuration from immutable safety
+  guardrails. Store guardrails in `managed/opencode.json`, apply them through
+  runtime inline configuration during development, and validate the fully
+  resolved configuration before OpenCode starts.
+* **Rationale:** Adversarial testing proved that project configuration could
+  override global agent permissions, restore source-editing tools on `lead`, and
+  introduce unrestricted user-facing primary agents.
+* **Consequences:**
+
+  * `opencode.json` contains normal configurable preferences only;
+  * `managed/opencode.json` contains non-overridable safety policy;
+  * the development launcher fails closed when the resolved agent surface or
+    permissions differ from the approved baseline;
+  * `--auto` and explicit agent selection are rejected by the hardened launcher;
+  * the eventual Linux deployment will install the managed configuration under
+    `/etc/opencode/`;
+  * OpenCode upgrades that introduce or remove agents require explicit review.

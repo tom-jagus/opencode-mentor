@@ -14,11 +14,19 @@ updated_at: 2026-08-03
 - **Definition version:** 1
 - **Current phase:** Development
 - **Active milestone:** Configuration Foundation
-- **Repository status:** not yet created
-- **Implementation status:** not started
+- **Repository status:** created and version-controlled
+- **Implementation status:** in progress
+- **Completed units:**
+  - repository bootstrap;
+  - minimal global configuration;
+  - `lead` primary agent;
+  - constrained `explore` agent;
+  - isolated development launcher;
+  - managed guardrails;
+  - adversarial configuration validation.
 - **Blocking issues:** none
-- **Next action:** create the dedicated configuration repository and implement
-  the minimum isolated configuration foundation.
+- **Next action:** implement dotfiles-managed live linkage and managed
+  configuration deployment.
 
 ## Phase Transition
 
