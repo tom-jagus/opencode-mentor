@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly script_dir="$(
+  CDPATH='' cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd
+)"
+readonly repo_root="$(
+  CDPATH='' cd -- "$script_dir/.." && pwd
+)"
+readonly runtime_root="${OPENCODE_DEV_RUNTIME:-$HOME/.local/share/opencode-workflow-dev}"
+
+if ! command -v opencode >/dev/null 2>&1; then
+  printf 'Error: opencode is not available in PATH.\n' >&2
+  exit 127
+fi
+
+mkdir -p \
+  "$runtime_root/config" \
+  "$runtime_root/data" \
+  "$runtime_root/cache" \
+  "$runtime_root/state"
+
+export XDG_CONFIG_HOME="$runtime_root/config"
+export XDG_DATA_HOME="$runtime_root/data"
+export XDG_CACHE_HOME="$runtime_root/cache"
+export XDG_STATE_HOME="$runtime_root/state"
+
+unset OPENCODE_CONFIG
+unset OPENCODE_CONFIG_CONTENT
+
+export OPENCODE_CONFIG_DIR="$repo_root"
+
+exec opencode --pure "$@"
+
+
