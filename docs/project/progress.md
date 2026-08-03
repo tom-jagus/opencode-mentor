@@ -25,8 +25,8 @@ updated_at: 2026-08-03
   - managed guardrails;
   - adversarial configuration validation.
 - **Blocking issues:** none
-- **Next action:** implement dotfiles-managed live linkage and managed
-  configuration deployment.
+- **Next action:** convert the validated permission and hostile-configuration
+  scenarios into a repeatable automated test suite.
 
 ## Phase Transition
 
@@ -75,6 +75,9 @@ serve as the base for all later workflows.
 - prevent accidental use of an unsafe fallback agent;
 - document bootstrap and validation steps;
 - create initial adversarial permission tests.
+- Dotfiles linkage and live configuration deployment are deferred until the
+  isolated configuration reaches a stable first version suitable for live
+  testing.
 
 ### Completion criteria
 
