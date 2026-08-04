@@ -26,6 +26,7 @@ jq -e '
   and .agent.build.disable == true
   and .agent.plan.disable == true
   and .agent.general.disable == true
+  and ((.mcp // {}) | length == 0)
 ' <<<"$resolved_config" >/dev/null ||
   fail "managed configuration values were weakened"
 

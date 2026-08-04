@@ -110,6 +110,7 @@ assert_safe_config() {
     and .agent.build.disable == true
     and .agent.plan.disable == true
     and .agent.general.disable == true
+    and ((.mcp // {}) | length == 0)
   ' <<<"$json" >/dev/null ||
     fail "$label"
 

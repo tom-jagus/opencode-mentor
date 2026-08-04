@@ -128,6 +128,15 @@ must not be removed merely because a later decision supersedes them.
 * Do not treat an implementation-level unknown as a scope problem unless it
   materially affects approved objectives, constraints, architecture, or
   acceptance criteria.
+- Treat paths returned by `git_state` as repository-state facts.
+- Report staged, unstaged, untracked, and conflicted paths exactly as returned.
+- Do not inspect the type, metadata, contents, ownership, or purpose of changed
+  paths during the State procedure.
+- Do not use Bash or additional file inspection merely because a path appears
+  unusual.
+- Inspect a changed path only when it is an authoritative project artifact that
+  the State procedure already requires, or when the user explicitly requests a
+  separate investigation.
 
 ## State Procedure
 
@@ -234,52 +243,43 @@ the supersession only when it helps explain the current state.
 
 ### 7. Inspect Git state
 
-Inspect Git only with read-only commands.
+Call the `git_state` tool exactly once.
 
-Use the smallest number of commands necessary. Start with:
+The tool performs deterministic, local, read-only Git inspection and returns
+structured repository state.
 
-```text
-git --no-optional-locks status --porcelain=v1 --branch
-git --no-optional-locks log -1 --oneline --decorate
-```
+Use its result to identify when available:
 
-The status command normally provides:
+- repository root;
+- current branch or detached HEAD state;
+- unborn branch state;
+- upstream branch;
+- ahead and behind counts;
+- staged paths;
+- unstaged paths;
+- untracked paths;
+- merge conflicts;
+- latest commit.
 
-* the current branch or detached HEAD state;
-* upstream tracking information;
-* ahead or behind state;
-* staged paths;
-* unstaged paths;
-* untracked paths.
+Do not use the Bash tool for routine Git inspection during the State procedure.
 
-Run additional read-only commands only when required information is unavailable
-or ambiguous.
+If `git_state` reports that the workspace is not inside a Git repository, report
+Git state as unavailable and continue with artifact-based project state.
 
-Optional commands include:
+If `git_state` is unavailable or reports an inspection failure:
 
-```text
-git --no-optional-locks rev-parse --show-toplevel
-git --no-optional-locks branch --show-current
-git --no-optional-locks rev-list --left-right --count HEAD...@{upstream}
-```
+- report the failure clearly;
+- do not guess the missing Git information;
+- do not fall back to general Bash commands;
+- continue with the project information that remains available.
 
-A missing upstream, unavailable Git repository, or non-zero result caused by
-absent optional state must be reported as unavailable information rather than
-treated as a workflow failure.
+The `git_state` result is sufficient for working-tree reporting.
 
-Do not run commands merely to duplicate information already returned by another
-command.
+Do not run additional commands or tools to inspect paths listed as staged,
+unstaged, untracked, or conflicted. Report those paths as repository state.
 
-Do not use commands that modify the working tree, index, branches, refs, remotes,
-configuration, or history.
-
-Do not use network-facing Git commands such as `fetch`, `pull`, `push`, or remote
-queries during the State procedure.
-
-If shell execution requires permission, explain that only fixed, read-only Git
-inspection is requested.
-
-Do not conceal unavailable Git information by guessing.
+An unusual filename is not by itself a blocker and does not justify further
+inspection.
 
 ### 8. Check artifact consistency
 
@@ -466,11 +466,12 @@ Do not silently prefer frontmatter over body or body over frontmatter.
 
 Report:
 
-* whether changes are staged, unstaged, or untracked;
-* affected paths;
-* whether the documented next action appears safe to continue.
+- whether changes are staged, unstaged, untracked, or conflicted;
+- the affected paths exactly as returned by `git_state`;
+- whether the dirty state blocks the documented next action.
 
-Do not stage or discard anything.
+Do not inspect changed paths merely to classify or explain them.
+Do not infer why a path exists.
 
 ### Detached HEAD
 

@@ -4,6 +4,7 @@
   "permission": {
     "edit": "deny",
     "bash": "ask",
+    "git_state": "deny",
     "task": {
       "*": "deny",
       "explore": "allow"
@@ -28,6 +29,7 @@
         "glob": "allow",
         "grep": "allow",
         "list": "allow",
+        "git_state": "allow",
         "bash": "ask",
         "task": {
           "*": "deny",
@@ -50,6 +52,7 @@
         "glob": "allow",
         "grep": "allow",
         "list": "allow",
+        "git_state": "deny",
         "edit": "deny",
         "bash": "deny",
         "task": "deny"

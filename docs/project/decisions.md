@@ -475,3 +475,29 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
   - the `project-progress` skill exposes a State procedure;
   - project documentation and tests use `/state`;
   - OpenCode's existing `/status` behavior remains untouched.
+
+## DEC-041 — Deterministic Read-Only Git State Tool
+
+- **Date:** 2026-08-04
+- **Status:** accepted
+- **Decision:** Implement a custom `git_state` tool for deterministic,
+  read-only Git repository inspection. Project State, Session Recovery, and
+  later Git lifecycle workflows will reuse this tool instead of independently
+  executing general shell commands.
+- **Rationale:** Repeated Bash permission prompts make read-only workflows noisy,
+  while broad approval of `git *` would also authorize mutating operations. A
+  fixed custom tool provides one reviewed inspection boundary and structured
+  output.
+- **Consequences:**
+  - `git_state` accepts no arbitrary commands;
+  - it performs no network or mutation operations;
+  - `lead` may invoke it without general Bash approval;
+  - `explore` remains unable to invoke it unless a later decision justifies
+    access;
+  - Git lifecycle mutations will use separate permission-gated mechanisms.
+  - project-local custom tool directories are rejected by the hardened launcher so
+    workspace code cannot replace or collide with an approved global tool;
+  - unapproved MCP servers are rejected because their generated tool names could
+    collide with approved custom-tool permissions;
+  - future project-specific tools or MCP servers require an explicit design and
+    guardrail revision.

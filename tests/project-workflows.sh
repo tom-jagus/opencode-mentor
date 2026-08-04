@@ -165,6 +165,21 @@ assert_contains \
   'active_milestone: project-workflows' \
   'progress frontmatter identifies Project Workflows'
 
+assert_contains \
+  "$skill_file" \
+  'Do not inspect the type, metadata, contents, ownership, or purpose of changed paths' \
+  'state procedure does not investigate changed paths'
+
+assert_contains \
+  "$skill_file" \
+  'An unusual filename is not by itself a blocker' \
+  'state procedure treats unusual paths as ordinary repository state'
+
+assert_contains \
+  "$skill_file" \
+  'Do not run additional commands or tools to inspect paths' \
+  'git state output is sufficient for path reporting'
+
 runtime_root="$(mktemp -d)"
 trap 'rm -rf -- "$runtime_root"' EXIT
 
