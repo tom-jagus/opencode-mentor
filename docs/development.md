@@ -63,6 +63,8 @@ opencode-mentor/
 ├── README.md
 ├── agents/
 │   └── lead.md
+├── commands/
+│   └── state.md
 ├── docs/
 │   ├── development.md
 │   └── project/
@@ -74,7 +76,11 @@ opencode-mentor/
 ├── scripts/
 │   ├── opencode-dev
 │   └── validate-opencode-config
+├── skills/
+│   └── project-progress/
+│       └── SKILL.md
 ├── tests/
+│   ├── project-workflows.sh
 │   └── guardrails.sh
 ├── opencode.json
 └── tui.json
@@ -380,9 +386,11 @@ jq empty managed/opencode.json
 bash -n scripts/opencode-dev
 bash -n scripts/validate-opencode-config
 bash -n tests/guardrails.sh
+bash -n tests/project-workflows.sh
 
 git diff --check
 tests/guardrails.sh
+tests/project-workflows.sh
 ```
 
 Before committing:

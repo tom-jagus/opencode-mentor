@@ -1,8 +1,8 @@
 ---
-title: OpenCode Mentor Project Progress
+title: OpenCode Mentor Project Definition
 status: approved
 version: 3
-approved_at: 2026-08-03
+approved_at: 2026-08-04
 ---
 
 # Project Definition
@@ -122,7 +122,7 @@ This includes:
 OpenCode may:
 
 - read source files;
-- inspect repository state;
+- inspect repository status;
 - propose changes in code blocks;
 - explain proposed changes;
 - reread files after Tom manually enters the changes;
@@ -189,10 +189,9 @@ Initial skills:
 
 Initial agent decisions:
 
-- retain built-in `explore` for read-only repository investigation and external documentation and dependency;
-  research;
-- disable built-in `build`;
-- disable built-in `general`;
+- retain built-in `explore` for constrained read-only repository investigation;
+- keep external documentation and dependency research with `lead`;
+- disable built-in `build`, `plan`, and `general`;
 - avoid exposing multiple normal primary agents;
 - add custom specialists only where permissions, context, reasoning role, or
   output contract materially differ.
@@ -228,7 +227,7 @@ Workflow selection follows this precedence:
 
 1. explicit slash command;
 2. explicit wording in the current request;
-3. recorded project state;
+3. recorded project status;
 4. automatic inference;
 5. safe read-only fallback.
 
@@ -455,7 +454,7 @@ Read-only report of:
 - current phase;
 - active milestone;
 - branch;
-- working-tree state;
+- working-tree status;
 - latest checkpoint;
 - blockers;
 - next documented action.
@@ -478,7 +477,7 @@ Records durable decisions with:
 
 - identifier;
 - date;
-- state;
+- status;
 - context;
 - decision;
 - rationale;
@@ -500,7 +499,7 @@ scope changes return to `/define`.
 - recent relevant decisions;
 - effective Git policy;
 - current branch;
-- working-tree state;
+- working-tree status;
 - recent commits.
 
 It returns:

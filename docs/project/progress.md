@@ -11,15 +11,16 @@ updated_at: 2026-08-03
 ## Current State
 
 - **Definition status:** approved
-- **Definition version:** 2
+- **Definition version:** 3
 - **Current phase:** Development
 - **Completed milestone:** Configuration Foundation
 - **Active milestone:** Project Workflows
-- **Implementation status:** Configuration Foundation merged through PR #1;
-  Project Workflows started
-- **Blocking issues:** none
-- **Next action:** establish the project workflow command structure and implement
-  the first workflow command.
+- **Implementation status:** The read-only `/state` vertical slice and
+  deterministic `git_state` tool are implemented and undergoing hardening.
+- **Blocking issues:** launcher custom-tool path typo, incomplete `git_state`
+  guardrail validation, and incomplete adversarial coverage
+- **Next action:** harden and validate deterministic Git state inspection, then
+  reconcile Project Workflows documentation.
 
 ## Phase Transition
 
@@ -68,7 +69,7 @@ Deliver:
 - `/define`;
 - `/resume`;
 - `/develop`;
-- `/status`;
+- `/state`;
 - `/milestone`;
 - `/decision`.
 
@@ -222,7 +223,7 @@ custom tools.
 
 Project artifacts may become outdated if progress and decisions are not updated.
 
-**Response:** use `/milestone`, `/decision`, `/status`, and `/resume` as normal
+**Response:** use `/milestone`, `/decision`, `/state`, and `/resume` as normal
 workflow boundaries.
 
 ### Vault duplication
@@ -238,6 +239,6 @@ Implement and validate the first read-only Project Workflows vertical slice:
 
 1. establish the global command and skill directory structure;
 2. add the `project-progress` skill;
-3. add `/status`;
+3. add `/state`;
 4. validate command and skill discovery;
 5. test the command against complete, missing, and inconsistent project state.

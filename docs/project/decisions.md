@@ -1,7 +1,7 @@
 ---
 title: OpenCode Workflow Decisions
 status: active
-updated_at: 2026-08-03
+updated_at: 2026-08-04
 ---
 
 # Decision Register
@@ -97,7 +97,7 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
 ## DEC-009 — Built-In Agent Policy
 
 - **Date:** 2026-08-03
-- **Status:** superseded bu DEC-036
+- **Status:** superseded by DEC-036
 - **Decision:** Disable `build` and `general`; retain `explore` and `scout`
   initially.
 - **Rationale:** Broad modifying agents conflict with the safety model, while the
@@ -501,3 +501,5 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
     collide with approved custom-tool permissions;
   - future project-specific tools or MCP servers require an explicit design and
     guardrail revision.
+  - repository-controlled Git hooks and FSMonitor commands are disabled during
+    inspection;
