@@ -1,7 +1,7 @@
 ---
-title: OpenCode Workflow Decisions
+title: OpenCode Mentor Project Decisions
 status: active
-updated_at: 2026-08-04
+updated_at: 2026-08-06
 ---
 
 # Decision Register
@@ -503,3 +503,4 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
     guardrail revision.
   - repository-controlled Git hooks and FSMonitor commands are disabled during
     inspection;
+  - Git lifecycle mutations will use separate permission-gated mechanisms;

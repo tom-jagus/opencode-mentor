@@ -80,8 +80,11 @@ opencode-mentor/
 │   └── project-progress/
 │       └── SKILL.md
 ├── tests/
+│   ├── git-state.sh
 │   ├── project-workflows.sh
 │   └── guardrails.sh
+├── tools/
+│   └── git_state.ts
 ├── opencode.json
 └── tui.json
 ```
@@ -183,6 +186,146 @@ executed.
 
 This separation prevents harmless preferences and hard safety rules from
 becoming one undifferentiated configuration file.
+
+## Protected Extension Surface
+
+OpenCode Mentor treats the reviewed tool namespace as part of its immutable
+permission boundary.
+
+A permission attached to a custom tool name is safe only when the implementation
+behind that name is also controlled. Project-local extensions and unreviewed MCP
+servers must therefore not be allowed to introduce tools that replace, shadow,
+or collide with approved global capabilities.
+
+### Project-Local Custom Tools
+
+The hardened development launcher rejects project-local custom-tool directories
+before OpenCode starts.
+
+The rejected locations are:
+
+```text
+.opencode/tool/
+.opencode/tools/
+```
+
+The launcher checks the current launch directory and each parent directory up to
+the detected Git repository root. A directory is rejected when it exists or is a
+symbolic link.
+
+This prevents a project from defining its own implementation of an approved tool
+name such as `git_state` and inheriting the permissions granted to the reviewed
+global implementation.
+
+The current hardened environment does not support project-specific custom tools.
+Adding that capability later requires:
+
+1. an explicit use case;
+2. a collision-resistant naming and ownership model;
+3. revised managed permissions;
+4. fail-closed validation;
+5. adversarial tests.
+
+### MCP Servers
+
+The isolated hardened environment rejects all project-provided MCP server
+configuration.
+
+The resolved configuration validator requires the effective `mcp` object to be
+empty. This includes disabled MCP definitions because they still alter the
+reviewed extension surface and may later expose generated tool names.
+
+MCP support may be introduced only after defining:
+
+1. an approved server allowlist;
+2. deterministic tool-name ownership;
+3. collision handling;
+4. server command and environment restrictions;
+5. authentication and secret-handling rules;
+6. updated adversarial validation.
+
+Until that design exists, an effective MCP configuration causes the launcher to
+fail closed.
+
+### `git_state` Permission Boundary
+
+`git_state` is a reviewed global custom tool for deterministic, local, read-only
+Git inspection.
+
+Its permissions are deliberately asymmetric:
+
+```text
+global default: deny
+lead:           allow
+explore:        deny
+```
+
+The global denial prevents the tool from becoming available automatically to
+other agents.
+
+`lead` receives access because Project State, Session Recovery, and later
+read-only Git workflows require structured repository information without
+general Bash approval.
+
+`explore` remains unable to invoke `git_state`. Repository delegation through
+`explore` is limited to the approved `read`, `glob`, `grep`, and `list`
+capabilities.
+
+The configuration validator checks both:
+
+1. the effective permission action for `git_state`;
+2. the resolved agent tool map.
+
+For `lead`, validation requires:
+
+```text
+effective git_state permission: allow
+resolved tools.git_state:       true
+```
+
+For `explore`, validation requires:
+
+```text
+effective git_state permission: deny
+resolved tools.git_state:       false
+```
+
+Checking both representations prevents the launcher from accepting a
+configuration in which the permission list and actual exposed tool surface
+disagree.
+
+## Protected Extension Tests
+
+`tests/guardrails.sh` validates the protected extension surface through the
+hardened launcher.
+
+The suite includes:
+
+* global denial of `git_state`;
+* explicit `lead` access to `git_state`;
+* explicit denial of `git_state` for `explore`;
+* rejection of a project-local custom-tool directory;
+* rejection of project-provided MCP configuration;
+* hostile project configuration attempting to weaken managed permissions.
+
+`tests/git-state.sh` validates the tool implementation independently from
+OpenCode configuration discovery.
+
+It covers:
+
+* non-Git directories;
+* unborn repositories;
+* clean repositories;
+* staged, unstaged, and untracked paths;
+* unusual filenames;
+* renames;
+* detached HEAD;
+* missing and divergent upstream state;
+* merge conflicts;
+* repository-configured FSMonitor commands.
+
+A successful run requires every named check to report `PASS` and every test
+script to exit with status zero.
 
 ## Permission Model
 
@@ -305,7 +448,7 @@ tests/guardrails.sh
 The suite currently reports:
 
 ```text
-All 21 guardrail checks passed.
+A successful run prints every named check as `PASS` and exits with status zero.
 ```
 
 The number may change as tests are added or removed. Every named check and the
@@ -387,10 +530,12 @@ bash -n scripts/opencode-dev
 bash -n scripts/validate-opencode-config
 bash -n tests/guardrails.sh
 bash -n tests/project-workflows.sh
+bash -n tests/git-state.sh
 
 git diff --check
 tests/guardrails.sh
 tests/project-workflows.sh
+tests/git-state.sh
 ```
 
 Before committing:

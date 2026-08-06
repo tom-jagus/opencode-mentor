@@ -3,7 +3,7 @@ title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
 active_milestone: project-workflows
-updated_at: 2026-08-03
+updated_at: 2026-08-06
 ---
 
 # Project Progress
@@ -53,8 +53,8 @@ Development.
 
 Status: completed
 
-Deliver the repository, `lead`, base configuration, dotfiles linkage, isolated
-testing, and initial permission controls.
+Deliver the repository, `lead`, base configuration, isolated testing, and
+initial permission controls.
 
 ### 2. Project Workflows
 
@@ -119,7 +119,11 @@ Deliver:
 - `/note`;
 - vault Git checkpoint integration.
 
-### 6. Research
+### 6. Live Deployment and Dotfiles Integration
+
+Status: planned
+
+### 7. Research
 
 Status: deferred
 
@@ -235,10 +239,21 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Implement and validate the first read-only Project Workflows vertical slice:
+Implement and validate `/resume` as the second read-only Project Workflows
+vertical slice.
 
-1. establish the global command and skill directory structure;
-2. add the `project-progress` skill;
-3. add `/state`;
-4. validate command and skill discovery;
-5. test the command against complete, missing, and inconsistent project state.
+1. define the `/resume` command contract and route it through `lead`;
+2. add a read-only Resume procedure that reuses the authoritative project
+   artifacts and the deterministic `git_state` tool;
+3. reconstruct the project objective, current phase, active milestone, relevant
+   accepted decisions, blockers, working-tree state, recent checkpoint, and next
+   documented action;
+4. distinguish durable recorded context from recommendations inferred during the
+   current session;
+5. prohibit Bash, mutation, network Git operations, and automatic artifact
+   repair;
+6. handle missing, incomplete, and inconsistent project state without guessing;
+7. add command-discovery, routing, procedure-contract, and runtime integration
+   tests;
+8. test `/resume` in a new OpenCode session and verify that it restores enough
+   context to continue work without relying on prior conversation history.

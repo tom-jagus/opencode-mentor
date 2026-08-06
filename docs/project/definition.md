@@ -17,7 +17,7 @@ local LLM experience aligned with Tom's preferred way of working:
 - preserve project context in durable Markdown artifacts;
 - propose source-code changes without writing source files;
 - allow controlled creation and modification of documentation;
-- enforce repeatable Git, GitHub, project-status, vault, and research workflows;
+- enforce repeatable Git, GitHub, project-progress, vault, and research workflows;
 - keep the configuration maintainable, auditable, reusable, and version-controlled.
 
 The configuration will expose one consistent user-facing primary agent while
@@ -814,8 +814,8 @@ The final model must be tested adversarially.
 The project is successful when:
 
 1. OpenCode starts with `lead` as the only normal user-facing primary agent.
-2. `build` and `general` are disabled.
-3. `explore` remain available for read-only delegation.
+2. `build`, `plan`, and `general` are disabled.
+3. `explore` remains available for read-only delegation.
 4. `lead` selects workflows without repeatedly reopening approved scope.
 5. explicit commands override automatic routing.
 6. source files cannot be modified through built-in edit tools or permitted shell
