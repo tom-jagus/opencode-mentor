@@ -236,7 +236,7 @@ export default tool({
           "status",
           "--porcelain=v1",
           "-z",
-          "--untracked-files=200",
+          "--untracked-files=all",
         ]),
       ])
 

@@ -15,11 +15,11 @@ authoritative Markdown artifacts.
 
 This skill covers:
 
-* lightweight project state reporting;
-* milestone state;
-* durable decision history;
-* detection of inconsistencies between project artifacts;
-* identification of the next documented action.
+- lightweight project state reporting;
+- milestone state;
+- durable decision history;
+- detection of inconsistencies between project artifacts;
+- identification of the next documented action.
 
 The initial implementation provides only the read-only **State procedure**.
 
@@ -32,24 +32,24 @@ Project Progress manages operational state. It does not redefine project scope.
 
 Use this skill for:
 
-* current phase;
-* completed and active milestones;
-* blockers;
-* open implementation questions;
-* next actions;
-* durable decisions;
-* repository state relevant to current work.
+- current phase;
+- completed and active milestones;
+- blockers;
+- open implementation questions;
+- next actions;
+- durable decisions;
+- repository state relevant to current work.
 
 Return to the Project Definition workflow when evidence indicates a material
 change to:
 
-* project objectives;
-* non-goals;
-* core constraints;
-* accepted architecture;
-* required capabilities;
-* acceptance criteria;
-* implementation phases.
+- project objectives;
+- non-goals;
+- core constraints;
+- accepted architecture;
+- required capabilities;
+- acceptance criteria;
+- implementation phases.
 
 Do not silently convert a scope change into a progress update.
 
@@ -69,17 +69,17 @@ Their responsibilities are separate.
 
 Authoritative for:
 
-* purpose;
-* problem statement;
-* objectives;
-* non-goals;
-* operating principles;
-* approved architecture;
-* workflow contracts;
-* constraints;
-* acceptance criteria;
-* planned implementation phases;
-* definition version.
+- purpose;
+- problem statement;
+- objectives;
+- non-goals;
+- operating principles;
+- approved architecture;
+- workflow contracts;
+- constraints;
+- acceptance criteria;
+- planned implementation phases;
+- definition version.
 
 It does not own the current operational phase or active milestone.
 
@@ -87,45 +87,45 @@ It does not own the current operational phase or active milestone.
 
 Authoritative for:
 
-* current phase;
-* active milestone;
-* completed milestones;
-* implementation status;
-* blockers;
-* open implementation questions;
-* risks;
-* next documented action.
+- current phase;
+- active milestone;
+- completed milestones;
+- implementation status;
+- blockers;
+- open implementation questions;
+- risks;
+- next documented action.
 
 ### `decisions.md`
 
 Authoritative for:
 
-* accepted decisions;
-* rejected alternatives;
-* superseded decisions;
-* rationales;
-* consequences;
-* durable implementation choices.
+- accepted decisions;
+- rejected alternatives;
+- superseded decisions;
+- rationales;
+- consequences;
+- durable implementation choices.
 
 Treat the decision register as append-oriented. Historical accepted decisions
 must not be removed merely because a later decision supersedes them.
 
 ## General Rules
 
-* Read authoritative project artifacts before reporting project state.
-* Prefer explicit artifact content over assumptions from the conversation.
-* Distinguish recorded facts from inferred recommendations.
-* Do not invent missing project state.
-* Do not silently repair contradictions.
-* Report conflicting values together and identify their sources.
-* Do not mutate files, Git state, GitHub state, or runtime configuration during
+- Read authoritative project artifacts before reporting project state.
+- Prefer explicit artifact content over assumptions from the conversation.
+- Distinguish recorded facts from inferred recommendations.
+- Do not invent missing project state.
+- Do not silently repair contradictions.
+- Report conflicting values together and identify their sources.
+- Do not mutate files, Git state, GitHub state, or runtime configuration during
   the State procedure.
-* Do not stage, commit, push, switch branches, fetch, pull, merge, rebase, tag,
+- Do not stage, commit, push, switch branches, fetch, pull, merge, rebase, tag,
   release, or create pull requests.
-* Do not invoke documentation or vault write tools.
-* Do not claim that a milestone is complete merely because implementation appears
+- Do not invoke documentation or vault write tools.
+- Do not claim that a milestone is complete merely because implementation appears
   finished. Completion must be recorded explicitly in `progress.md`.
-* Do not treat an implementation-level unknown as a scope problem unless it
+- Do not treat an implementation-level unknown as a scope problem unless it
   materially affects approved objectives, constraints, architecture, or
   acceptance criteria.
 - Treat paths returned by `git_state` as repository-state facts.
@@ -154,9 +154,9 @@ Prefer the Git repository root when the workspace is inside a Git repository.
 
 When no Git repository is available:
 
-* continue reading project artifacts relative to the workspace when possible;
-* report Git state as unavailable;
-* do not fail the entire state report solely because Git is absent.
+- continue reading project artifacts relative to the workspace when possible;
+- report Git state as unavailable;
+- do not fail the entire state report solely because Git is absent.
 
 ### 2. Read project instructions
 
@@ -180,11 +180,11 @@ docs/project/decisions.md
 
 For each file:
 
-* report whether it exists;
-* read its frontmatter when present;
-* extract only information relevant to the state report;
-* preserve the artifact's terminology;
-* do not infer absent values.
+- report whether it exists;
+- read its frontmatter when present;
+- extract only information relevant to the state report;
+- preserve the artifact's terminology;
+- do not infer absent values.
 
 A missing artifact is a reportable condition, not permission to create it.
 
@@ -192,13 +192,13 @@ A missing artifact is a reportable condition, not permission to create it.
 
 From `definition.md`, identify when available:
 
-* project title;
-* definition state;
-* definition version;
-* approval date;
-* project purpose or primary objective;
-* planned implementation phases;
-* acceptance criteria relevant to the active milestone.
+- project title;
+- definition status;
+- definition version;
+- approval date;
+- project purpose or primary objective;
+- planned implementation phases;
+- acceptance criteria relevant to the active milestone.
 
 Keep this summary brief. `/state` is not a full definition review.
 
@@ -206,15 +206,15 @@ Keep this summary brief. `/state` is not a full definition review.
 
 From `progress.md`, identify when available:
 
-* current phase;
-* completed milestones;
-* active milestone;
-* implementation status;
-* blockers;
-* open questions relevant to current work;
-* risks currently affecting progress;
-* next documented action;
-* last recorded update date.
+- current phase;
+- completed milestones;
+- active milestone;
+- implementation status;
+- blockers;
+- open questions relevant to current work;
+- risks currently affecting progress;
+- next documented action;
+- last recorded update date.
 
 Prefer explicit fields in the Current State section for the main report.
 
@@ -225,10 +225,10 @@ replacement for contradictory body content.
 
 From `decisions.md`, identify:
 
-* accepted decisions directly relevant to the active milestone;
-* recent decisions that changed implementation direction;
-* superseded decisions that might otherwise create confusion;
-* unresolved proposed decisions when present.
+- accepted decisions directly relevant to the active milestone;
+- recent decisions that changed implementation direction;
+- superseded decisions that might otherwise create confusion;
+- unresolved proposed decisions when present.
 
 Do not summarize the entire decision history.
 
@@ -288,48 +288,48 @@ Compare overlapping values across artifacts.
 
 Check at least:
 
-* project title and identity;
-* definition version;
-* definition state;
-* current phase;
-* active milestone;
-* completed milestone declarations;
-* implementation phase ordering;
-* next documented action;
-* decisions referenced as superseding other decisions.
+- project title and identity;
+- definition version;
+- definition state;
+- current phase;
+- active milestone;
+- completed milestone declarations;
+- implementation phase ordering;
+- next documented action;
+- decisions referenced as superseding other decisions.
 
 Classify findings as:
 
-* **consistent** — relevant values agree;
-* **missing** — an expected value or artifact is unavailable;
-* **inconsistent** — two authoritative locations provide conflicting values;
-* **stale** — a value clearly refers to a completed or superseded state.
+- **consistent** — relevant values agree;
+- **missing** — an expected value or artifact is unavailable;
+- **inconsistent** — two authoritative locations provide conflicting values;
+- **stale** — a value clearly refers to a completed or superseded state.
 
 Do not resolve inconsistencies automatically.
 
 For every inconsistency, report:
 
-* the conflicting values;
-* the files or sections containing them;
-* which artifact normally owns that type of state;
-* the recommended corrective workflow.
+- the conflicting values;
+- the files or sections containing them;
+- which artifact normally owns that type of state;
+- the recommended corrective workflow.
 
 Examples:
 
-* a current-phase conflict belongs to Project Progress;
-* a definition-version conflict requires checking whether an approved material
+- a current-phase conflict belongs to Project Progress;
+- a definition-version conflict requires checking whether an approved material
   definition change was recorded;
-* a material scope conflict returns to `/define`;
-* a milestone transition belongs to `/milestone` once its write workflow exists.
+- a material scope conflict returns to `/define`;
+- a milestone transition belongs to `/milestone` once its write workflow exists.
 
 ### 9. Determine blockers
 
 Separate blockers into:
 
-* explicitly recorded blockers;
-* repository-state blockers;
-* artifact-consistency blockers;
-* inferred risks.
+- explicitly recorded blockers;
+- repository-state blockers;
+- artifact-consistency blockers;
+- inferred risks.
 
 Do not promote every open question into a blocker.
 
@@ -344,12 +344,12 @@ Start with the next action recorded in `progress.md`.
 
 Evaluate it against:
 
-* current branch;
-* working-tree state;
-* completed work;
-* blockers;
-* relevant decisions;
-* artifact inconsistencies.
+- current branch;
+- working-tree state;
+- completed work;
+- blockers;
+- relevant decisions;
+- artifact inconsistencies.
 
 Return one recommended next action.
 
@@ -357,10 +357,10 @@ When the documented next action remains valid, preserve it.
 
 When evidence shows it is stale or blocked:
 
-* report the documented action;
-* explain the conflict;
-* recommend the smallest corrective action;
-* do not update the artifact automatically.
+- report the documented action;
+- explain the conflict;
+- recommend the smallest corrective action;
+- do not update the artifact automatically.
 
 Do not expand the recommendation into a broad new plan unless the user asks.
 
@@ -373,25 +373,25 @@ Return the report using this structure.
 
 ## Project
 
-- **Name:** ...
-- **Objective:** ...
-- **Definition:** approved, version ...
-- **Current phase:** ...
-- **Active milestone:** ...
+- **Name:*- ...
+- **Objective:*- ...
+- **Definition:*- approved, version ...
+- **Current phase:*- ...
+- **Active milestone:*- ...
 
 ## Repository
 
-- **Branch:** ...
-- **Tracking:** ...
-- **Working tree:** clean | dirty | unavailable
-- **Latest checkpoint:** ...
+- **Branch:*- ...
+- **Tracking:*- ...
+- **Working tree:*- clean | dirty | unavailable
+- **Latest checkpoint:*- ...
 
 ## Progress
 
-- **Completed:** ...
-- **Current work:** ...
-- **Blockers:** none | ...
-- **Next documented action:** ...
+- **Completed:*- ...
+- **Current work:*- ...
+- **Blockers:*- none | ...
+- **Next documented action:*- ...
 
 ## Relevant Decisions
 
@@ -399,7 +399,7 @@ Return the report using this structure.
 
 ## Consistency
 
-- **State:** consistent | issues detected
+- **State:*- consistent | issues detected
 - ...
 
 ## Recommended Next Action
@@ -424,10 +424,10 @@ Produce the normal report and state that no artifact inconsistencies were found.
 
 Report:
 
-* project definition unavailable;
-* objective and definition version unavailable;
-* whether progress and decisions can still be read;
-* recommended recovery or definition workflow.
+- project definition unavailable;
+- objective and definition version unavailable;
+- whether progress and decisions can still be read;
+- recommended recovery or definition workflow.
 
 Do not reconstruct a definition from progress or conversation history.
 
@@ -435,9 +435,9 @@ Do not reconstruct a definition from progress or conversation history.
 
 Report:
 
-* operational project state unavailable;
-* active phase, milestone, blockers, and next documented action unavailable;
-* definition and decisions that remain readable.
+- operational project state unavailable;
+- active phase, milestone, blockers, and next documented action unavailable;
+- definition and decisions that remain readable.
 
 Do not infer the active milestone from branch names alone.
 
@@ -445,9 +445,9 @@ Do not infer the active milestone from branch names alone.
 
 Report:
 
-* decision history unavailable;
-* any decision references found in other artifacts;
-* that effective decision constraints could not be fully verified.
+- decision history unavailable;
+- any decision references found in other artifacts;
+- that effective decision constraints could not be fully verified.
 
 ### Conflicting definition versions
 
@@ -494,27 +494,27 @@ Report Git state as unavailable and continue with artifact-based state.
 The following Project Progress procedures are planned but not active in this
 skill version:
 
-* milestone transitions;
-* decision creation;
-* decision rejection;
-* decision supersession;
-* progress-file updates;
-* coordinated project-artifact writes.
+- milestone transitions;
+- decision creation;
+- decision rejection;
+- decision supersession;
+- progress-file updates;
+- coordinated project-artifact writes.
 
 Until constrained documentation transactions are implemented:
 
-* `/milestone` must remain proposal-only;
-* `/decision` must remain proposal-only;
-* no project artifact may be modified through this skill;
-* proposed updates must be shown in the conversation for manual review.
+- `/milestone` must remain proposal-only;
+- `/decision` must remain proposal-only;
+- no project artifact may be modified through this skill;
+- proposed updates must be shown in the conversation for manual review.
 
 ## Completion Condition
 
 The State procedure is complete when:
 
-* available authoritative artifacts have been read;
-* relevant Git state has been inspected or reported unavailable;
-* missing and conflicting state has been identified;
-* no mutation has occurred;
-* one clear recommended next action has been returned.
+- available authoritative artifacts have been read;
+- relevant Git state has been inspected or reported unavailable;
+- missing and conflicting state has been identified;
+- no mutation has occurred;
+- one clear recommended next action has been returned.
 

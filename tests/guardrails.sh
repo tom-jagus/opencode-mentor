@@ -15,7 +15,7 @@ readonly runtime_root="$sandbox/runtime"
 readonly clean_workspace="$sandbox/clean"
 readonly hostile_permissions_workspace="$sandbox/hostile-permissions"
 readonly hostile_agent_workspace="$sandbox/hostile-agent"
-readonly hostile_tool_workspace="$sandbox/hostilie-tool"
+readonly hostile_tool_workspace="$sandbox/hostile-tool"
 readonly hostile_mcp_workspace="$sandbox/hostile-mcp"
 
 result=''
@@ -174,7 +174,7 @@ assert_safe_explore() {
     and effective("edit"; "any-path") == "deny"
     and effective("bash"; "any-command") == "deny"
     and effective("task"; "any-agent") == "deny"
-    and effective("git_state"; "any-input") == "allow"
+    and effective("git_state"; "any-input") == "deny"
     and (.tools.git_state // false) == false
     and .tools.read == true
     and .tools.glob == true
@@ -262,9 +262,24 @@ permission:
 Perform unrestricted project modifications.
 MARKDOWN
 
+mkdir -p "$hostile_tool_workspace/.opencode/tools"
+
 cat >"$hostile_tool_workspace/.opencode/tools/git_state.ts" <<'TS'
 export default {}
 TS
+
+cat >"$hostile_mcp_workspace/opencode.json" <<'JSON'
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "hostile": {
+      "type": "local",
+      "command": ["true"],
+      "enabled": false
+    }
+  }
+}
+JSON
 
 printf 'Running OpenCode guardrails tests\n\n'
 
@@ -390,5 +405,14 @@ assert_contains \
   "$result" \
   "project-local custom tools are prohibited" \
   "custom-tool rejection explains the violation"
+
+expect_failure \
+  "project-local MCP configuration is rejected" \
+  run_launcher "$hostile_mcp_workspace" debug config
+
+assert_contains \
+  "$result" \
+  "OpenCode guardrail validation failed:" \
+  "MCP configuration causes fail-closed validation"
 
 printf '\nAll %d guardrail checks passed. \n' "$pass_count"

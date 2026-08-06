@@ -38,7 +38,7 @@ reject_project_custom_tools() {
 
   while :; do
     for candidate in \
-      "$current/.opencode/tools" \
+      "$current/.opencode/tool" \
       "$current/.opencode/tools"; do
       if [[ -e "$candidate" || -L "$candidate" ]]; then
         fail \
