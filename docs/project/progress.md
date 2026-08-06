@@ -16,11 +16,9 @@ updated_at: 2026-08-06
 - **Completed milestone:** Configuration Foundation
 - **Active milestone:** Project Workflows
 - **Implementation status:** The read-only `/state` vertical slice and
-  deterministic `git_state` tool are implemented and undergoing hardening.
-- **Blocking issues:** launcher custom-tool path typo, incomplete `git_state`
-  guardrail validation, and incomplete adversarial coverage
-- **Next action:** harden and validate deterministic Git state inspection, then
-  reconcile Project Workflows documentation.
+  deterministic `git_state` tool are implemented and validated.
+- **Blocking issues:** none
+- **Next action:** implement and validate the read-only `/resume` workflow.
 
 ## Phase Transition
 

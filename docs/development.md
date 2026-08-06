@@ -44,6 +44,7 @@ Development currently requires:
 
 ```text
 bash
+bun
 git
 jq
 opencode
@@ -445,11 +446,8 @@ From the repository root:
 tests/guardrails.sh
 ```
 
-The suite currently reports:
-
-```text
 A successful run prints every named check as `PASS` and exits with status zero.
-```
+The named checks and final exit status matter more than a fixed test count.
 
 The number may change as tests are added or removed. Every named check and the
 final zero exit status matter more than the fixed count.
