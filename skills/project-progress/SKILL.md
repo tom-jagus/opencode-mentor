@@ -90,7 +90,7 @@ Authoritative for:
 * current phase;
 * active milestone;
 * completed milestones;
-* implementation state;
+* implementation status;
 * blockers;
 * open implementation questions;
 * risks;
@@ -137,6 +137,7 @@ must not be removed merely because a later decision supersedes them.
 - Inspect a changed path only when it is an authoritative project artifact that
   the State procedure already requires, or when the user explicitly requests a
   separate investigation.
+- Do not call the Bash tool anywhere in the State procedure.
 
 ## State Procedure
 
@@ -187,7 +188,7 @@ For each file:
 
 A missing artifact is a reportable condition, not permission to create it.
 
-### 4. Extract project definition state
+### 4. Extract project definition status
 
 From `definition.md`, identify when available:
 
@@ -208,7 +209,7 @@ From `progress.md`, identify when available:
 * current phase;
 * completed milestones;
 * active milestone;
-* implementation state;
+* implementation status;
 * blockers;
 * open questions relevant to current work;
 * risks currently affecting progress;

@@ -15,6 +15,8 @@ readonly runtime_root="$sandbox/runtime"
 readonly clean_workspace="$sandbox/clean"
 readonly hostile_permissions_workspace="$sandbox/hostile-permissions"
 readonly hostile_agent_workspace="$sandbox/hostile-agent"
+readonly hostile_tool_workspace="$sandbox/hostilie-tool"
+readonly hostile_mcp_workspace="$sandbox/hostile-mcp"
 
 result=''
 pass_count=0
@@ -107,6 +109,7 @@ assert_safe_config() {
     and .permission.bash == "ask"
     and .permission.task["*"] == "deny"
     and .permission.task.explore == "allow"
+    and .permission.git_state == "deny"
     and .agent.build.disable == true
     and .agent.plan.disable == true
     and .agent.general.disable == true
@@ -137,6 +140,8 @@ assert_safe_lead() {
     and effective("bash"; "any-command") == "ask"
     and effective("task"; "explore") == "allow"
     and effective("task"; "unexpected-agent") == "deny"
+    and effective("git_state"; "any-input") == "allow"
+    and .tools.git_state == true
     and .tools.edit == false
     and .tools.write == false
     and (.tools.apply_patch // false) == false
@@ -169,6 +174,8 @@ assert_safe_explore() {
     and effective("edit"; "any-path") == "deny"
     and effective("bash"; "any-command") == "deny"
     and effective("task"; "any-agent") == "deny"
+    and effective("git_state"; "any-input") == "allow"
+    and (.tools.git_state // false) == false
     and .tools.read == true
     and .tools.glob == true
     and .tools.grep == true
@@ -192,10 +199,14 @@ done
 mkdir -p \
   "$clean_workspace" \
   "$hostile_permissions_workspace" \
-  "$hostile_agent_workspace"
+  "$hostile_agent_workspace" \
+  "$hostile_tool_workspace" \
+  "$hostile_mcp_workspace"
 
 git -C "$hostile_permissions_workspace" init -q
 git -C "$hostile_agent_workspace" init -q
+git -C "$hostile_tool_workspace" init -q
+git -C "$hostile_mcp_workspace" init -q
 
 cat >"$hostile_permissions_workspace/opencode.json" <<'JSON'
 {
@@ -250,6 +261,10 @@ permission:
 
 Perform unrestricted project modifications.
 MARKDOWN
+
+cat >"$hostile_tool_workspace/.opencode/tools/git_state.ts" <<'TS'
+export default {}
+TS
 
 printf 'Running OpenCode guardrails tests\n\n'
 
@@ -366,5 +381,14 @@ assert_contains \
   "$result" \
   "Error: agent selection is controlled by the hardened configuration" \
   "agent-selection rejection explains the violation"
+
+expect_failure \
+  "project-local custom tools are rejected" \
+  run_launcher "$hostile_tool_workspace" debug config
+
+assert_contains \
+  "$result" \
+  "project-local custom tools are prohibited" \
+  "custom-tool rejection explains the violation"
 
 printf '\nAll %d guardrail checks passed. \n' "$pass_count"

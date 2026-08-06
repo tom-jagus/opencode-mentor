@@ -167,7 +167,7 @@ assert_contains \
 
 assert_contains \
   "$skill_file" \
-  'Do not inspect the type, metadata, contents, ownership, or purpose of changed paths' \
+  'Do not inspect the type, metadata, contents, ownership, or purpose' \
   'state procedure does not investigate changed paths'
 
 assert_contains \

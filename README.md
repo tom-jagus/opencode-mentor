@@ -1,7 +1,8 @@
-# OpenCode Workflow Configuration
+# OpenCode Mentor
 
-Personal, version-controlled OpenCode configuration and operating workflow.
+A personal, version-controlled OpenCode configuration and proposal-only operating
+workflow.
 
-The project aims to provide a consistent primary agent, durable project context, controlled file permissions, and repeatable development, documentation, Git, vault, and research workflows.
-
-The configuration is currently under active development.
+OpenCode Mentor provides a consistent `lead` agent, durable project context,
+immutable source-edit guardrails, deterministic read-only repository inspection,
+and repeatable project, documentation, Git, vault, and research workflows.

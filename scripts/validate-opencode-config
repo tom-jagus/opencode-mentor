@@ -23,6 +23,7 @@ jq -e '
   and .permission.bash == "ask"
   and .permission.task["*"] == "deny"
   and .permission.task.explore == "allow"
+  and .permission.git_state == "deny"
   and .agent.build.disable == true
   and .agent.plan.disable == true
   and .agent.general.disable == true
@@ -77,6 +78,8 @@ jq -e "$effective_permission_filter"'
   and effective("bash"; "any-command") == "ask"
   and effective("task"; "explore") == "allow"
   and effective("task"; "unexpected-agent") == "deny"
+  and effective("git_state"; "any-input") == "allow"
+  and .tools.git_state == true
   and .tools.edit == false
   and .tools.write == false
   and (.tools.apply_patch // false) == false
@@ -95,6 +98,8 @@ jq -e "$effective_permission_filter"'
   and effective("edit"; "any-path") == "deny"
   and effective("bash"; "any-command") == "deny"
   and effective("task"; "any-agent") == "deny"
+  and effective("git_state"; "any-input") == "allow"
+  and (.tools.git_state // false) == false
   and .tools.edit == false
   and .tools.write == false
   and .tools.bash == false

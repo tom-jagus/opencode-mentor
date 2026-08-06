@@ -38,8 +38,8 @@ reject_project_custom_tools() {
 
   while :; do
     for candidate in \
-      "$current/.opencode/tool" \
-      "$current/.opencide/tools"; do
+      "$current/.opencode/tools" \
+      "$current/.opencode/tools"; do
       if [[ -e "$candidate" || -L "$candidate" ]]; then
         fail \
           "project-local custom tools are prohibited by the hardened launcher: $candidate"

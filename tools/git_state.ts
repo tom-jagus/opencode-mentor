@@ -36,17 +36,28 @@ async function runGit(
   cwd: string,
   args: string[],
 ): Promise<GitCommandResult> {
-  const subprocess = Bun.spawn(["git", ...args], {
-    cwd,
-    env: {
-      ...Bun.env,
-      GIT_OPTIONAL_LOCKS: "0",
-      LANG: "C",
-      LC_ALL: "C",
+  const subprocess = Bun.spawn(
+    [
+      "git",
+      "-c",
+      "core.fsmonitor=false",
+      "-c",
+      "core.hooksPath=/dev/null",
+      ...args,
+    ],
+    {
+        cwd,
+        env: {
+          ...Bun.env,
+          GIT_OPTIONAL_LOCKS: "0",
+          GIT_TERMINAL_PROMPT: "0",
+          LANG: "C",
+          LC_ALL: "C",
+        },
+        stdout: "pipe",
+        stderr: "pipe",
     },
-    stdout: "pipe",
-    stderr: "pipe",
-  })
+  )
 
   const [stdout, stderr, exitCode] = await Promise.all([
     new Response(subprocess.stdout).text(),
@@ -225,7 +236,7 @@ export default tool({
           "status",
           "--porcelain=v1",
           "-z",
-          "--untracked-files=all",
+          "--untracked-files=200",
         ]),
       ])
 
