@@ -4,7 +4,7 @@ name: development
 description: Propose, debug, review, and validate source implementation without modifying source files.
 compatibility: opencode
 metadata:
-workflow: development
+  workflow: development
 ---
 
 # Development
@@ -134,23 +134,32 @@ documentation changes remain conversational proposals.
 
 ## Project Context
 
-Before proposing substantial implementation, read enough durable project context
-to understand:
+Before proposing source changes:
+
+- read the applicable project `AGENTS.md` when present;
+- attempt to read `docs/project/definition.md`;
+- read enough additional durable project context to understand the active work
+  and constraints relevant to the request.
+
+Use `definition.md` to establish:
 
 - the approved objective;
-- the active milestone or implementation area;
 - constraints relevant to the requested work;
 - architecture relevant to the requested work;
-- accepted decisions that constrain the implementation;
 - acceptance criteria relevant to the requested work.
 
-Prefer these artifacts when available:
+Read these additional artifacts when relevant:
 
 ```text
-docs/project/definition.md
 docs/project/progress.md
 docs/project/decisions.md
 ```
+
+Use them to identify:
+
+- the active milestone or implementation area;
+- current implementation status;
+- accepted decisions that constrain the implementation.
 
 Read the applicable project `AGENTS.md` when present.
 
@@ -665,7 +674,7 @@ Change: add | replace | remove | rename
 
 ```language
 ...
-````
+```
 
 ## Design Notes
 
@@ -690,7 +699,7 @@ clearly.
 
 After the user enters the proposed changes, use:
 
-```markdown
+````markdown
 # Implementation Review
 
 ## Result
@@ -707,7 +716,7 @@ correct | corrections required | cannot fully verify
 
 ```language
 ...
-````
+```
 
 ## Validation
 
@@ -725,7 +734,7 @@ validation.
 When Development begins from a defect or failed validation rather than a new
 implementation request, use:
 
-```markdown
+````markdown
 # Development Diagnosis
 
 ## Problem
@@ -742,13 +751,13 @@ implementation request, use:
 
 ```language
 ...
-````
+```
 
 ## Validation
 
 - ...
 
-```
+````
 
 Distinguish confirmed root cause from hypotheses.
 
@@ -858,4 +867,3 @@ The Development procedure is complete for one implementation unit when:
 - appropriate validation has passed or its limitations are explicitly recorded;
 - no unresolved material scope conflict remains;
 - no source mutation has been performed by OpenCode.
-```

@@ -4,6 +4,10 @@ agent: lead
 ---
 Load the `development` skill and execute its Development procedure.
 
+Treat the following text as the current development request when present:
+
+$ARGUMENTS
+
 This workflow is proposal-only for source files. Do not create, edit, patch,
 format, regenerate, rename, move, or delete source files.
 
