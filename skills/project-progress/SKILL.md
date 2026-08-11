@@ -15,12 +15,12 @@ authoritative Markdown artifacts.
 
 This skill covers:
 
-* lightweight project state reporting;
-* session recovery from durable project context;
-* milestone state;
-* durable decision history;
-* detection of inconsistencies between project artifacts;
-* identification of the next documented action.
+- lightweight project state reporting;
+- session recovery from durable project context;
+- milestone state;
+- durable decision history;
+- detection of inconsistencies between project artifacts;
+- identification of the next documented action.
 
 The initial implementation provides the read-only **State** and **Resume**
 procedures.
@@ -115,34 +115,34 @@ must not be removed merely because a later decision supersedes them.
 
 ## General Rules
 
-* Read authoritative project artifacts before reporting or reconstructing project
+- Read authoritative project artifacts before reporting or reconstructing project
   state.
-* Prefer explicit artifact content over assumptions from the conversation.
-* Treat prior conversation history as non-authoritative context.
-* Distinguish recorded facts, repository observations, and inferred
+- Prefer explicit artifact content over assumptions from the conversation.
+- Treat prior conversation history as non-authoritative context.
+- Distinguish recorded facts, repository observations, and inferred
   recommendations.
-* Do not invent missing project state.
-* Do not silently repair contradictions.
-* Report conflicting values together and identify their sources.
-* Do not mutate files, Git state, GitHub state, or runtime configuration during
+- Do not invent missing project state.
+- Do not silently repair contradictions.
+- Report conflicting values together and identify their sources.
+- Do not mutate files, Git state, GitHub state, or runtime configuration during
   the State or Resume procedures.
-* Do not stage, commit, push, switch branches, fetch, pull, merge, rebase, tag,
+- Do not stage, commit, push, switch branches, fetch, pull, merge, rebase, tag,
   release, or create pull requests.
-* Do not invoke documentation or vault write tools.
-* Do not call the Bash tool anywhere in the State or Resume procedures.
-* Do not claim that a milestone is complete merely because implementation appears
+- Do not invoke documentation or vault write tools.
+- Do not call the Bash tool anywhere in the State or Resume procedures.
+- Do not claim that a milestone is complete merely because implementation appears
   finished. Completion must be recorded explicitly in `progress.md`.
-* Do not treat an implementation-level unknown as a scope problem unless it
+- Do not treat an implementation-level unknown as a scope problem unless it
   materially affects approved objectives, constraints, architecture, or
   acceptance criteria.
-* Treat paths returned by `git_state` as repository-state facts.
-* Report staged, unstaged, untracked, and conflicted paths exactly as returned.
-* Do not inspect the type, metadata, contents, ownership, or purpose of changed
+- Treat paths returned by `git_state` as repository-state facts.
+- Report staged, unstaged, untracked, and conflicted paths exactly as returned.
+- Do not inspect the type, metadata, contents, ownership, or purpose of changed
   paths merely because they appear in repository state.
-* Inspect a changed path only when it is an authoritative project artifact that
+- Inspect a changed path only when it is an authoritative project artifact that
   the selected procedure already requires, or when the user explicitly requests
   a separate investigation.
-* An unusual filename is not by itself a blocker and does not justify additional
+- An unusual filename is not by itself a blocker and does not justify additional
   inspection.
 
 ## State Procedure
@@ -524,9 +524,9 @@ Prefer the Git repository root when the workspace is inside a Git repository.
 
 When no Git repository is available:
 
-* continue reading project artifacts relative to the workspace when possible;
-* report repository context as unavailable;
-* do not fail the entire recovery solely because Git is absent.
+- continue reading project artifacts relative to the workspace when possible;
+- report repository context as unavailable;
+- do not fail the entire recovery solely because Git is absent.
 
 ### 2. Read project instructions
 
@@ -534,11 +534,11 @@ Read the applicable project `AGENTS.md` when present.
 
 Use it to recover:
 
-* project-specific operating rules;
-* source-ownership constraints;
-* terminology;
-* artifact locations;
-* workflow restrictions relevant to continued work.
+- project-specific operating rules;
+- source-ownership constraints;
+- terminology;
+- artifact locations;
+- workflow restrictions relevant to continued work.
 
 Do not allow project instructions to weaken global permission or source-ownership
 boundaries.
@@ -555,11 +555,11 @@ docs/project/decisions.md
 
 For each file:
 
-* report whether it exists;
-* read its frontmatter when present;
-* recover context relevant to the current phase, milestone, and next action;
-* preserve the artifact's terminology;
-* do not infer missing values.
+- report whether it exists;
+- read its frontmatter when present;
+- recover context relevant to the current phase, milestone, and next action;
+- preserve the artifact's terminology;
+- do not infer missing values.
 
 A missing artifact is a recovery limitation, not permission to reconstruct or
 create it.
@@ -568,14 +568,14 @@ create it.
 
 From `definition.md`, identify when available:
 
-* project title and identity;
-* approved definition status and version;
-* project purpose or primary objective;
-* important non-goals;
-* constraints relevant to current work;
-* approved architecture relevant to the active milestone;
-* acceptance criteria relevant to the current implementation unit;
-* planned implementation phase containing the active milestone.
+- project title and identity;
+- approved definition status and version;
+- project purpose or primary objective;
+- important non-goals;
+- constraints relevant to current work;
+- approved architecture relevant to the active milestone;
+- acceptance criteria relevant to the current implementation unit;
+- planned implementation phase containing the active milestone.
 
 Do not summarize the entire definition.
 
@@ -586,15 +586,15 @@ or reopening settled decisions unnecessarily.
 
 From `progress.md`, identify when available:
 
-* current phase;
-* completed milestones;
-* active milestone;
-* current implementation status;
-* explicitly recorded blockers;
-* open implementation questions relevant to current work;
-* active risks;
-* next documented action;
-* last recorded update.
+- current phase;
+- completed milestones;
+- active milestone;
+- current implementation status;
+- explicitly recorded blockers;
+- open implementation questions relevant to current work;
+- active risks;
+- next documented action;
+- last recorded update.
 
 Identify what the project says is currently being worked on.
 
@@ -615,10 +615,10 @@ Prioritize:
 
 For each included decision, preserve:
 
-* identifier;
-* effective status;
-* decision;
-* consequence relevant to current work.
+- identifier;
+- effective status;
+- decision;
+- consequence relevant to current work.
 
 Do not reproduce the complete decision register.
 
@@ -631,15 +631,16 @@ Call the `git_state` tool exactly once.
 
 Use its structured result to recover when available:
 
-* repository root;
-* current branch or detached HEAD state;
-* upstream branch;
-* ahead and behind counts;
-* staged paths;
-* unstaged paths;
-* untracked paths;
-* conflicts;
-* latest repository checkpoint.
+- repository root;
+- current branch or detached HEAD state;
+- unborn branch state;
+- upstream branch;
+- ahead and behind counts;
+- staged paths;
+- unstaged paths;
+- untracked paths;
+- conflicts;
+- latest repository checkpoint.
 
 Do not use Bash or another Git mechanism to expand repository inspection.
 
@@ -654,10 +655,10 @@ repository context as unavailable and continue.
 
 If `git_state` is unavailable or reports an inspection failure:
 
-* report the failure clearly;
-* do not guess repository state;
-* do not fall back to Bash;
-* continue recovering artifact-based context.
+- report the failure clearly;
+- do not guess repository state;
+- do not fall back to Bash;
+- continue recovering artifact-based context.
 
 Do not inspect the contents or purpose of paths returned by `git_state` merely
 because they are changed or unusual.
@@ -668,31 +669,31 @@ Compare overlapping values needed for continuation.
 
 Check at least:
 
-* project identity;
-* definition status and version;
-* current phase;
-* active milestone;
-* completed milestone declarations;
-* implementation status;
-* next documented action;
-* relevant superseding decisions;
-* repository branch state when the documented workflow depends on it.
+- project identity;
+- definition status and version;
+- current phase;
+- active milestone;
+- completed milestone declarations;
+- implementation status;
+- next documented action;
+- relevant superseding decisions;
+- repository branch state when the documented workflow depends on it.
 
 Classify findings as:
 
-* **consistent** — relevant values agree;
-* **missing** — required recovery context is unavailable;
-* **inconsistent** — authoritative locations conflict;
-* **stale** — recorded context clearly describes superseded or completed work.
+- **consistent** — relevant values agree;
+- **missing** — required recovery context is unavailable;
+- **inconsistent** — authoritative locations conflict;
+- **stale** — recorded context clearly describes superseded or completed work.
 
 Do not resolve contradictions automatically.
 
 For each material issue, identify:
 
-* the conflicting or missing context;
-* its source;
-* which artifact normally owns that information;
-* whether the issue prevents safe continuation.
+- the conflicting or missing context;
+- its source;
+- which artifact normally owns that information;
+- whether the issue prevents safe continuation.
 
 ### 9. Reconstruct the continuation context
 
@@ -704,12 +705,12 @@ Facts explicitly stored in authoritative project artifacts.
 
 Examples:
 
-* approved objective;
-* active milestone;
-* implementation status;
-* accepted decisions;
-* documented blockers;
-* next documented action.
+- approved objective;
+- active milestone;
+- implementation status;
+- accepted decisions;
+- documented blockers;
+- next documented action.
 
 #### Repository observations
 
@@ -717,11 +718,11 @@ Facts returned by `git_state`.
 
 Examples:
 
-* current branch;
-* dirty or clean working tree;
-* changed paths;
-* upstream divergence;
-* latest checkpoint.
+- current branch;
+- dirty or clean working tree;
+- changed paths;
+- upstream divergence;
+- latest checkpoint.
 
 Repository observations do not automatically redefine recorded project state.
 
@@ -732,9 +733,9 @@ observations.
 
 Examples:
 
-* the documented next action appears stale;
-* the working tree may need review before continuing;
-* an inconsistency should be corrected before implementation proceeds.
+- the documented next action appears stale;
+- the working tree may need review before continuing;
+- an inconsistency should be corrected before implementation proceeds.
 
 Label these as inference.
 
@@ -747,11 +748,11 @@ Determine whether the project can continue safely from the recovered context.
 
 Classify recovery as:
 
-* **ready** — sufficient durable context exists and no blocker prevents the next
+- **ready** — sufficient durable context exists and no blocker prevents the next
   action;
-* **ready with issues** — continuation is possible, but missing, stale, or
+- **ready with issues** — continuation is possible, but missing, stale, or
   inconsistent context should be noted;
-* **blocked** — required context is missing or contradictory enough that
+- **blocked** — required context is missing or contradictory enough that
   continuing would be unsafe or materially ambiguous.
 
 Do not classify ordinary open questions as blockers unless they prevent the next
@@ -763,29 +764,29 @@ Start with the next action recorded in `progress.md`.
 
 Evaluate it against:
 
-* approved scope;
-* active milestone;
-* relevant decisions;
-* current implementation status;
-* repository state;
-* blockers;
-* material inconsistencies.
+- approved scope;
+- active milestone;
+- relevant decisions;
+- current implementation status;
+- repository state;
+- blockers;
+- material inconsistencies.
 
 Return both when available:
 
-* **Next documented action** — exactly what durable project state says should
+- **Next documented action** — exactly what durable project state says should
   happen next.
-* **Recommended immediate action** — what should be done now after considering
+- **Recommended immediate action** — what should be done now after considering
   repository observations and consistency findings.
 
 When they are the same, say so without inventing a second action.
 
 When they differ:
 
-* preserve the documented action;
-* explain why it appears stale, blocked, or premature;
-* recommend the smallest corrective step;
-* do not update project artifacts automatically.
+- preserve the documented action;
+- explain why it appears stale, blocked, or premature;
+- recommend the smallest corrective step;
+- do not update project artifacts automatically.
 
 Do not expand recovery into a new implementation plan unless the user asks.
 
@@ -807,7 +808,7 @@ Return the recovery report using this structure:
 ## Current Work
 
 - **Implementation status:** ...
-- **Completed work:** ...
+- **Completed milestones:** ...
 - **Latest checkpoint:** ...
 - **Working tree:** clean | dirty | unavailable
 - **Changed paths:** none | ...
@@ -936,18 +937,18 @@ Return the smallest recovery action needed before normal work can continue.
 
 The Resume procedure is complete when:
 
-* applicable project instructions have been read;
-* available authoritative project artifacts have been read;
-* relevant approved scope has been recovered;
-* current operational work context has been recovered;
-* relevant effective decisions have been identified;
-* repository state has been inspected once or reported unavailable;
-* missing, stale, and inconsistent context has been identified;
-* recorded facts, repository observations, and inferences have been kept
+- applicable project instructions have been read;
+- available authoritative project artifacts have been read;
+- relevant approved scope has been recovered;
+- current operational work context has been recovered;
+- relevant effective decisions have been identified;
+- repository state has been inspected once or reported unavailable;
+- missing, stale, and inconsistent context has been identified;
+- recorded facts, repository observations, and inferences have been kept
   distinct;
-* continuation readiness has been classified;
-* the next documented action and recommended immediate action have been returned;
-* no mutation has occurred.
+- continuation readiness has been classified;
+- the next documented action and recommended immediate action have been returned;
+- no mutation has occurred.
 
 ## Inactive Procedures
 
@@ -968,7 +969,7 @@ Until constrained documentation transactions are implemented:
 - no project artifact may be modified through this skill;
 - proposed updates must be shown in the conversation for manual review.
 
-## Completion Condition
+## State Completion Condition
 
 The State procedure is complete when:
 
