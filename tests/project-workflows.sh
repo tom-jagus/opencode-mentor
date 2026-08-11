@@ -390,6 +390,49 @@ else
   cat "$config_stderr" >&2
 fi
 
+skills_raw="$runtime_root/resolved-skills.raw"
+skills_json="$runtime_root/resolved-skills.json"
+skills_stderr="$runtime_root/resolved-skills.stderr"
+
+if OPENCODE_DEV_RUNTIME="$runtime_root/runtime" \
+  "$launcher" debug skill >"$skills_raw" 2>"$skills_stderr"; then
+  pass 'development launcher resolves skills'
+else
+  fail 'development launcher resolves skills'
+  cat "$skills_stderr" >&2
+fi
+
+awk '
+  found || /^[[:space:]]*\[/ {
+    found = 1
+    print
+  }
+' "$skills_raw" >"$skills_json"
+
+if jq empty "$skills_json" >/dev/null 2>&1; then
+  pass 'resolved OpenCode skills are valid JSON'
+else
+  fail 'resolved OpenCode skills are valid JSON'
+fi
+
+if jq -e '
+  type == "array"
+  and any(.[]; .name == "project-progress")
+' "$skills_json" >/dev/null 2>&1; then
+  pass 'project-progress skill is discovered at runtime'
+else
+  fail 'project-progress skill is discovered at runtime'
+fi
+
+if jq -e '
+  type == "array"
+  and any(.[]; .name == "development")
+' "$skills_json" >/dev/null 2>&1; then
+  pass 'development skill is discovered at runtime'
+else
+  fail 'development skill is discovered at runtime'
+fi
+
 # The launcher validator prints its PASS message before OpenCode emits JSON.
 # Retain everything beginning with the first JSON object.
 awk '

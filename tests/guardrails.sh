@@ -177,6 +177,7 @@ assert_safe_explore() {
     and effective("bash"; "any-command") == "deny"
     and effective("task"; "any-agent") == "deny"
     and effective("git_state"; "any-input") == "deny"
+    and effective("external_directory"; "/tmp/opencode") == "deny"
     and (.tools.git_state // false) == false
     and .tools.read == true
     and .tools.glob == true
