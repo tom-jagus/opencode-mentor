@@ -14,21 +14,21 @@ Use this skill to establish or materially revise durable project scope.
 
 Project Definition answers questions such as:
 
-* what problem the project exists to solve;
-* what outcomes are required;
-* what is explicitly outside scope;
-* which constraints must be respected;
-* which architectural approach is approved;
-* which assumptions materially affect the project;
-* how success will be evaluated;
-* which implementation phases are expected.
+- what problem the project exists to solve;
+- what outcomes are required;
+- what is explicitly outside scope;
+- which constraints must be respected;
+- which architectural approach is approved;
+- which assumptions materially affect the project;
+- how success will be evaluated;
+- which implementation phases are expected.
 
 The workflow covers:
 
-* initial project definition;
-* continued definition before initial approval;
-* material re-entry during Development;
-* coordinated definition, progress, and decision proposals.
+- initial project definition;
+- continued definition before initial approval;
+- material re-entry during Development;
+- coordinated definition, progress, and decision proposals.
 
 During the current Project Workflows milestone, Project Definition is
 proposal-only.
@@ -49,14 +49,14 @@ docs/project/decisions.md
 
 Authoritative for:
 
-* problem statement;
-* objectives;
-* intended outcomes;
-* non-goals;
-* constraints;
-* approved architecture or approach;
-* acceptance criteria;
-* planned implementation phases.
+- problem statement;
+- objectives;
+- intended outcomes;
+- non-goals;
+- constraints;
+- approved architecture or approach;
+- acceptance criteria;
+- planned implementation phases.
 
 It does not own current operational progress.
 
@@ -64,12 +64,12 @@ It does not own current operational progress.
 
 Authoritative for:
 
-* current phase;
-* active milestone;
-* completed milestones;
-* blockers;
-* open implementation questions;
-* next documented action.
+- current phase;
+- active milestone;
+- completed milestones;
+- blockers;
+- open implementation questions;
+- next documented action.
 
 Project Definition may propose progress changes when definition work establishes
 or materially changes the project's operational starting point.
@@ -96,10 +96,10 @@ Project Definition operates in one of two modes.
 
 Use Initial Definition when:
 
-* `definition.md` does not exist;
-* project artifacts have not yet been established;
-* the existing definition is explicitly incomplete or unapproved;
-* the user is continuing an unfinished initial definition process.
+- `definition.md` does not exist;
+- project artifacts have not yet been established;
+- the existing definition is explicitly incomplete or unapproved;
+- the user is continuing an unfinished initial definition process.
 
 Initial Definition establishes the first coherent project scope and coordinated
 project artifacts.
@@ -111,24 +111,24 @@ may require changing approved scope.
 
 Re-enter Project Definition when:
 
-* the objective changes;
-* a non-goal becomes required;
-* a core constraint changes;
-* an architectural assumption becomes invalid;
-* acceptance criteria change;
-* a major capability enters or leaves scope;
-* implementation evidence materially invalidates the approved approach.
+- the objective changes;
+- a non-goal becomes required;
+- a core constraint changes;
+- an architectural assumption becomes invalid;
+- acceptance criteria change;
+- a major capability enters or leaves scope;
+- implementation evidence materially invalidates the approved approach.
 
 Do not re-enter Project Definition merely because:
 
-* implementation is difficult;
-* several technical implementations are possible;
-* an ordinary defect exists;
-* validation fails;
-* the working tree is dirty;
-* a milestone advances;
-* a standalone implementation decision must be recorded;
-* documentation wording needs editorial cleanup.
+- implementation is difficult;
+- several technical implementations are possible;
+- an ordinary defect exists;
+- validation fails;
+- the working tree is dirty;
+- a milestone advances;
+- a standalone implementation decision must be recorded;
+- documentation wording needs editorial cleanup.
 
 Those remain in their owning workflows.
 
@@ -136,9 +136,9 @@ Those remain in their owning workflows.
 
 For an existing approved definition, classify the outcome as:
 
-* **material**
-* **editorial**
-* **no-change**
+- **material**
+- **editorial**
+- **no-change**
 
 ### Material
 
@@ -146,13 +146,13 @@ A change is material when it changes approved project meaning.
 
 Examples:
 
-* objective changes;
-* non-goal changes;
-* required capability changes;
-* core constraint changes;
-* approved architecture changes materially;
-* acceptance criteria change;
-* implementation phase structure changes in a way that changes approved scope.
+- objective changes;
+- non-goal changes;
+- required capability changes;
+- core constraint changes;
+- approved architecture changes materially;
+- acceptance criteria change;
+- implementation phase structure changes in a way that changes approved scope.
 
 A material definition proposal increments the proposed definition version by
 exactly one.
@@ -166,11 +166,11 @@ A change is editorial when meaning remains unchanged.
 
 Examples:
 
-* clearer wording;
-* grammar correction;
-* restructuring for readability;
-* removing duplication;
-* clarifying terminology without changing intent.
+- clearer wording;
+- grammar correction;
+- restructuring for readability;
+- removing duplication;
+- clarifying terminology without changing intent.
 
 Editorial changes do not increment the definition version.
 
@@ -188,44 +188,67 @@ Do not manufacture documentation changes simply to produce visible work.
 
 ## General Rules
 
-* Read existing authoritative project artifacts before redefining approved scope.
-* Read the applicable project `AGENTS.md` when present.
-* Prefer recorded project facts over conversation memory.
-* Treat prior conversation history as useful but non-authoritative context.
-* Distinguish facts, assumptions, inferences, proposals, and accepted choices.
-* Challenge unclear reasoning and unnecessary complexity.
-* Separate desired outcomes from proposed implementation.
-* Preserve approved decisions unless new evidence justifies reconsideration.
-* Do not reopen settled scope without material evidence.
-* Do not convert ordinary implementation ambiguity into a definition problem.
-* Do not invent missing project requirements.
-* Do not silently resolve contradictions between authoritative artifacts.
-* Do not modify project artifacts.
-* Do not use Bash.
-* Do not stage, commit, push, merge, rebase, tag, release, or create pull
+- Read existing authoritative project artifacts before redefining approved scope.
+- Read the applicable project `AGENTS.md` when present.
+- Prefer recorded project facts over conversation memory.
+- Treat prior conversation history as useful but non-authoritative context.
+- Distinguish facts, assumptions, inferences, proposals, and accepted choices.
+- Challenge unclear reasoning and unnecessary complexity.
+- Separate desired outcomes from proposed implementation.
+- Preserve approved decisions unless new evidence justifies reconsideration.
+- Do not reopen settled scope without material evidence.
+- Do not convert ordinary implementation ambiguity into a definition problem.
+- Do not invent missing project requirements.
+- Do not silently resolve contradictions between authoritative artifacts.
+- When changing one ownership, permission, or workflow boundary, preserve
+  adjacent boundaries unless the requested material change explicitly affects
+  them.
+- Do not weaken or broaden another artifact category's mutation authority merely
+  to contrast it with the category being changed.
+- Do not modify project artifacts.
+- Do not use Bash.
+- Do not stage, commit, push, merge, rebase, tag, release, or create pull
   requests.
-* Do not invoke documentation or vault mutation tools.
-* Keep coordinated artifact changes internally consistent.
-* Minimize changes to only the artifacts affected by the definition outcome.
+- Do not invoke documentation or vault mutation tools.
+- Keep coordinated artifact changes internally consistent.
+- Minimize changes to only the artifacts affected by the definition outcome.
 
 ## Investigation
+
+Investigation must be proportional to the definition question.
+
+Inspect implementation only when needed to:
+
+- determine whether approved scope is actually affected;
+- validate or invalidate an architectural assumption;
+- establish a material constraint;
+- understand consequences that materially affect the definition decision.
+
+Stop investigation once enough evidence exists to classify the definition
+outcome and frame the material choices.
+
+Do not perform a complete implementation impact analysis during Project
+Definition. Detailed implementation tracing belongs to Development.
 
 ### Direct inspection
 
 Use approved read-only tools to inspect:
 
-* project instructions;
-* existing project artifacts;
-* source relevant to a claimed architectural constraint;
-* existing configuration relevant to approved scope;
-* repository structure when it materially informs the definition.
+- project instructions;
+- existing project artifacts;
+- source relevant to a claimed architectural constraint;
+- existing configuration relevant to approved scope;
+- repository structure when it materially informs the definition.
 
 Do not inspect implementation merely to find something to challenge.
 
 ### `explore`
 
-Use `explore` only for bounded read-only repository investigation when existing
-implementation evidence materially affects the definition.
+Give `explore` the smallest question needed to resolve the definition issue.
+
+Do not ask `explore` to map every file, test, permission, or implementation
+dependency merely because a material definition change may later require
+Development work.
 
 Examples:
 
@@ -243,11 +266,11 @@ Do not delegate definition decisions to `explore`.
 
 `lead` remains responsible for:
 
-* interpreting evidence;
-* challenging assumptions;
-* comparing alternatives;
-* deciding what must be presented to the user;
-* preparing the coordinated proposal.
+- interpreting evidence;
+- challenging assumptions;
+- comparing alternatives;
+- deciding what must be presented to the user;
+- preparing the coordinated proposal.
 
 ### External research
 
@@ -270,18 +293,18 @@ Identify what the user is trying to define or reconsider.
 
 Use:
 
-* command arguments;
-* the user's current wording;
-* existing project artifacts;
-* relevant project instructions.
+- command arguments;
+- the user's current wording;
+- existing project artifacts;
+- relevant project instructions.
 
 Determine whether the request concerns:
 
-* a new project;
-* an unfinished initial definition;
-* a possible material redefinition;
-* an editorial clarification;
-* something that belongs to another workflow.
+- a new project;
+- an unfinished initial definition;
+- a possible material redefinition;
+- an editorial clarification;
+- something that belongs to another workflow.
 
 Do not assume that invoking `/define` guarantees a material change.
 
@@ -291,11 +314,11 @@ Read the applicable project `AGENTS.md` when present.
 
 Recover relevant:
 
-* operating constraints;
-* terminology;
-* source-ownership rules;
-* project artifact locations;
-* workflow boundaries.
+- operating constraints;
+- terminology;
+- source-ownership rules;
+- project artifact locations;
+- workflow boundaries.
 
 Project instructions may constrain Project Definition but must not weaken global
 guardrails.
@@ -312,11 +335,11 @@ docs/project/decisions.md
 
 Determine for each artifact:
 
-* whether it exists;
-* whether frontmatter exists;
-* relevant status and version information;
-* whether it appears internally usable;
-* whether it conflicts materially with another authoritative artifact.
+- whether it exists;
+- whether frontmatter exists;
+- relevant status and version information;
+- whether it appears internally usable;
+- whether it conflicts materially with another authoritative artifact.
 
 Do not reconstruct a missing artifact from assumptions.
 
@@ -324,8 +347,8 @@ Do not reconstruct a missing artifact from assumptions.
 
 Select:
 
-* **Initial Definition**, or
-* **Material Re-entry**.
+- **Initial Definition**, or
+- **Material Re-entry**.
 
 Use Initial Definition when approved scope has not yet been established.
 
@@ -341,11 +364,11 @@ State the selected mode internally and follow the corresponding rules.
 
 Identify:
 
-* the actual problem being solved;
-* who or what is affected;
-* the required outcomes;
-* why the project is needed;
-* how the desired future state differs from the current state.
+- the actual problem being solved;
+- who or what is affected;
+- the required outcomes;
+- why the project is needed;
+- how the desired future state differs from the current state.
 
 Challenge solution-first framing.
 
@@ -371,11 +394,11 @@ Identify important non-goals where ambiguity could otherwise expand scope.
 
 Challenge objectives that are:
 
-* implementation details disguised as outcomes;
-* redundant;
-* unverifiable;
-* contradictory;
-* broader than the stated problem requires.
+- implementation details disguised as outcomes;
+- redundant;
+- unverifiable;
+- contradictory;
+- broader than the stated problem requires.
 
 Do not create non-goals merely to make the document look complete.
 
@@ -385,13 +408,13 @@ Identify constraints that materially affect the solution.
 
 Examples include:
 
-* security boundaries;
-* source-ownership requirements;
-* platform limitations;
-* compatibility requirements;
-* workflow constraints;
-* operational constraints;
-* external system dependencies.
+- security boundaries;
+- source-ownership requirements;
+- platform limitations;
+- compatibility requirements;
+- workflow constraints;
+- operational constraints;
+- external system dependencies.
 
 Separate constraints from assumptions.
 
@@ -401,9 +424,9 @@ An assumption is believed to be true but may require validation.
 
 For important assumptions, determine:
 
-* why the assumption matters;
-* what happens if it is false;
-* whether it should be validated before implementation.
+- why the assumption matters;
+- what happens if it is false;
+- whether it should be validated before implementation.
 
 ### 8. Evaluate architecture and implementation approach
 
@@ -433,18 +456,18 @@ unsafe, ambiguous, or misleading.
 
 Consider when relevant:
 
-* security;
-* permissions;
-* data ownership;
-* failure handling;
-* compatibility;
-* migration;
-* lifecycle;
-* maintainability;
-* validation;
-* deployment;
-* external dependencies;
-* operational recovery.
+- security;
+- permissions;
+- data ownership;
+- failure handling;
+- compatibility;
+- migration;
+- lifecycle;
+- maintainability;
+- validation;
+- deployment;
+- external dependencies;
+- operational recovery.
 
 Do not turn every implementation detail into a definition requirement.
 
@@ -466,12 +489,12 @@ Good criteria answer:
 
 Acceptance criteria may include:
 
-* required behavior;
-* prohibited behavior;
-* compatibility guarantees;
-* security properties;
-* required validation;
-* operational properties.
+- required behavior;
+- prohibited behavior;
+- compatibility guarantees;
+- security properties;
+- required validation;
+- operational properties.
 
 ### 11. Define implementation phases
 
@@ -479,10 +502,10 @@ When useful, divide approved work into coherent implementation phases.
 
 Phases should:
 
-* have a clear purpose;
-* respect dependencies;
-* avoid premature detail;
-* provide a useful order for Development.
+- have a clear purpose;
+- respect dependencies;
+- avoid premature detail;
+- provide a useful order for Development.
 
 Do not confuse implementation phases in `definition.md` with the current
 operational phase or active milestone in `progress.md`.
@@ -493,18 +516,31 @@ Identify choices made during Project Definition that deserve durable history.
 
 Classify each as appropriate:
 
-* accepted;
-* rejected;
-* superseding an earlier decision.
+- accepted;
+- rejected;
+- superseding an earlier decision.
 
 For a proposed decision entry, identify:
 
-* decision identifier when one can be determined safely;
-* status;
-* decision;
-* rationale;
-* consequence;
-* superseded decision when applicable.
+- decision identifier when one can be determined safely;
+- status;
+- decision;
+- rationale;
+- consequence;
+- superseded decision when applicable.
+
+Base durable decision rationale on:
+
+- explicit user statements;
+- recorded project facts;
+- evidence established during the current definition work;
+- clearly labelled inference when inference is necessary.
+
+Do not convert an inferred benefit, preference, motivation, or problem into a
+recorded user rationale.
+
+When the user's motivation has not been established, describe the architectural
+or workflow consequence of the requested choice instead.
 
 Do not rewrite or delete historical decisions.
 
@@ -518,9 +554,9 @@ exists to approve the project scope.
 
 Classify definition readiness as:
 
-* **ready for approval**
-* **needs clarification**
-* **blocked**
+- **ready for approval**
+- **needs clarification**
+- **blocked**
 
 Use `ready for approval` when the project has enough durable definition to enter
 or continue Development safely.
@@ -541,11 +577,18 @@ questions when appropriate.
 
 When clarification is required:
 
-* ask about the highest-impact unresolved issue first;
-* explain why the answer affects project definition;
-* avoid long generic questionnaires;
-* avoid asking for information already available in project artifacts;
-* use reasonable inference only for non-material details and label it clearly.
+- ask about the highest-impact unresolved issue first;
+- explain why the answer affects project definition;
+- avoid long generic questionnaires;
+- avoid asking for information already available in project artifacts;
+- use reasonable inference only for non-material details and label it clearly.
+
+When presenting materially different choices:
+
+- describe the meaningful consequence or trade-off of each option;
+- make a recommendation when the evidence supports one;
+- explain the reason for the recommendation;
+- do not present a recommended option as though it were already approved.
 
 Continue the definition conversation until the project becomes ready, blocked,
 or the user chooses to stop.
@@ -554,27 +597,40 @@ or the user chooses to stop.
 
 For Initial Definition, classify the result as:
 
-* **initial proposal**
-* **needs clarification**
-* **blocked**
+- **initial proposal**
+- **needs clarification**
+- **blocked**
 
 For Material Re-entry, classify the proposed definition change as:
 
-* **material**
-* **editorial**
-* **no-change**
-* **needs clarification**
-* **blocked**
+- **material**
+- **editorial**
+- **no-change**
+- **needs clarification**
+- **blocked**
 
 For a material change:
 
-* determine the current definition version;
-* propose exactly the next version;
-* identify why the change is material.
+- determine the current definition version;
+- propose exactly the next version;
+- identify why the change is material.
 
 For editorial and no-change outcomes:
 
-* do not increment the definition version.
+- do not increment the definition version.
+
+When the outcome is conclusively `no-change` because the request belongs to
+another workflow:
+
+- stop definition investigation once enough evidence exists to establish that
+  classification;
+- explain briefly why approved project meaning remains unchanged;
+- identify the owning workflow;
+- do not perform implementation impact analysis for that workflow;
+- do not continue to artifact proposal or approval steps;
+- conclude the Project Definition procedure directly.
+
+A `no-change` outcome requires no definition approval or artifact application.
 
 ### 16. Determine affected artifacts
 
@@ -598,12 +654,12 @@ Change only affected artifacts.
 
 Examples:
 
-* objective change → `definition.md`, usually `decisions.md`, and possibly
+- objective change → `definition.md`, usually `decisions.md`, and possibly
   `progress.md`;
-* architectural decision change → `definition.md` and `decisions.md`;
-* acceptance criteria clarification with unchanged meaning → possibly only
+- architectural decision change → `definition.md` and `decisions.md`;
+- acceptance criteria clarification with unchanged meaning → possibly only
   `definition.md`;
-* no-change → no artifacts.
+- no-change → no artifacts.
 
 Do not update `progress.md` merely to mirror every definition edit.
 
@@ -613,22 +669,22 @@ Do not add a decision entry for trivial editorial changes.
 
 Before presenting the proposal, verify that affected artifacts agree on:
 
-* project identity;
-* definition status;
-* definition version;
-* current operational phase;
-* active milestone;
-* relevant decisions;
-* implementation phase terminology;
-* next documented action.
+- project identity;
+- definition status;
+- definition version;
+- current operational phase;
+- active milestone;
+- relevant decisions;
+- implementation phase terminology;
+- next documented action.
 
 Respect artifact ownership.
 
 For example:
 
-* `definition.md` owns approved scope;
-* `progress.md` owns active milestone;
-* `decisions.md` owns decision history.
+- `definition.md` owns approved scope;
+- `progress.md` owns active milestone;
+- `decisions.md` owns decision history.
 
 Do not duplicate operational state into `definition.md`.
 
@@ -644,11 +700,11 @@ For a new artifact, provide complete proposed file content.
 
 For an existing artifact, provide:
 
-* the artifact path;
-* change classification;
-* exact affected section or frontmatter;
-* proposed replacement or insertion;
-* why the change is required.
+- the artifact path;
+- change classification;
+- exact affected section or frontmatter;
+- proposed replacement or insertion;
+- why the change is required.
 
 When several artifacts must change together, present them as one change set.
 
@@ -661,13 +717,13 @@ The proposal must remain reviewable and manually applicable.
 
 Summarize:
 
-* what project meaning changes;
-* what remains unchanged;
-* important accepted choices;
-* important rejected alternatives;
-* unresolved implementation questions;
-* risks introduced or removed;
-* whether Development can proceed after approval.
+- what project meaning changes;
+- what remains unchanged;
+- important accepted choices;
+- important rejected alternatives;
+- unresolved implementation questions;
+- risks introduced or removed;
+- whether Development can proceed after approval.
 
 Do not repeat the full artifact proposal.
 
@@ -677,11 +733,11 @@ After presenting the coordinated proposal, stop.
 
 Allow the user to:
 
-* accept it;
-* reject it;
-* revise part of it;
-* answer unresolved questions;
-* request another alternative.
+- accept it;
+- reject it;
+- revise part of it;
+- answer unresolved questions;
+- request another alternative.
 
 Do not treat presentation of the proposal as approval.
 
@@ -694,10 +750,10 @@ authorize automatic artifact mutation.
 
 When the user approves the proposal:
 
-* state that the coordinated proposal is approved conceptually;
-* provide any final exact artifact changes needed for manual application;
-* let the user apply them manually;
-* do not claim that durable project state changed until the files are actually
+- state that the coordinated proposal is approved conceptually;
+- provide any final exact artifact changes needed for manual application;
+- let the user apply them manually;
+- do not claim that durable project state changed until the files are actually
   updated and reread.
 
 Once Documentation Transaction is implemented, this step will hand the approved
@@ -740,7 +796,7 @@ Change: create
 
 ```markdown
 ...
-````
+```
 
 ### `docs/project/progress.md`
 
@@ -760,7 +816,7 @@ Change: create
 
 ## Consequences
 
-* ...
+- ...
 
 ````
 
@@ -773,7 +829,7 @@ proposal.
 
 For an existing approved definition, use:
 
-```markdown
+````markdown
 # Project Redefinition Proposal
 
 ## Classification
@@ -802,7 +858,6 @@ Change: replace | insert | none
 
 ```markdown
 ...
-````
 
 ### `docs/project/progress.md`
 
@@ -822,13 +877,13 @@ Change: append | none
 
 ## Consequences
 
-* ...
+- ...
 
 ## Open Questions
 
-* none | ...
+- none | ...
 
-```
+````
 
 For `no-change`, omit `Proposed Artifact Changes`.
 
@@ -863,6 +918,10 @@ Return a `no-change` definition outcome.
 Explain why the request belongs in Development.
 
 Do not alter project artifacts.
+
+Once this classification is established, do not inspect the implementation
+further except when additional evidence is required to confirm that approved
+scope is genuinely unaffected.
 
 ### Approved definition exists and wording needs cleanup only
 
@@ -963,4 +1022,3 @@ true:
 - coordinated artifact changes are internally consistent;
 - the user has been given a reviewable proposal;
 - no artifact mutation has occurred.
-```
