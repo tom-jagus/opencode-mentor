@@ -4,6 +4,7 @@
   "permission": {
     "edit": "deny",
     "bash": "ask",
+    "external_directory": "deny",
     "git_state": "deny",
     "task": {
       "*": "deny",
@@ -40,7 +41,7 @@
         "todowrite": "allow",
         "skill": "allow",
         "doom_loop": "ask",
-        "external_directory": "ask",
+        "external_directory": "deny",
         "edit": "deny"
       }
     },

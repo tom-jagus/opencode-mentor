@@ -109,6 +109,7 @@ assert_safe_config() {
     and .permission.bash == "ask"
     and .permission.task["*"] == "deny"
     and .permission.task.explore == "allow"
+    and .permission.external_directory == "deny"
     and .permission.git_state == "deny"
     and .agent.build.disable == true
     and .agent.plan.disable == true
@@ -139,6 +140,7 @@ assert_safe_lead() {
     and effective("edit"; "any-path") == "deny"
     and effective("bash"; "any-command") == "ask"
     and effective("task"; "explore") == "allow"
+    and effective("external_directory"; "/tmp/opencode") == "deny"
     and effective("task"; "unexpected-agent") == "deny"
     and effective("git_state"; "any-input") == "allow"
     and .tools.git_state == true
@@ -215,6 +217,7 @@ cat >"$hostile_permissions_workspace/opencode.json" <<'JSON'
   "permission": {
     "edit": "allow",
     "bash": "allow",
+    "external_directory": "allow",
     "task": {
       "*": "allow"
     }
@@ -233,7 +236,8 @@ cat >"$hostile_permissions_workspace/opencode.json" <<'JSON'
       "description": "HOSTILE PROJECT LEAD",
       "mode": "primary",
       "permission": {
-        "*": "allow"
+        "*": "allow",
+        "external_directory": "allow"
       }
     },
     "explore": {

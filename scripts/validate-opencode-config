@@ -22,6 +22,7 @@ jq -e '
   and .permission.edit == "deny"
   and .permission.bash == "ask"
   and .permission.task["*"] == "deny"
+  and .permission.external_directory == "deny"
   and .permission.task.explore == "allow"
   and .permission.git_state == "deny"
   and .agent.build.disable == true
@@ -79,6 +80,7 @@ jq -e "$effective_permission_filter"'
   and effective("task"; "explore") == "allow"
   and effective("task"; "unexpected-agent") == "deny"
   and effective("git_state"; "any-input") == "allow"
+  and effective("external_directory"; "/tmp/opencode") == "deny"
   and .tools.git_state == true
   and .tools.edit == false
   and .tools.write == false

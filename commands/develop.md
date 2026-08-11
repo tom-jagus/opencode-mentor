@@ -24,9 +24,11 @@ and provide corrected fragments without applying them.
 Use read-only investigation directly or delegate bounded repository exploration
 to `explore` when useful.
 
-Bash may be used only through its permission-gated capability and must not be
-used to modify source files or bypass the proposal-only source-ownership
-boundary.
+Bash is validation-only during Development. Do not use Bash for repository,
+source, filesystem, environment, or external-path investigation.
+
+Validation through Bash remains permission-gated and must not modify source
+files or access paths outside the active workspace.
 
 Recommend appropriate validation after implementation review, but do not perform
 mutating fixes in response to validation failures.

@@ -161,8 +161,6 @@ Use them to identify:
 - current implementation status;
 - accepted decisions that constrain the implementation.
 
-Read the applicable project `AGENTS.md` when present.
-
 Do not load or summarize every project artifact mechanically.
 
 Read only enough context to establish the implementation boundary and avoid
@@ -254,12 +252,36 @@ Do not use Bash for Git status information that `git_state` already provides.
 
 ### Bash
 
-Bash is permission-gated.
+Bash is permission-gated and validation-only during Development.
 
-Use Bash only when inspection or validation materially benefits from executing a
-command.
+Do not use Bash for:
 
-Before executing a command, determine whether it may modify source files.
+- repository discovery;
+- source inspection;
+- filesystem exploration;
+- environment discovery;
+- locating files;
+- checking temporary directories;
+- determining project structure;
+- Git status inspection;
+- investigating paths outside the active workspace.
+
+Use approved read-only tools, `explore`, and `git_state` for investigation.
+
+Use Bash only after an implementation has been reviewed and a concrete
+validation command has been selected.
+
+Before executing validation, determine whether the command may modify source
+files or access paths outside the active workspace.
+
+Do not execute a validation command when:
+
+- its mutation behaviour is uncertain;
+- it may modify tracked source or configuration;
+- it requires access outside the active workspace.
+
+When any of these conditions apply, explain the limitation and give the command
+to the user for manual execution when appropriate.
 
 Safe candidates may include:
 
