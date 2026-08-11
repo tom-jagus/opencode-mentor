@@ -203,6 +203,10 @@ Do not manufacture documentation changes simply to produce visible work.
 - When changing one ownership, permission, or workflow boundary, preserve
   adjacent boundaries unless the requested material change explicitly affects
   them.
+- When a material change adds a capability, preserve compatible existing
+  capabilities unless the request explicitly removes or replaces them.
+- Do not infer that a newly approved workflow path becomes mandatory merely
+  because it becomes the preferred or default path.
 - Do not weaken or broaden another artifact category's mutation authority merely
   to contrast it with the category being changed.
 - Do not modify project artifacts.
@@ -436,8 +440,25 @@ For important assumptions, determine:
 When architecture is part of the definition, identify the smallest level of
 architectural commitment needed to guide Development.
 
+When a proposed architecture adds a new mechanism, determine whether it replaces
+an existing mechanism or coexists with it.
+
+Preserve an existing compatible mechanism unless replacement is required by the
+requested outcome or explicitly chosen by the user.
+
 Do not over-specify implementation details that can safely remain local
 Development decisions.
+
+Define architectural guarantees in terms of required behaviour and boundaries,
+not the specific mechanism used to enforce them.
+
+When a guarantee may be implemented in several valid ways, record what must be
+true and leave details such as identifiers, checksums, hashes, session binding,
+storage formats, or exact validation algorithms to the relevant implementation
+workflow.
+
+Only promote a mechanism into the project definition when that mechanism itself
+is an approved architectural constraint.
 
 When materially different approaches exist:
 
