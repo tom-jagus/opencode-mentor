@@ -244,6 +244,9 @@ Do not inspect implementation merely to find something to challenge.
 
 ### `explore`
 
+Use `explore` only for bounded read-only repository investigation when existing
+implementation evidence materially affects the definition.
+
 Give `explore` the smallest question needed to resolve the definition issue.
 
 Do not ask `explore` to map every file, test, permission, or implementation
@@ -858,6 +861,7 @@ Change: replace | insert | none
 
 ```markdown
 ...
+```
 
 ### `docs/project/progress.md`
 
