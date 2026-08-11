@@ -3,22 +3,26 @@ title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
 active_milestone: project-workflows
-updated_at: 2026-08-06
+updated_at: 2026-08-11
 ---
 
 # Project Progress
 
+
 ## Current State
 
-- **Definition status:** approved
-- **Definition version:** 3
-- **Current phase:** Development
-- **Completed milestone:** Configuration Foundation
-- **Active milestone:** Project Workflows
-- **Implementation status:** The read-only `/state` vertical slice and
-  deterministic `git_state` tool are implemented and validated.
-- **Blocking issues:** none
-- **Next action:** implement and validate the read-only `/resume` workflow.
+* **Definition status:** approved
+* **Definition version:** 3
+* **Current phase:** Development
+* **Completed milestone:** Configuration Foundation
+* **Active milestone:** Project Workflows
+* **Implementation status:** The `/state`, `/resume`, and `/develop` workflows
+  are implemented and validated. The deterministic `git_state` tool, protected
+  workspace boundary, command and skill discovery checks, and Project Workflows
+  regression tests are also in place.
+* **Blocking issues:** none
+* **Next action:** implement `/define` and the proposal-only
+  `project-definition` workflow.
 
 ## Phase Transition
 
@@ -70,6 +74,29 @@ Deliver:
 - `/state`;
 - `/milestone`;
 - `/decision`.
+
+Current implementation status:
+
+**Implemented and validated:**
+
+* `/state`;
+* `/resume`;
+* `/develop`;
+* State and Resume procedures in `project-progress`;
+* proposal-only `development` skill;
+* deterministic `git_state` tool;
+* protected external-workspace boundary;
+* command and skill runtime discovery tests;
+* Project Workflows and permission guardrail regression tests.
+
+**Remaining in this milestone:**
+
+* `project-definition` skill;
+* `/define`;
+* `/milestone`;
+* `/decision`;
+* project templates;
+* final workflow-routing integration and hardening.
 
 ### 3. Documentation Transaction
 
@@ -155,12 +182,12 @@ scope or constraints.
 
 ### Project Workflows
 
-- exact skill directory structure;
-- exact command prompt wording;
-- project-state bootstrap behaviour;
-- command argument conventions;
-- how `lead` records and recognises the active workflow;
-- whether `project-critic` is required in the first implementation.
+* project-state bootstrap behaviour;
+* command argument conventions for the remaining workflows;
+* how `lead` records and recognises the active workflow;
+* whether `project-critic` is required in the first implementation;
+* final protection model for project-local commands, skills, agents, and other
+  workflow overrides.
 
 ### Documentation Transaction
 
@@ -237,21 +264,21 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Implement and validate `/resume` as the second read-only Project Workflows
-vertical slice.
+Implement `/define` and the proposal-only `project-definition` workflow as the
+next Project Workflows vertical slice.
 
-1. define the `/resume` command contract and route it through `lead`;
-2. add a read-only Resume procedure that reuses the authoritative project
-   artifacts and the deterministic `git_state` tool;
-3. reconstruct the project objective, current phase, active milestone, relevant
-   accepted decisions, blockers, working-tree state, recent checkpoint, and next
-   documented action;
-4. distinguish durable recorded context from recommendations inferred during the
-   current session;
-5. prohibit Bash, mutation, network Git operations, and automatic artifact
-   repair;
-6. handle missing, incomplete, and inconsistent project state without guessing;
-7. add command-discovery, routing, procedure-contract, and runtime integration
-   tests;
-8. test `/resume` in a new OpenCode session and verify that it restores enough
-   context to continue work without relying on prior conversation history.
+1. define the `/define` command contract and route it through `lead`;
+2. create the `project-definition` skill;
+3. support both initial project definition and material re-entry during
+   Development;
+4. read and reason across `definition.md`, `progress.md`, and `decisions.md` as a
+   coordinated project state;
+5. distinguish material, editorial, and no-change definition outcomes;
+6. challenge objectives, constraints, assumptions, architecture, non-goals, and
+   acceptance criteria before proposing changes;
+7. produce a coordinated preview of required project-artifact changes;
+8. keep artifact mutation proposal-only until the Documentation Transaction
+   milestone provides constrained preview and atomic application;
+9. add command, skill, routing, and workflow-contract regression tests;
+10. validate `/define` manually in both initial-definition and development
+    re-entry scenarios.
