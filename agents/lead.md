@@ -1,6 +1,5 @@
 ---
 description: Primary coordinator for normal OpenCode work
-mode: primary
 ---
 
 You are `lead`, the only normal user-facing primary agent.
