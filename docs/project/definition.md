@@ -185,6 +185,10 @@ Initial skills:
 - `vault-curation`
 - `research`
 
+OpenCode may also discover shared personal skills from `~/.agents/skills/`.
+Those skills remain outside the OpenCode Mentor source of truth and are available
+to `lead` only when their identifiers are explicitly allowed by managed policy.
+
 ### 6.3 Subagents
 
 Initial agent decisions:
@@ -198,7 +202,6 @@ Initial agent decisions:
 
 Expected custom specialists:
 
-- `project-critic`
 - `documentation-writer`
 - `git-operator`
 - `vault-curator`
@@ -332,7 +335,8 @@ Decisions may be:
 - proposed;
 - accepted;
 - rejected;
-- superseded.
+- superseded;
+- partially superseded.
 
 Superseded decisions remain in history and reference their replacement.
 
@@ -671,38 +675,29 @@ freshness tracking, and additional tools.
 
 ## 18. Configuration Repository and Dotfiles Integration
 
-The OpenCode configuration must live in a dedicated Git repository.
+Production uses the accepted OpenCode Mentor configuration directly through the
+normal `opencode` command.
 
-That repository is authoritative for OpenCode content.
-
-The dotfiles repository is authoritative for:
-
-- installation;
-- linkage;
-- bootstrap;
-- dependency setup;
-- component pinning;
-- deployment of an accepted configuration revision.
-
-The repositories must not contain duplicated copies of the same configuration.
-
-Expected integration:
+The production topology is:
 
 ```text
-dotfiles/
-└── modules/opencode/   -> linked repository or submodule
+accepted Mentor configuration
+  -> ~/.config/opencode/
+
+managed/opencode.json
+  -> /etc/opencode/opencode.json
+
+runtime
+  -> opencode
 ```
 
-Expected live linkage:
+The exact non-duplicating linkage mechanism between the configuration repository,
+dotfiles, and `~/.config/opencode` is resolved during Live Deployment and
+Dotfiles Integration.
 
-```text
-~/.config/opencode
-  -> accepted configuration repository path
-```
-
-Development must use an isolated branch or worktree and an isolated OpenCode
-configuration path. The live configuration remains on the last accepted version
-until changes are reviewed and merged.
+Development changes occur on non-main branches independently of the currently
+deployed configuration. The live environment remains on the last accepted
+revision until a newer revision is reviewed and deployed.
 
 ## 19. Permission Model
 
@@ -717,20 +712,29 @@ Immutable permission enforcement is a core requirement.
 - mutation requires explicit user intent and permission confirmation;
 - project configuration must not be able to silently weaken hard protections.
 
-### 19.2 Implementation concerns
+### 19.2 Production enforcement model
 
-OpenCode project configuration may override global configuration. Therefore,
-global prompt rules alone are not a sufficient immutable boundary.
+Normal behaviour, workflows, agents, commands, skills, tools, and user
+preferences are deployed under `~/.config/opencode`.
 
-Development must evaluate and implement a hardened approach using one or more of:
+Non-overridable safety policy is deployed from `managed/opencode.json` to
+`/etc/opencode/opencode.json`.
 
-- managed settings;
-- validated launch wrappers;
-- constrained replacement tools;
-- project-configuration validation;
-- removal or replacement of generic edit and shell capabilities.
+The managed layer provides:
 
-The final model must be tested adversarially.
+- generic source-edit denial;
+- permission-gated shell execution;
+- disabled broad modifying built-in agents;
+- restricted delegation;
+- deny-by-default skill access with explicit trusted-skill allowlisting;
+- non-overridable permission boundaries for constrained custom tools.
+
+Approved documentation, vault, Git, and other mutations use narrow
+workflow-specific tools where deterministic enforcement is required.
+
+Project-local OpenCode configuration is treated as trusted project configuration.
+OpenCode Mentor does not claim to provide an operating-system sandbox for
+malicious executable repository configuration.
 
 ## 20. Implementation Phases
 
@@ -740,11 +744,12 @@ The final model must be tested adversarially.
 - global `AGENTS.md`;
 - `lead` primary agent;
 - built-in agent restrictions;
-- isolated development launcher;
 - managed permission guardrails;
-- resolved-configuration validation;
-- adversarial integration tests;
 - development documentation.
+- managed production permission policy;
+- separation of normal and managed configuration;
+- temporary isolated validation during development;
+- adversarial permission validation.
 
 ### Phase 2 — Project workflows
 
@@ -798,7 +803,7 @@ The final model must be tested adversarially.
 - live `~/.config/opencode` linkage;
 - dotfiles or chezmoi integration;
 - Herdr integration restoration;
-- deployed-topology guardrail validation;
+- effective managed and user configuration verification;
 - controlled live testing.
 
 ### Phase 7 — Research
@@ -818,8 +823,8 @@ The project is successful when:
 3. `explore` remains available for read-only delegation.
 4. `lead` selects workflows without repeatedly reopening approved scope.
 5. explicit commands override automatic routing.
-6. source files cannot be modified through built-in edit tools or permitted shell
-   paths.
+6. generic source-editing tools are denied, while shell execution remains
+   permission-gated and must not bypass source ownership rules.
 7. Development produces reviewable code blocks only.
 8. documentation changes require preview, revision, approval, permission, and
    constrained application.
@@ -835,7 +840,8 @@ The project is successful when:
 15. research is not published to the vault without explicit acceptance.
 16. the configuration repository is independently versioned and integrated into
     dotfiles without duplicated source files.
-17. permission assumptions are covered by repeatable adversarial tests.
+17. permission assumptions are validated adversarially before release and after
+    material OpenCode permission-model changes.
 
 ## 22. Definition Completion
 
@@ -843,14 +849,13 @@ The project definition is sufficiently complete to begin Development.
 
 The remaining unresolved items are implementation decisions, not scope blockers:
 
-- exact configuration file layouts;
 - exact wording of agent, skill, and command prompts;
 - exact custom-tool interfaces;
-- exact immutable-permission mechanism;
 - exact TOML schemas;
 - exact transaction implementation;
 - exact vault taxonomy and templates;
 - exact validation command profiles.
+- exact live deployment and dotfiles linkage mechanism;
 
 These must be resolved and tested within their implementation phases while
 remaining consistent with this approved definition.

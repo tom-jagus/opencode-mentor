@@ -17,17 +17,19 @@ updated_at: 2026-08-12
 * **Completed milestones:** Configuration Foundation
 * **Active milestone:** Project Workflows
 * **Implementation status:** `/state`, `/resume`, `/develop`, `/define`,
-  `/milestone`, and `/decision` are implemented. `project-progress` provides
-  State, Resume, Milestone, and Decision procedures; `project-definition`
-  provides initial definition, material re-entry, project bootstrap semantics,
-  and embedded project artifact templates; `lead` provides workflow routing and
-  project-state bootstrap classification. Earlier workflow slices and guardrails
-  have been validated individually; integrated validation of the completed
-  Project Workflows surface remains pending.
+  `/milestone`, and `/decision` are implemented and validated.
+  `project-progress` provides State, Resume, Milestone, and Decision procedures;
+  `project-definition` provides initial definition, material re-entry, project
+  bootstrap semantics, and embedded project artifact templates; `lead` provides
+  workflow routing and project-state bootstrap classification. Integrated
+  automated validation and manual semantic smoke validation are complete.
+  Production configuration hardening is established through the managed
+  `/etc/opencode` policy, explicit skill allowlisting, and the production trust
+  boundary recorded in DEC-042. A dedicated `project-critic` is deferred by
+  DEC-043.
 * **Blocking issues:** none
-* **Next action:** reconcile Project Workflows documentation with the validated
-  production configuration and resolve the remaining `project-critic`
-  implementation question.
+* **Next action:** complete Project Workflows documentation reconciliation and
+  perform the final milestone review.
 
 ## Phase Transition
 
@@ -98,14 +100,15 @@ Current implementation status:
 * initial project artifact templates;
 * deterministic `git_state` tool;
 * protected external-workspace boundary;
-* command and skill runtime discovery infrastructure;
-* existing Project Workflows and permission guardrail regression tests.
 * integrated automated testing of the complete Project Workflows surface;
+* integrated automated validation of the complete Project Workflows surface;
+* manual semantic smoke validation of implemented workflows;
+* production configuration and trust-boundary hardening;
+* deny-by-default managed skill policy with explicit trusted-skill allowlisting.
 
 **Remaining in this milestone:**
 
 * Project Workflows documentation reconciliation;
-* resolve whether `project-critic` is required in the first implementation;
 * final milestone review and completion.
 
 ### 3. Documentation Transaction
@@ -158,6 +161,12 @@ Deliver:
 
 Status: planned
 
+- exact non-duplicating dotfiles linkage mechanism;
+- installation/bootstrap strategy for `~/.config/opencode` and
+  `/etc/opencode/opencode.json`;
+- whether the final repository requires an installation/bootstrap script;
+- exact Herdr integration restoration mechanism.
+
 ### 7. Research
 
 Status: deferred
@@ -177,24 +186,6 @@ requirements become sufficiently stable.
 These questions must be resolved during the relevant milestone. They do not
 require returning to Project Definition unless the answer materially changes
 scope or constraints.
-
-### Configuration Foundation
-
-- exact repository layout;
-- exact dotfiles linkage mechanism;
-- exact live versus development configuration paths;
-- exact `lead` prompt content;
-- exact `opencode.jsonc` agent and permission structure;
-- safe handling of invalid `default_agent` fallback;
-- managed settings versus wrapper-based immutable restrictions;
-- whether a replacement shell tool is required in the first version;
-- minimum adversarial permission test suite.
-
-### Project Workflows
-
-* whether `project-critic` is required in the first implementation;
-* final protection model for project-local commands, skills, agents, and other
-  workflow overrides.
 
 ### Documentation Transaction
 
@@ -236,8 +227,11 @@ scope or constraints.
 Project configuration, shell commands, formatters, generators, or custom scripts
 may bypass a superficial source-edit denial.
 
-**Response:** use constrained tools, immutable enforcement, configuration
-validation, and adversarial tests.
+**Response:** enforce immutable permissions through managed configuration under
+`/etc/opencode`, keep generic source editing denied, permission-gate shell
+execution, and expose approved mutation through constrained workflow-specific
+tools. Project-local executable OpenCode configuration is treated as trusted
+project configuration rather than an adversarial sandbox boundary.
 
 ### Workflow overengineering
 
@@ -252,8 +246,8 @@ output materially differs.
 Prompts cannot guarantee deterministic branch names, policy precedence, atomic
 writes, or permission boundaries.
 
-**Response:** place enforceable behaviour in scripts, policies, schemas, and
-custom tools.
+**Response:** place enforceable behaviour in managed configuration, deterministic
+policies, schemas, and constrained custom tools.
 
 ### Documentation drift
 
@@ -271,20 +265,15 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Expand and reconcile automated Project Workflows testing against the complete
-implemented workflow surface.
+Complete Project Workflows documentation reconciliation so that the project
+artifacts and development documentation consistently describe:
 
-The next validation unit should:
+- direct production use through `opencode`;
+- normal Mentor configuration under `~/.config/opencode`;
+- non-overridable managed policy under `/etc/opencode/opencode.json`;
+- explicitly allowlisted shared skills;
+- development tests and scripts as temporary scaffolding rather than production
+  runtime dependencies.
 
-1. add static contract coverage for `/define`, `/milestone`, and `/decision`;
-2. validate runtime discovery and routing for all implemented commands and skills;
-3. verify command argument forwarding where applicable;
-4. verify proposal-only and no-Bash boundaries for Project Definition, Milestone,
-   and Decision;
-5. cover project bootstrap states and Initial Definition template contracts;
-6. remove obsolete assertions describing Milestone and Decision as inactive;
-7. rerun Project Workflows, `git_state`, and permission guardrail suites as a
-   coherent baseline.
-
-After that baseline passes, proceed to protected-workflow hardening for
-project-local commands, skills, agents, and other workflow overrides.
+After reconciliation, perform the final Project Workflows milestone review and
+propose completion. The next planned milestone is Documentation Transaction.
