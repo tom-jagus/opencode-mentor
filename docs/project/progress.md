@@ -3,7 +3,7 @@ title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
 active_milestone: project-workflows
-updated_at: 2026-08-11
+updated_at: 2026-08-12
 ---
 
 # Project Progress
@@ -14,15 +14,19 @@ updated_at: 2026-08-11
 * **Definition status:** approved
 * **Definition version:** 3
 * **Current phase:** Development
-* **Completed milestone:** Configuration Foundation
+* **Completed milestones:** Configuration Foundation
 * **Active milestone:** Project Workflows
-* **Implementation status:** The `/state`, `/resume`, and `/develop` workflows
-  are implemented and validated. The deterministic `git_state` tool, protected
-  workspace boundary, command and skill discovery checks, and Project Workflows
-  regression tests are also in place.
+* **Implementation status:** `/state`, `/resume`, `/develop`, `/define`,
+  `/milestone`, and `/decision` are implemented. `project-progress` provides
+  State, Resume, Milestone, and Decision procedures; `project-definition`
+  provides initial definition, material re-entry, project bootstrap semantics,
+  and embedded project artifact templates; `lead` provides workflow routing and
+  project-state bootstrap classification. Earlier workflow slices and guardrails
+  have been validated individually; integrated validation of the completed
+  Project Workflows surface remains pending.
 * **Blocking issues:** none
-* **Next action:** implement `/define` and the proposal-only
-  `project-definition` workflow.
+* **Next action:** expand and reconcile the Project Workflows automated test suite
+  against the complete implemented workflow surface.
 
 ## Phase Transition
 
@@ -77,26 +81,32 @@ Deliver:
 
 Current implementation status:
 
-**Implemented and validated:**
+**Implemented:**
 
 * `/state`;
 * `/resume`;
 * `/develop`;
-* State and Resume procedures in `project-progress`;
-* proposal-only `development` skill;
-* deterministic `git_state` tool;
-* protected external-workspace boundary;
-* command and skill runtime discovery tests;
-* Project Workflows and permission guardrail regression tests.
-
-**Remaining in this milestone:**
-
-* `project-definition` skill;
 * `/define`;
 * `/milestone`;
 * `/decision`;
-* project templates;
-* final workflow-routing integration and hardening.
+* State, Resume, Milestone, and Decision procedures in `project-progress`;
+* proposal-only `development` skill;
+* proposal-only `project-definition` skill;
+* workflow routing through `lead`;
+* project-state bootstrap classification and handling;
+* initial project artifact templates;
+* deterministic `git_state` tool;
+* protected external-workspace boundary;
+* command and skill runtime discovery infrastructure;
+* existing Project Workflows and permission guardrail regression tests.
+
+**Remaining in this milestone:**
+
+* integrated automated testing of the complete Project Workflows surface;
+* final protection model and hardening for project-local commands, skills,
+  agents, and other workflow overrides;
+* final workflow validation and manual smoke testing;
+* Project Workflows documentation reconciliation.
 
 ### 3. Documentation Transaction
 
@@ -182,9 +192,6 @@ scope or constraints.
 
 ### Project Workflows
 
-* project-state bootstrap behaviour;
-* command argument conventions for the remaining workflows;
-* how `lead` records and recognises the active workflow;
 * whether `project-critic` is required in the first implementation;
 * final protection model for project-local commands, skills, agents, and other
   workflow overrides.
@@ -264,21 +271,20 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Implement `/define` and the proposal-only `project-definition` workflow as the
-next Project Workflows vertical slice.
+Expand and reconcile automated Project Workflows testing against the complete
+implemented workflow surface.
 
-1. define the `/define` command contract and route it through `lead`;
-2. create the `project-definition` skill;
-3. support both initial project definition and material re-entry during
-   Development;
-4. read and reason across `definition.md`, `progress.md`, and `decisions.md` as a
-   coordinated project state;
-5. distinguish material, editorial, and no-change definition outcomes;
-6. challenge objectives, constraints, assumptions, architecture, non-goals, and
-   acceptance criteria before proposing changes;
-7. produce a coordinated preview of required project-artifact changes;
-8. keep artifact mutation proposal-only until the Documentation Transaction
-   milestone provides constrained preview and atomic application;
-9. add command, skill, routing, and workflow-contract regression tests;
-10. validate `/define` manually in both initial-definition and development
-    re-entry scenarios.
+The next validation unit should:
+
+1. add static contract coverage for `/define`, `/milestone`, and `/decision`;
+2. validate runtime discovery and routing for all implemented commands and skills;
+3. verify command argument forwarding where applicable;
+4. verify proposal-only and no-Bash boundaries for Project Definition, Milestone,
+   and Decision;
+5. cover project bootstrap states and Initial Definition template contracts;
+6. remove obsolete assertions describing Milestone and Decision as inactive;
+7. rerun Project Workflows, `git_state`, and permission guardrail suites as a
+   coherent baseline.
+
+After that baseline passes, proceed to protected-workflow hardening for
+project-local commands, skills, agents, and other workflow overrides.
