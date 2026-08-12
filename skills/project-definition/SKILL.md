@@ -427,7 +427,7 @@ later decisions supersede them.
 ## DEC-001 — <decision title>
 
 - **Date:** <YYYY-MM-DD>
-- **Status:** accepted
+- **Status:** accepted | rejected | proposed
 - **Decision:** <durable choice>
 - **Rationale:** <supported reason>
 - **Consequences:** <durable consequence>
@@ -510,7 +510,8 @@ established.
 This includes a new project with no artifacts and a partially established
 artifact set that can be completed without materially redefining approved scope.
 
-Use Material Re-entry when an approved definition exists.
+Use Material Re-entry when an approved coordinated project artifact set already
+exists and the current request may materially change approved project scope.
 
 If an approved definition exists but the requested change is clearly editorial,
 continue far enough to classify it correctly rather than forcing a material

@@ -72,6 +72,9 @@ Treat the set as:
 - **uninitialised** when none of the artifacts exist;
 - **partial** when only some exist;
 - **established** when the coordinated artifact set exists and is usable.
+- **inconsistent** when the expected artifact set exists but material
+  contradictions or unusable state prevent it from being treated as coordinated
+  authoritative context.
 
 Missing project artifacts do not automatically route ordinary repository work to
 Project Definition.
@@ -92,6 +95,17 @@ When project artifacts are partial:
 - use Project Definition when the user wants to establish or reconcile the
 coordinated project artifact set;
 - allow read-only reporting procedures to report the partial state as recorded.
+- allow another clearly requested workflow to proceed when the usable recorded
+  context is sufficient and the missing artifacts are not required for that
+  request;
+
+When project artifacts are inconsistent:
+
+- report the conflicting values and their owning artifacts;
+- do not silently choose one;
+- use Project Definition when the user wants to reconcile durable project state;
+- allow another clearly requested workflow to proceed only when the inconsistency
+  does not affect the context required for that request.
 
 Established project artifacts become the authoritative durable context for normal
 workflow routing.
