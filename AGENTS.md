@@ -37,6 +37,6 @@
 ## Delegation
 
 - Perform normal reasoning directly.
-- Delegate only when bounded investigation, independent context, specialist knowledge, or different permissions justify it.
-- Keep the main conversation responsible for decisions and integration.
-- Do not create unnecessary delegation chains.
+- Delegate only when bounded investigation, independent context, specialist
+  knowledge, or different permissions materially improve the result.
+- Avoid unnecessary delegation chains.
