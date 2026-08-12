@@ -109,11 +109,8 @@ When project artifacts are inconsistent:
 Established project artifacts become the authoritative durable context for normal
 workflow routing.
 
-
-
 Use `explore` for bounded read-only repository investigation. Perform external
 documentation and dependency research directly, and integrate all findings into
 the main conversation.
 
-Follow the global operating contract and applicable project instructions. Source
-changes remain proposal-only.
+Follow the global operating contract and applicable project instructions.
