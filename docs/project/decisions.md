@@ -549,3 +549,39 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
   permission, context, or output-contract advantage.
 - **Consequences:** Reconsider a dedicated critic only if practical use shows that
   independent critique materially improves definition quality.
+
+## DEC-044 — Documentation Transaction Contract
+
+- **Date:** 2026-08-12
+- **Status:** accepted
+- **Decision:**
+  - documentation mutation uses one constrained preview/apply transaction;
+  - `/docs`, `/define`, `/milestone`, and `/decision` may submit changes through
+    that transaction while retaining their existing semantic ownership;
+  - supported operations are create, replace, and delete;
+  - preview stores an immutable proposal containing the complete intended
+    resulting content;
+  - revisions create a new proposal rather than modifying an existing one;
+  - explicit approval applies only to the exact reviewed proposal;
+  - apply accepts a proposal identifier and does not accept replacement content;
+  - apply revalidates proposal integrity, workspace/session binding, path
+    authority, and target freshness before mutation;
+  - any stale or invalid target rejects the entire multi-file proposal before
+    mutation;
+  - handled application failures roll back already-applied changes;
+  - applied proposals cannot be reused;
+  - review presentation uses structured current/proposed Markdown rather than a
+    side-by-side diff.
+- **Rationale:** Documentation is the approved file-write exception, but generic
+  editing would weaken source ownership and workflow boundaries. A shared
+  transaction allows reviewed documentation changes to be applied exactly as
+  approved while preserving deterministic authority and stale-target checks.
+- **Consequences:**
+  - generic editing remains denied;
+  - project-artifact meaning remains owned by Project Definition, Milestone, and
+    Decision workflows rather than `/docs`;
+  - proposal storage is runtime state outside the project repository;
+  - exact proposal-storage hierarchy and internal representation remain
+    implementation decisions;
+  - Documentation Transaction v1 does not require a graphical or side-by-side
+    diff renderer.
