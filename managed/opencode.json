@@ -49,6 +49,7 @@
           "project-definition": "allow",
           "project-progress": "allow",
           "development": "allow",
+          "documentation": "allow",
           "omarchy": "allow",
           "herdr": "allow"
         },
