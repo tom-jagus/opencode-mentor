@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto";
 import {
   lstat,
   mkdir,
@@ -7,70 +7,57 @@ import {
   rename,
   unlink,
   writeFile,
-} from "node:fs/promises"
-import { homedir } from "node:os"
-import {
-  basename,
-  isAbsolute,
-  join,
-  relative,
-  resolve,
-  sep,
-} from "node:path"
+} from "node:fs/promises";
+import { homedir } from "node:os";
+import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 
-import { tool } from "@opencode-ai/plugin"
+import { tool } from "@opencode-ai/plugin";
 
 type DocumentationAuthority =
-  | "docs"
-  | "project-definition"
-  | "milestone"
-  | "decision"
+  "docs" | "project-definition" | "milestone" | "decision";
 
-type DocumentationOperation =
-  | "create"
-  | "replace"
-  | "delete"
+type DocumentationOperation = "create" | "replace" | "delete";
 
 type ProposalSnapshot = {
-  sha256: string
-  content: string
-}
+  sha256: string;
+  content: string;
+};
 
 type ProposalTarget = {
-  path: string
-  operation: DocumentationOperation
-  before: ProposalSnapshot | null
-  after: ProposalSnapshot | null
-}
+  path: string;
+  operation: DocumentationOperation;
+  before: ProposalSnapshot | null;
+  after: ProposalSnapshot | null;
+};
 
 type ProposalPayload = {
-  id: string
-  created_at: string
+  id: string;
+  created_at: string;
   project: {
-    key: string
-    root: string
-  }
-  authority: DocumentationAuthority
-  targets: ProposalTarget[]
-}
+    key: string;
+    root: string;
+  };
+  authority: DocumentationAuthority;
+  targets: ProposalTarget[];
+};
 
 type ProposalRecord = {
-  schema_version: 1
-  proposal: ProposalPayload
+  schema_version: 1;
+  proposal: ProposalPayload;
   integrity: {
-    proposal_sha256: string
-  }
+    proposal_sha256: string;
+  };
   state: {
-    status: "pending"
-    applied_at: null
-  }
-}
+    status: "pending";
+    applied_at: null;
+  };
+};
 
 type PreviewChange = {
-  path: string
-  operation: DocumentationOperation
-  content?: string
-}
+  path: string;
+  operation: DocumentationOperation;
+  content?: string;
+};
 
 type ErrorCode =
   | "INVALID_INPUT"
@@ -87,21 +74,17 @@ type ErrorCode =
   | "NO_CHANGE"
   | "PROJECT_RESOLUTION_FAILED"
   | "PROPOSAL_STORAGE_FAILED"
-  | "PREVIEW_FAILED"
+  | "PREVIEW_FAILED";
 
 class DocumentationError extends Error {
-  readonly code: ErrorCode
-  readonly path?: string
+  readonly code: ErrorCode;
+  readonly path?: string;
 
-  constructor(
-    code: ErrorCode,
-    message: string,
-    path?: string,
-  ) {
-    super(message)
-    this.name = "DocumentationError"
-    this.code = code
-    this.path = path
+  constructor(code: ErrorCode, message: string, path?: string) {
+    super(message);
+    this.name = "DocumentationError";
+    this.code = code;
+    this.path = path;
   }
 }
 
@@ -113,37 +96,35 @@ const rootDocumentationPaths = new Set([
   "CODE_OF_CONDUCT.md",
   "LICENSE",
   "LICENSE.md",
-])
+]);
 
 const projectDefinitionPaths = new Set([
   "docs/project/definition.md",
   "docs/project/progress.md",
   "docs/project/decisions.md",
-])
+]);
 
-const milestonePath = "docs/project/progress.md"
-const decisionPath = "docs/project/decisions.md"
+const milestonePath = "docs/project/progress.md";
+const decisionPath = "docs/project/decisions.md";
 
 function json(value: unknown): string {
-  return JSON.stringify(value, null, 2)
+  return JSON.stringify(value, null, 2);
 }
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error) {
-    return error.message
+    return error.message;
   }
 
-  return String(error)
+  return String(error);
 }
 
 function sha256Bytes(value: Uint8Array): string {
-  return createHash("sha256")
-    .update(value)
-    .digest("hex")
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function sha256Text(value: string): string {
-  return sha256Bytes(Buffer.from(value, "utf8"))
+  return sha256Bytes(Buffer.from(value, "utf8"));
 }
 
 function canonicalJson(value: unknown): string {
@@ -152,38 +133,33 @@ function canonicalJson(value: unknown): string {
     typeof value === "string" ||
     typeof value === "boolean"
   ) {
-    return JSON.stringify(value)
+    return JSON.stringify(value);
   }
 
   if (typeof value === "number") {
     if (!Number.isFinite(value)) {
-      throw new Error("Canonical JSON cannot contain non-finite numbers")
+      throw new Error("Canonical JSON cannot contain non-finite numbers");
     }
 
-    return JSON.stringify(value)
+    return JSON.stringify(value);
   }
 
   if (Array.isArray(value)) {
-    return `[${value.map(canonicalJson).join(",")}]`
+    return `[${value.map(canonicalJson).join(",")}]`;
   }
 
   if (typeof value === "object") {
-    const record = value as Record<string, unknown>
+    const record = value as Record<string, unknown>;
 
     const entries = Object.keys(record)
       .filter((key) => record[key] !== undefined)
       .sort()
-      .map(
-        (key) =>
-          `${JSON.stringify(key)}:${canonicalJson(record[key])}`,
-      )
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`);
 
-    return `{${entries.join(",")}}`
+    return `{${entries.join(",")}}`;
   }
 
-  throw new Error(
-    `Unsupported canonical JSON value: ${typeof value}`,
-  )
+  throw new Error(`Unsupported canonical JSON value: ${typeof value}`);
 }
 
 function proposalIntegrity(
@@ -195,47 +171,41 @@ function proposalIntegrity(
       schema_version: schemaVersion,
       proposal,
     }),
-  )
+  );
 }
 
-function isNodeError(
-  error: unknown,
-  code: string,
-): boolean {
+function isNodeError(error: unknown, code: string): boolean {
   return (
     error instanceof Error &&
     "code" in error &&
     (error as NodeJS.ErrnoException).code === code
-  )
+  );
 }
 
-async function resolveProjectRoot(
-  directory: string,
-): Promise<string> {
+async function resolveProjectRoot(directory: string): Promise<string> {
   try {
-    return await realpath(directory)
+    return await realpath(directory);
   } catch (error) {
     throw new DocumentationError(
       "PROJECT_RESOLUTION_FAILED",
       `Unable to resolve canonical project root: ${errorMessage(error)}`,
-    )
+    );
   }
 }
 
 function projectKey(projectRoot: string): string {
-  const rawName = basename(projectRoot) || "project"
+  const rawName = basename(projectRoot) || "project";
 
   const safeName =
-    rawName
-      .replace(/[^A-Za-z0-9._-]+/g, "-")
-      .replace(/^-+|-+$/g, "") || "project"
+    rawName.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") ||
+    "project";
 
   const pathHash = createHash("sha256")
     .update(projectRoot, "utf8")
     .digest("hex")
-    .slice(0, 12)
+    .slice(0, 12);
 
-  return `${safeName}-${pathHash}`
+  return `${safeName}-${pathHash}`;
 }
 
 function validateRelativePath(value: string): void {
@@ -244,7 +214,7 @@ function validateRelativePath(value: string): void {
       "INVALID_PATH",
       "Documentation path must not be empty.",
       value,
-    )
+    );
   }
 
   if (value.includes("\0")) {
@@ -252,7 +222,7 @@ function validateRelativePath(value: string): void {
       "INVALID_PATH",
       "Documentation path must not contain NUL characters.",
       value,
-    )
+    );
   }
 
   if (value.includes("\\")) {
@@ -260,7 +230,7 @@ function validateRelativePath(value: string): void {
       "INVALID_PATH",
       "Documentation path must use forward slashes.",
       value,
-    )
+    );
   }
 
   if (isAbsolute(value)) {
@@ -268,63 +238,57 @@ function validateRelativePath(value: string): void {
       "INVALID_PATH",
       "Documentation path must be relative to the project root.",
       value,
-    )
+    );
   }
 
-  const segments = value.split("/")
+  const segments = value.split("/");
 
   if (
     segments.some(
-      (segment) =>
-        segment === "" ||
-        segment === "." ||
-        segment === "..",
+      (segment) => segment === "" || segment === "." || segment === "..",
     )
   ) {
     throw new DocumentationError(
       "INVALID_PATH",
       "Documentation path must not contain empty, '.' or '..' segments.",
       value,
-    )
+    );
   }
 }
 
 function isGeneralDocumentationPath(value: string): boolean {
   if (rootDocumentationPaths.has(value)) {
-    return true
+    return true;
   }
 
   if (!value.startsWith("docs/")) {
-    return false
+    return false;
   }
 
   if (!value.endsWith(".md")) {
-    return false
+    return false;
   }
 
   if (value.startsWith("docs/project/")) {
-    return false
+    return false;
   }
 
-  return true
+  return true;
 }
 
-function pathAllowed(
-  authority: DocumentationAuthority,
-  path: string,
-): boolean {
+function pathAllowed(authority: DocumentationAuthority, path: string): boolean {
   switch (authority) {
     case "docs":
-      return isGeneralDocumentationPath(path)
+      return isGeneralDocumentationPath(path);
 
     case "project-definition":
-      return projectDefinitionPaths.has(path)
+      return projectDefinitionPaths.has(path);
 
     case "milestone":
-      return path === milestonePath
+      return path === milestonePath;
 
     case "decision":
-      return path === decisionPath
+      return path === decisionPath;
   }
 }
 
@@ -334,17 +298,14 @@ function operationAllowed(
 ): boolean {
   switch (authority) {
     case "docs":
-      return true
+      return true;
 
     case "project-definition":
-      return (
-        operation === "create" ||
-        operation === "replace"
-      )
+      return operation === "create" || operation === "replace";
 
     case "milestone":
     case "decision":
-      return operation === "replace"
+      return operation === "replace";
   }
 }
 
@@ -357,7 +318,7 @@ function validateAuthorityBoundary(
       "PATH_NOT_ALLOWED",
       `Path is not writable by '${authority}' authority.`,
       change.path,
-    )
+    );
   }
 
   if (!operationAllowed(authority, change.operation)) {
@@ -365,26 +326,21 @@ function validateAuthorityBoundary(
       "OPERATION_NOT_ALLOWED",
       `Operation '${change.operation}' is not permitted by '${authority}' authority.`,
       change.path,
-    )
+    );
   }
 }
 
-function validateChangeContent(
-  change: PreviewChange,
-): void {
-  if (
-    change.operation === "create" ||
-    change.operation === "replace"
-  ) {
+function validateChangeContent(change: PreviewChange): void {
+  if (change.operation === "create" || change.operation === "replace") {
     if (typeof change.content !== "string") {
       throw new DocumentationError(
         "INVALID_INPUT",
         `Operation '${change.operation}' requires complete resulting content.`,
         change.path,
-      )
+      );
     }
 
-    return
+    return;
   }
 
   if (change.content !== undefined) {
@@ -392,16 +348,13 @@ function validateChangeContent(
       "INVALID_INPUT",
       "Delete operations must not include content.",
       change.path,
-    )
+    );
   }
 }
 
-function ensureInsideProject(
-  projectRoot: string,
-  targetPath: string,
-): string {
-  const absolutePath = resolve(projectRoot, targetPath)
-  const relativePath = relative(projectRoot, absolutePath)
+function ensureInsideProject(projectRoot: string, targetPath: string): string {
+  const absolutePath = resolve(projectRoot, targetPath);
+  const relativePath = relative(projectRoot, absolutePath);
 
   if (
     relativePath === ".." ||
@@ -412,54 +365,47 @@ function ensureInsideProject(
       "INVALID_PATH",
       "Documentation path escapes the project root.",
       targetPath,
-    )
+    );
   }
 
-  return absolutePath
+  return absolutePath;
 }
 
 async function inspectTargetPath(
   projectRoot: string,
   targetPath: string,
 ): Promise<{
-  absolutePath: string
-  exists: boolean
-  regularFile: boolean
+  absolutePath: string;
+  exists: boolean;
+  regularFile: boolean;
 }> {
-  const absolutePath = ensureInsideProject(
-    projectRoot,
-    targetPath,
-  )
+  const absolutePath = ensureInsideProject(projectRoot, targetPath);
 
-  const segments = targetPath.split("/")
-  let current = projectRoot
+  const segments = targetPath.split("/");
+  let current = projectRoot;
 
-  for (
-    let index = 0;
-    index < segments.length;
-    index += 1
-  ) {
-    current = join(current, segments[index]!)
+  for (let index = 0; index < segments.length; index += 1) {
+    current = join(current, segments[index]!);
 
     try {
-      const stat = await lstat(current)
+      const stat = await lstat(current);
 
       if (stat.isSymbolicLink()) {
         throw new DocumentationError(
           "SYMLINK_NOT_ALLOWED",
           "Documentation transaction paths must not contain symbolic links.",
           targetPath,
-        )
+        );
       }
 
-      const isTarget = index === segments.length - 1
+      const isTarget = index === segments.length - 1;
 
       if (!isTarget && !stat.isDirectory()) {
         throw new DocumentationError(
           "INVALID_PATH",
           "A documentation path component is not a directory.",
           targetPath,
-        )
+        );
       }
 
       if (isTarget) {
@@ -467,11 +413,11 @@ async function inspectTargetPath(
           absolutePath,
           exists: true,
           regularFile: stat.isFile(),
-        }
+        };
       }
     } catch (error) {
       if (error instanceof DocumentationError) {
-        throw error
+        throw error;
       }
 
       if (isNodeError(error, "ENOENT")) {
@@ -479,10 +425,10 @@ async function inspectTargetPath(
           absolutePath,
           exists: false,
           regularFile: false,
-        }
+        };
       }
 
-      throw error
+      throw error;
     }
   }
 
@@ -490,52 +436,47 @@ async function inspectTargetPath(
     absolutePath,
     exists: false,
     regularFile: false,
-  }
+  };
 }
 
 async function readUtf8Snapshot(
   absolutePath: string,
   targetPath: string,
 ): Promise<ProposalSnapshot> {
-  const bytes = await readFile(absolutePath)
+  const bytes = await readFile(absolutePath);
 
-  let content: string
+  let content: string;
 
   try {
     content = new TextDecoder("utf-8", {
       fatal: true,
-    }).decode(bytes)
+    }).decode(bytes);
   } catch {
     throw new DocumentationError(
       "TARGET_NOT_UTF8",
       "Existing documentation target is not valid UTF-8.",
       targetPath,
-    )
+    );
   }
 
   return {
     sha256: sha256Bytes(bytes),
     content,
-  }
+  };
 }
 
-function afterSnapshot(
-  content: string,
-): ProposalSnapshot {
+function afterSnapshot(content: string): ProposalSnapshot {
   return {
     sha256: sha256Text(content),
     content,
-  }
+  };
 }
 
 async function buildTarget(
   projectRoot: string,
   change: PreviewChange,
 ): Promise<ProposalTarget> {
-  const inspected = await inspectTargetPath(
-    projectRoot,
-    change.path,
-  )
+  const inspected = await inspectTargetPath(projectRoot, change.path);
 
   switch (change.operation) {
     case "create": {
@@ -544,7 +485,7 @@ async function buildTarget(
           "TARGET_EXISTS",
           "Create requested but target already exists.",
           change.path,
-        )
+        );
       }
 
       return {
@@ -552,7 +493,7 @@ async function buildTarget(
         operation: "create",
         before: null,
         after: afterSnapshot(change.content!),
-      }
+      };
     }
 
     case "replace": {
@@ -561,7 +502,7 @@ async function buildTarget(
           "TARGET_MISSING",
           "Replace requested but target does not exist.",
           change.path,
-        )
+        );
       }
 
       if (!inspected.regularFile) {
@@ -569,22 +510,22 @@ async function buildTarget(
           "TARGET_NOT_REGULAR_FILE",
           "Replace target is not a regular file.",
           change.path,
-        )
+        );
       }
 
       const before = await readUtf8Snapshot(
         inspected.absolutePath,
         change.path,
-      )
+      );
 
-      const after = afterSnapshot(change.content!)
+      const after = afterSnapshot(change.content!);
 
       if (before.sha256 === after.sha256) {
         throw new DocumentationError(
           "NO_CHANGE",
           "Replacement content is identical to the current file.",
           change.path,
-        )
+        );
       }
 
       return {
@@ -592,7 +533,7 @@ async function buildTarget(
         operation: "replace",
         before,
         after,
-      }
+      };
     }
 
     case "delete": {
@@ -601,7 +542,7 @@ async function buildTarget(
           "TARGET_MISSING",
           "Delete requested but target does not exist.",
           change.path,
-        )
+        );
       }
 
       if (!inspected.regularFile) {
@@ -609,80 +550,61 @@ async function buildTarget(
           "TARGET_NOT_REGULAR_FILE",
           "Delete target is not a regular file.",
           change.path,
-        )
+        );
       }
 
       return {
         path: change.path,
         operation: "delete",
-        before: await readUtf8Snapshot(
-          inspected.absolutePath,
-          change.path,
-        ),
+        before: await readUtf8Snapshot(inspected.absolutePath, change.path),
         after: null,
-      }
+      };
     }
   }
 }
 
 function proposalStateRoot(): string {
-  const configured = Bun.env.XDG_STATE_HOME
+  const configured = Bun.env.XDG_STATE_HOME;
 
   const stateHome =
     configured && isAbsolute(configured)
       ? configured
-      : join(homedir(), ".local", "state")
+      : join(homedir(), ".local", "state");
 
-  return join(
-    stateHome,
-    "opencode-mentor",
-    "documentation-proposals",
-  )
+  return join(stateHome, "opencode-mentor", "documentation-proposals");
 }
 
-async function persistProposal(
-  record: ProposalRecord,
-): Promise<void> {
+async function persistProposal(record: ProposalRecord): Promise<void> {
   const projectDirectory = join(
     proposalStateRoot(),
     record.proposal.project.key,
-  )
+  );
 
-  await mkdir(projectDirectory, {
-    recursive: true,
-    mode: 0o700,
-  })
-
-  const finalPath = join(
-    projectDirectory,
-    `${record.proposal.id}.json`,
-  )
+  const finalPath = join(projectDirectory, `${record.proposal.id}.json`);
 
   const temporaryPath = join(
     projectDirectory,
     `.${record.proposal.id}.${randomUUID()}.tmp`,
-  )
+  );
 
-  const serialized = `${json(record)}\n`
+  const serialized = `${json(record)}\n`;
 
   try {
-    await writeFile(
-      temporaryPath,
-      serialized,
-      {
-        encoding: "utf8",
-        mode: 0o600,
-        flag: "wx",
-      },
-    )
+    await mkdir(projectDirectory, {
+      recursive: true,
+      mode: 0o700,
+    });
 
-    await rename(
-      temporaryPath,
-      finalPath,
-    )
+    await writeFile(temporaryPath, serialized, {
+      encoding: "utf8",
+      mode: 0o600,
+      flag: "wx",
+    });
+
+    await rename(temporaryPath, finalPath);
   } catch (error) {
     try {
-      await unlink(temporaryPath)
+      await unlink(temporaryPath);
     } catch {
       // Best-effort cleanup only.
     }
@@ -690,13 +612,11 @@ async function persistProposal(
     throw new DocumentationError(
       "PROPOSAL_STORAGE_FAILED",
       `Unable to persist documentation proposal: ${errorMessage(error)}`,
-    )
+    );
   }
 }
 
-function failure(
-  error: DocumentationError,
-): string {
+function failure(error: DocumentationError): string {
   return json({
     version: 1,
     ok: false,
@@ -705,7 +625,7 @@ function failure(
       ...(error.path ? { path: error.path } : {}),
       message: error.message,
     },
-  })
+  });
 }
 
 export const preview = tool({
@@ -716,12 +636,7 @@ export const preview = tool({
 
   args: {
     authority: tool.schema
-      .enum([
-        "docs",
-        "project-definition",
-        "milestone",
-        "decision",
-      ])
+      .enum(["docs", "project-definition", "milestone", "decision"])
       .describe(
         "Semantic workflow authority requesting the documentation change.",
       ),
@@ -736,14 +651,8 @@ export const preview = tool({
             ),
 
           operation: tool.schema
-            .enum([
-              "create",
-              "replace",
-              "delete",
-            ])
-            .describe(
-              "Exact requested filesystem operation.",
-            ),
+            .enum(["create", "replace", "delete"])
+            .describe("Exact requested filesystem operation."),
 
           content: tool.schema
             .string()
@@ -761,61 +670,54 @@ export const preview = tool({
 
   async execute(args, context) {
     try {
-      const directory =
-        context.worktree ||
-        context.directory
+      const directory = context.worktree || context.directory;
 
       if (!directory) {
         throw new DocumentationError(
           "PROJECT_RESOLUTION_FAILED",
           "OpenCode did not provide a project directory.",
-        )
+        );
       }
 
-      const projectRoot =
-        await resolveProjectRoot(directory)
+      const projectRoot = await resolveProjectRoot(directory);
 
-      const key = projectKey(projectRoot)
+      const key = projectKey(projectRoot);
 
-      const seenPaths = new Set<string>()
+      const seenPaths = new Set<string>();
 
       for (const change of args.changes) {
-        validateRelativePath(change.path)
-        validateChangeContent(change)
+        validateRelativePath(change.path);
+        validateChangeContent(change);
 
         if (seenPaths.has(change.path)) {
           throw new DocumentationError(
             "DUPLICATE_PATH",
             "A proposal must not contain the same target path more than once.",
             change.path,
-          )
+          );
         }
 
-        seenPaths.add(change.path)
+        seenPaths.add(change.path);
 
-        validateAuthorityBoundary(
-          args.authority,
-          change,
-        )
+        validateAuthorityBoundary(args.authority, change);
       }
 
-      const sortedChanges = [...args.changes]
-        .sort((left, right) =>
-          left.path.localeCompare(
-            right.path,
-            "en",
-          ),
-        )
+      const sortedChanges = [...args.changes].sort((left, right) => {
+        if (left.path < right.path) {
+          return -1;
+        }
 
-      const targets: ProposalTarget[] = []
+        if (left.path > right.path) {
+          return 1;
+        }
+
+        return 0;
+      });
+
+      const targets: ProposalTarget[] = [];
 
       for (const change of sortedChanges) {
-        targets.push(
-          await buildTarget(
-            projectRoot,
-            change,
-          ),
-        )
+        targets.push(await buildTarget(projectRoot, change));
       }
 
       const proposal: ProposalPayload = {
@@ -827,25 +729,21 @@ export const preview = tool({
         },
         authority: args.authority,
         targets,
-      }
+      };
 
       const record: ProposalRecord = {
         schema_version: 1,
         proposal,
         integrity: {
-          proposal_sha256:
-            proposalIntegrity(
-              1,
-              proposal,
-            ),
+          proposal_sha256: proposalIntegrity(1, proposal),
         },
         state: {
           status: "pending",
           applied_at: null,
         },
-      }
+      };
 
-      await persistProposal(record)
+      await persistProposal(record);
 
       return json({
         version: 1,
@@ -854,26 +752,21 @@ export const preview = tool({
         project_root: projectRoot,
         project_key: key,
         authority: proposal.authority,
-        changes: targets.map(
-          (target) => ({
-            path: target.path,
-            operation: target.operation,
-            before: target.before,
-            after: target.after,
-          }),
-        ),
-      })
+        changes: targets.map((target) => ({
+          path: target.path,
+          operation: target.operation,
+          before: target.before,
+          after: target.after,
+        })),
+      });
     } catch (error) {
       if (error instanceof DocumentationError) {
-        return failure(error)
+        return failure(error);
       }
 
       return failure(
-        new DocumentationError(
-          "PREVIEW_FAILED",
-          errorMessage(error),
-        ),
-      )
+        new DocumentationError("PREVIEW_FAILED", errorMessage(error)),
+      );
     }
   },
-})
+});
