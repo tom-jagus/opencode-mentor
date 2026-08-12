@@ -123,8 +123,8 @@ reconstructing the missing state.
 
 ### Material Re-entry
 
-Use Material Re-entry when an approved definition already exists and new evidence
-may require changing approved scope.
+Use Material Re-entry when an approved coordinated project artifact set already
+exists and new evidence may require changing approved scope.
 
 Re-enter Project Definition when:
 
