@@ -1059,7 +1059,8 @@ Typical states are:
 - planned;
 - active;
 - blocked;
-- completed.
+- completed;
+- canceled.
 
 Also determine whether another milestone is currently active.
 
@@ -1167,7 +1168,49 @@ transition.
 
 **Cancel**
 
+A cancel transition means the milestone is intentionally abandoned rather than
+completed.
 
+Before proposing cancellation, determine whether abandoning the milestone would
+materially change approved project scope.
+
+Cancellation is valid only when the milestone can be abandoned without changing:
+
+- required project objectives;
+- core constraints;
+- accepted architecture;
+- required capabilities;
+- acceptance criteria;
+- planned implementation phases owned by the approved definition.
+
+If cancellation would leave required approved scope intentionally undelivered,
+classify the request as a scope change and route it to `/define`.
+
+For a valid cancellation:
+
+- preserve the milestone in project history;
+- mark its status as cancelled;
+- preserve the reason for cancellation when the user supplied one;
+- remove it as the active milestone when it is currently active;
+- update blocker state when cancellation makes an existing blocker irrelevant;
+- update the next action to reflect the resulting operational state.
+
+Do not mark a cancelled milestone as completed.
+
+Do not automatically activate another milestone merely because the current
+milestone was cancelled.
+
+When the user explicitly requests a combined transition such as:
+
+```text
+cancel Research and start Live Deployment
+```
+
+evaluate both transitions through the combined-transition procedure.
+
+Do not cancel an already completed milestone merely to rewrite project history.
+If the user intends to revise previously recorded completion, require
+clarification before proposing a state change.
 
 ### 7. Handle combined transitions
 
@@ -1255,6 +1298,10 @@ Check when applicable:
 - current phase.
 
 A completed milestone must not remain recorded as active.
+
+A canceled milestone must not remain recorded as active.
+
+A canceled milestone must not also be recorded as completed.
 
 A blocked milestone must not be reported as unblocked elsewhere in the same
 artifact.
