@@ -1,24 +1,34 @@
 ---
-title: OpenCode Workflow Progress
+title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
-active_milestone: configuration-foundation
-updated_at: 2026-08-03
+active_milestone: none
+updated_at: 2026-08-12
 ---
 
 # Project Progress
 
+
 ## Current State
 
-- **Definition status:** approved
-- **Definition version:** 2
-- **Current phase:** Development
-- **Active milestone:** Configuration Foundation
-- **Repository status:** created and version-controlled
- **Implementation status:** implementation complete; PR pending
-- **Blocking issues:** none
-- **Next action:** perform final branch validation and open the Configuration
-  Foundation pull request.
+* **Definition status:** approved
+* **Definition version:** 3
+* **Current phase:** Development
+* **Completed milestones:** Configuration Foundation, Project Workflows
+* **Active milestone:** none
+* **Implementation status:** `/state`, `/resume`, `/develop`, `/define`,
+  `/milestone`, and `/decision` are implemented and validated.
+  `project-progress` provides State, Resume, Milestone, and Decision procedures;
+  `project-definition` provides initial definition, material re-entry, project
+  bootstrap semantics, and embedded project artifact templates; `lead` provides
+  workflow routing and project-state bootstrap classification. Integrated
+  automated validation and manual semantic smoke validation are complete.
+  Production configuration hardening is established through the managed
+  `/etc/opencode` policy, explicit skill allowlisting, and the production trust
+  boundary recorded in DEC-042. A dedicated `project-critic` is deferred by
+  DEC-043.
+* **Blocking issues:** none
+* **Next action:** start the Documentation Transaction milestone when ready.
 
 ## Phase Transition
 
@@ -45,62 +55,20 @@ The project is ready to move into Development because the following are agreed:
 Remaining unknowns are implementation-level decisions and do not block
 Development.
 
-## Active Milestone — Configuration Foundation
-
-### Objective
-
-Create the smallest working and safely isolated OpenCode configuration that can
-serve as the base for all later workflows.
-
-### Planned outcomes
-
-- create the dedicated OpenCode configuration repository;
-- decide and implement the dotfiles linkage mechanism;
-- define the initial repository layout;
-- create the global `AGENTS.md`;
-- define the `lead` primary agent;
-- set `lead` as the default agent;
-- disable `build` and `general`;
-- retain `explore`;
-- establish the initial permission baseline;
-- create an isolated test launch using a branch or worktree;
-- prevent accidental use of an unsafe fallback agent;
-- document bootstrap and validation steps;
-- create initial adversarial permission tests.
-- Dotfiles linkage and live configuration deployment are deferred until the
-  isolated configuration reaches a stable first version suitable for live
-  testing.
-
-### Completion criteria
-
-The milestone is complete when:
-
-1. the repository exists and is version-controlled;
-2. the dotfiles integration approach is implemented without file duplication;
-3. an isolated OpenCode instance starts from the repository configuration;
-4. `lead` is the only normal user-facing primary agent;
-5. `build` and `general` are unavailable;
-6. 'explore' can be used for read-only repository delegation; external research
-remains with lead until a stable or justified specialist is available7. generic source editing is denied;
-8. known shell mutation paths are blocked or permission-gated;
-9. a misconfigured default agent cannot silently expose unsafe behaviour;
-10. the setup and validation process are documented;
-11. the initial change is checkpointed through a feature branch and PR.
-
 ## Planned Milestones
 
 ### 1. Configuration Foundation
 
-Status: active
+Status: completed
 
-Deliver the repository, `lead`, base configuration, dotfiles linkage, isolated
-testing, and initial permission controls.
+Deliver the repository, `lead`, base configuration, isolated testing, and
+initial permission controls.
 
 ### 2. Project Workflows
 
-Status: planned
+Status: completed
 
-Deliver:
+Delivered:
 
 - skills;
 - command catalogue;
@@ -109,9 +77,32 @@ Deliver:
 - `/define`;
 - `/resume`;
 - `/develop`;
-- `/status`;
+- `/state`;
 - `/milestone`;
 - `/decision`.
+
+Completed implementation:
+
+**Implemented:**
+
+* `/state`;
+* `/resume`;
+* `/develop`;
+* `/define`;
+* `/milestone`;
+* `/decision`;
+* State, Resume, Milestone, and Decision procedures in `project-progress`;
+* proposal-only `development` skill;
+* proposal-only `project-definition` skill;
+* workflow routing through `lead`;
+* project-state bootstrap classification and handling;
+* initial project artifact templates;
+* deterministic `git_state` tool;
+* protected external-workspace boundary;
+* integrated automated validation of the complete Project Workflows surface;
+* manual semantic smoke validation of implemented workflows;
+* production configuration and trust-boundary hardening;
+* deny-by-default managed skill policy with explicit trusted-skill allowlisting.
 
 ### 3. Documentation Transaction
 
@@ -159,7 +150,17 @@ Deliver:
 - `/note`;
 - vault Git checkpoint integration.
 
-### 6. Research
+### 6. Live Deployment and Dotfiles Integration
+
+Status: planned
+
+- exact non-duplicating dotfiles linkage mechanism;
+- installation/bootstrap strategy for `~/.config/opencode` and
+  `/etc/opencode/opencode.json`;
+- whether the final repository requires an installation/bootstrap script;
+- exact Herdr integration restoration mechanism.
+
+### 7. Research
 
 Status: deferred
 
@@ -178,27 +179,6 @@ requirements become sufficiently stable.
 These questions must be resolved during the relevant milestone. They do not
 require returning to Project Definition unless the answer materially changes
 scope or constraints.
-
-### Configuration Foundation
-
-- exact repository layout;
-- exact dotfiles linkage mechanism;
-- exact live versus development configuration paths;
-- exact `lead` prompt content;
-- exact `opencode.jsonc` agent and permission structure;
-- safe handling of invalid `default_agent` fallback;
-- managed settings versus wrapper-based immutable restrictions;
-- whether a replacement shell tool is required in the first version;
-- minimum adversarial permission test suite.
-
-### Project Workflows
-
-- exact skill directory structure;
-- exact command prompt wording;
-- project-state bootstrap behaviour;
-- command argument conventions;
-- how `lead` records and recognises the active workflow;
-- whether `project-critic` is required in the first implementation.
 
 ### Documentation Transaction
 
@@ -240,8 +220,11 @@ scope or constraints.
 Project configuration, shell commands, formatters, generators, or custom scripts
 may bypass a superficial source-edit denial.
 
-**Response:** use constrained tools, immutable enforcement, configuration
-validation, and adversarial tests.
+**Response:** enforce immutable permissions through managed configuration under
+`/etc/opencode`, keep generic source editing denied, permission-gate shell
+execution, and expose approved mutation through constrained workflow-specific
+tools. Project-local executable OpenCode configuration is treated as trusted
+project configuration rather than an adversarial sandbox boundary.
 
 ### Workflow overengineering
 
@@ -256,14 +239,14 @@ output materially differs.
 Prompts cannot guarantee deterministic branch names, policy precedence, atomic
 writes, or permission boundaries.
 
-**Response:** place enforceable behaviour in scripts, policies, schemas, and
-custom tools.
+**Response:** place enforceable behaviour in managed configuration, deterministic
+policies, schemas, and constrained custom tools.
 
 ### Documentation drift
 
 Project artifacts may become outdated if progress and decisions are not updated.
 
-**Response:** use `/milestone`, `/decision`, `/status`, and `/resume` as normal
+**Response:** use `/milestone`, `/decision`, `/state`, and `/resume` as normal
 workflow boundaries.
 
 ### Vault duplication
@@ -275,20 +258,4 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Start the Configuration Foundation milestone with:
-
-```text
-/start configuration-foundation
-```
-
-The first implementation unit should establish:
-
-1. repository structure;
-2. isolated launch path;
-3. minimal global `AGENTS.md`;
-4. minimal `lead` definition;
-5. built-in agent disable/retain settings;
-6. initial safe permission baseline.
-
-Do not begin command, vault, or Git automation implementation before the isolated
-foundation is working and tested.
+Start the Documentation Transaction milestone when ready.

@@ -1,7 +1,7 @@
 ---
-title: OpenCode Workflow Decisions
+title: OpenCode Mentor Project Decisions
 status: active
-updated_at: 2026-08-03
+updated_at: 2026-08-12
 ---
 
 # Decision Register
@@ -97,7 +97,7 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
 ## DEC-009 — Built-In Agent Policy
 
 - **Date:** 2026-08-03
-- **Status:** superseded bu DEC-036
+- **Status:** superseded by DEC-036
 - **Decision:** Disable `build` and `general`; retain `explore` and `scout`
   initially.
 - **Rationale:** Broad modifying agents conflict with the safety model, while the
@@ -243,7 +243,7 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
 ## DEC-023 — Simplified Command Names
 
 - **Date:** 2026-08-03
-- **Status:** accepted
+- **Status:** partially superseded
 - **Decision:** Use the compact command catalogue:
   `/define`, `/resume`, `/develop`, `/docs`, `/status`, `/milestone`,
   `/decision`, `/start`, `/checkpoint`, `/finish`, `/release`, `/note`,
@@ -458,3 +458,94 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
     live testing are delivered in the later deployment milestone;
   * final project acceptance still requires non-duplicating dotfiles
     integration.
+
+## DEC-040 — Rename Project State Command
+
+- **Date:** 2026-08-04
+- **Status:** accepted
+- **Partially supersedes:** DEC-023
+- **Decision:** Rename the read-only Project Progress command from `/status` to
+  `/state`. All other command names accepted by DEC-023 remain unchanged.
+- **Rationale:** `/status` already exists in the installed OpenCode environment.
+  Reusing it would override or obscure existing behavior. `/state` more precisely
+  describes the command's responsibility: reporting durable project state from
+  authoritative artifacts and read-only repository inspection.
+- **Consequences:**
+  - the custom command file is `commands/state.md`;
+  - the `project-progress` skill exposes a State procedure;
+  - project documentation and tests use `/state`;
+  - OpenCode's existing `/status` behavior remains untouched.
+
+## DEC-041 — Deterministic Read-Only Git State Tool
+
+- **Date:** 2026-08-04
+- **Status:** accepted
+- **Decision:** Implement a custom `git_state` tool for deterministic,
+  read-only Git repository inspection. Project State, Session Recovery, and
+  later Git lifecycle workflows will reuse this tool instead of independently
+  executing general shell commands.
+- **Rationale:** Repeated Bash permission prompts make read-only workflows noisy,
+  while broad approval of `git *` would also authorize mutating operations. A
+  fixed custom tool provides one reviewed inspection boundary and structured
+  output.
+- **Consequences:**
+  - `git_state` accepts no arbitrary commands;
+  - it performs no network or mutation operations;
+  - `lead` may invoke it without general Bash approval;
+  - `explore` remains unable to invoke it unless a later decision justifies
+    access;
+  - Git lifecycle mutations will use separate permission-gated mechanisms.
+  - project-local custom tool directories are rejected by the hardened launcher so
+    workspace code cannot replace or collide with an approved global tool;
+  - unapproved MCP servers are rejected because their generated tool names could
+    collide with approved custom-tool permissions;
+  - future project-specific tools or MCP servers require an explicit design and
+    guardrail revision.
+  - repository-controlled Git hooks and FSMonitor commands are disabled during
+    inspection;
+  - Git lifecycle mutations will use separate permission-gated mechanisms;
+
+## DEC-042 — Production Configuration and Trust Boundary
+
+- **Date:** 2026-08-12
+- **Status:** accepted
+- **Decision:**
+  - normal production use launches OpenCode directly with `opencode`;
+  - `~/.config/opencode/` contains OpenCode Mentor behaviour, agents, commands,
+    skills, tools, and normal user configuration;
+  - `/etc/opencode/opencode.json`, deployed from `managed/opencode.json`, contains
+    non-overridable safety policy;
+  - `~/.agents/skills/` may provide shared personal skills, but `lead` may load
+    only skill identifiers explicitly allowed by managed policy;
+  - project-local OpenCode configuration is treated as trusted project
+    configuration rather than as an adversarial sandbox boundary;
+  - development launchers, validators, and test suites are development
+    scaffolding rather than part of the production runtime architecture.
+- **Rationale:** Production should use OpenCode normally without requiring a
+  wrapper while preserving hard safety rules through OpenCode's managed
+  configuration layer. Shared personal skills remain usable without implicitly
+  granting every discovered skill to `lead`.
+- **Consequences:**
+  - production operation does not depend on `scripts/opencode-dev`;
+  - managed permissions remain the hard capability boundary;
+  - behavioural and workflow configuration remains under
+    `~/.config/opencode/`;
+  - newly implemented Mentor skills must be explicitly added to the managed
+    `lead` skill allowlist;
+  - development-only tests and scripts are removed before the final release,
+    except for an installation/bootstrap script if one is ultimately required;
+  - Mentor v1 does not claim to protect against malicious executable OpenCode
+    configuration intentionally present in a repository.
+
+## DEC-043 — Defer Dedicated Project Critic
+
+- **Date:** 2026-08-12
+- **Status:** accepted
+- **Decision:** Do not implement `project-critic` in the first OpenCode Mentor
+  version.
+- **Rationale:** Current validation shows that `lead` with the
+  `project-definition` workflow already provides the required critical analysis,
+  clarification, and scope challenge. A separate critic has no demonstrated
+  permission, context, or output-contract advantage.
+- **Consequences:** Reconsider a dedicated critic only if practical use shows that
+  independent critique materially improves definition quality.

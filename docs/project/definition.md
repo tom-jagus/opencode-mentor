@@ -1,8 +1,8 @@
 ---
-title: OpenCode Workflow Configuration
+title: OpenCode Mentor Project Definition
 status: approved
-version: 1
-approved_at: 2026-08-03
+version: 3
+approved_at: 2026-08-04
 ---
 
 # Project Definition
@@ -17,7 +17,7 @@ local LLM experience aligned with Tom's preferred way of working:
 - preserve project context in durable Markdown artifacts;
 - propose source-code changes without writing source files;
 - allow controlled creation and modification of documentation;
-- enforce repeatable Git, GitHub, project-status, vault, and research workflows;
+- enforce repeatable Git, GitHub, project-progress, vault, and research workflows;
 - keep the configuration maintainable, auditable, reusable, and version-controlled.
 
 The configuration will expose one consistent user-facing primary agent while
@@ -83,7 +83,7 @@ The initial project will not:
 - rebuild a complete project-management platform inside Markdown;
 - implement full Polish marketplace product research in the first version;
 - rely on OpenCode's GitHub Actions integration for the local Git workflow;
-- allow OpenCode to rewrite its own live configuration without isolated testing;
+- allow OpenCode to rewrite its own live configuration directly;
 - introduce nested subagent hierarchies unless later evidence justifies them.
 
 ## 5. Operating Principles
@@ -122,7 +122,7 @@ This includes:
 OpenCode may:
 
 - read source files;
-- inspect repository state;
+- inspect repository status;
 - propose changes in code blocks;
 - explain proposed changes;
 - reread files after Tom manually enters the changes;
@@ -185,21 +185,23 @@ Initial skills:
 - `vault-curation`
 - `research`
 
+OpenCode may also discover shared personal skills from `~/.agents/skills/`.
+Those skills remain outside the OpenCode Mentor source of truth and are available
+to `lead` only when their identifiers are explicitly allowed by managed policy.
+
 ### 6.3 Subagents
 
 Initial agent decisions:
 
-- retain built-in `explore` for read-only repository investigation and external documentation and dependency;
-  research;
-- disable built-in `build`;
-- disable built-in `general`;
+- retain built-in `explore` for constrained read-only repository investigation;
+- keep external documentation and dependency research with `lead`;
+- disable built-in `build`, `plan`, and `general`;
 - avoid exposing multiple normal primary agents;
 - add custom specialists only where permissions, context, reasoning role, or
   output contract materially differ.
 
 Expected custom specialists:
 
-- `project-critic`
 - `documentation-writer`
 - `git-operator`
 - `vault-curator`
@@ -228,7 +230,7 @@ Workflow selection follows this precedence:
 
 1. explicit slash command;
 2. explicit wording in the current request;
-3. recorded project state;
+3. recorded project status;
 4. automatic inference;
 5. safe read-only fallback.
 
@@ -248,7 +250,7 @@ invalidates approved scope.
 /resume
 /develop
 /docs
-/status
+/state
 /milestone
 /decision
 /start
@@ -261,21 +263,21 @@ invalidates approved scope.
 
 ### 8.1 Command contracts
 
-| Command | Responsibility |
-|---|---|
-| `/define` | Create or materially revise the project definition and related artifacts |
-| `/resume` | Reconstruct enough project context to continue work |
-| `/develop` | Propose and review source changes without writing them |
-| `/docs` | Create, review, revise, approve, and apply documentation |
-| `/status` | Report current project and repository state without modifying it |
-| `/milestone` | Start, complete, block, or otherwise transition a milestone |
-| `/decision` | Record, reject, or supersede a durable decision |
-| `/start` | Begin a policy-compliant unit of work on a feature branch |
-| `/checkpoint` | Validate, commit, and push a coherent unit of work |
-| `/finish` | Finalise the current branch and prepare a pull request |
-| `/release` | Merge, version, tag, and publish according to policy |
-| `/note` | Create or update an approved Obsidian vault note |
-| `/research` | Perform structured research without automatic publication |
+| Command       | Responsibility                                                           |
+| ------------- | ------------------------------------------------------------------------ |
+| `/define`     | Create or materially revise the project definition and related artifacts |
+| `/resume`     | Reconstruct enough project context to continue work                      |
+| `/develop`    | Propose and review source changes without writing them                   |
+| `/docs`       | Create, review, revise, approve, and apply documentation                 |
+| `/state`      | Report current project and repository state without modifying it         |
+| `/milestone`  | Start, complete, block, or otherwise transition a milestone              |
+| `/decision`   | Record, reject, or supersede a durable decision                          |
+| `/start`      | Begin a policy-compliant unit of work on a feature branch                |
+| `/checkpoint` | Validate, commit, and push a coherent unit of work                       |
+| `/finish`     | Finalise the current branch and prepare a pull request                   |
+| `/release`    | Merge, version, tag, and publish according to policy                     |
+| `/note`       | Create or update an approved Obsidian vault note                         |
+| `/research`   | Perform structured research without automatic publication                |
 
 Commands use short names because their descriptions and definitions provide the
 execution contract.
@@ -333,7 +335,8 @@ Decisions may be:
 - proposed;
 - accepted;
 - rejected;
-- superseded.
+- superseded;
+- partially superseded.
 
 Superseded decisions remain in history and reference their replacement.
 
@@ -444,18 +447,18 @@ The apply tool must reject:
 
 The Project Progress capability includes:
 
-- `/status`
+- `/state`
 - `/milestone`
 - `/decision`
 
-### 13.1 `/status`
+### 13.1 `/state`
 
 Read-only report of:
 
 - current phase;
 - active milestone;
 - branch;
-- working-tree state;
+- working-tree status;
 - latest checkpoint;
 - blockers;
 - next documented action.
@@ -500,7 +503,7 @@ scope changes return to `/define`.
 - recent relevant decisions;
 - effective Git policy;
 - current branch;
-- working-tree state;
+- working-tree status;
 - recent commits.
 
 It returns:
@@ -512,7 +515,7 @@ It returns:
 - uncommitted changes;
 - recommended next action.
 
-`/status` remains lightweight; `/resume` restores working context.
+`/state` remains lightweight; `/resume` restores working context.
 
 ## 15. Git and GitHub Workflow
 
@@ -672,38 +675,38 @@ freshness tracking, and additional tools.
 
 ## 18. Configuration Repository and Dotfiles Integration
 
-The OpenCode configuration must live in a dedicated Git repository.
+The OpenCode Mentor repository is authoritative for OpenCode Mentor configuration
+content.
 
-That repository is authoritative for OpenCode content.
+The dotfiles repository is authoritative for installation, linkage, bootstrap,
+dependency setup, and deployment of an accepted Mentor revision.
 
-The dotfiles repository is authoritative for:
+The two repositories must not maintain duplicated authoritative copies of the
+same configuration.
 
-- installation;
-- linkage;
-- bootstrap;
-- dependency setup;
-- component pinning;
-- deployment of an accepted configuration revision.
+Production uses the accepted OpenCode Mentor configuration directly through the
+normal `opencode` command.
 
-The repositories must not contain duplicated copies of the same configuration.
-
-Expected integration:
+The production topology is:
 
 ```text
-dotfiles/
-└── modules/opencode/   -> linked repository or submodule
+accepted Mentor configuration
+  -> ~/.config/opencode/
+
+managed/opencode.json
+  -> /etc/opencode/opencode.json
+
+runtime
+  -> opencode
 ```
 
-Expected live linkage:
+The exact non-duplicating linkage mechanism between the configuration repository,
+dotfiles, and `~/.config/opencode` is resolved during Live Deployment and
+Dotfiles Integration.
 
-```text
-~/.config/opencode
-  -> accepted configuration repository path
-```
-
-Development must use an isolated branch or worktree and an isolated OpenCode
-configuration path. The live configuration remains on the last accepted version
-until changes are reviewed and merged.
+Development changes occur on non-main branches independently of the currently
+deployed configuration. The live environment remains on the last accepted
+revision until a newer revision is reviewed and deployed.
 
 ## 19. Permission Model
 
@@ -718,20 +721,29 @@ Immutable permission enforcement is a core requirement.
 - mutation requires explicit user intent and permission confirmation;
 - project configuration must not be able to silently weaken hard protections.
 
-### 19.2 Implementation concerns
+### 19.2 Production enforcement model
 
-OpenCode project configuration may override global configuration. Therefore,
-global prompt rules alone are not a sufficient immutable boundary.
+Normal behaviour, workflows, agents, commands, skills, tools, and user
+preferences are deployed under `~/.config/opencode`.
 
-Development must evaluate and implement a hardened approach using one or more of:
+Non-overridable safety policy is deployed from `managed/opencode.json` to
+`/etc/opencode/opencode.json`.
 
-- managed settings;
-- validated launch wrappers;
-- constrained replacement tools;
-- project-configuration validation;
-- removal or replacement of generic edit and shell capabilities.
+The managed layer provides:
 
-The final model must be tested adversarially.
+- generic source-edit denial;
+- permission-gated shell execution;
+- disabled broad modifying built-in agents;
+- restricted delegation;
+- deny-by-default skill access with explicit trusted-skill allowlisting;
+- non-overridable permission boundaries for constrained custom tools.
+
+Approved documentation, vault, Git, and other mutations use narrow
+workflow-specific tools where deterministic enforcement is required.
+
+Project-local OpenCode configuration is treated as trusted project configuration.
+OpenCode Mentor does not claim to provide an operating-system sandbox for
+malicious executable repository configuration.
 
 ## 20. Implementation Phases
 
@@ -741,11 +753,12 @@ The final model must be tested adversarially.
 - global `AGENTS.md`;
 - `lead` primary agent;
 - built-in agent restrictions;
-- isolated development launcher;
 - managed permission guardrails;
-- resolved-configuration validation;
-- adversarial integration tests;
-- development documentation.
+- development documentation;
+- managed production permission policy;
+- separation of normal and managed configuration;
+- temporary isolated validation during development;
+- adversarial permission validation.
 
 ### Phase 2 — Project workflows
 
@@ -756,7 +769,7 @@ The final model must be tested adversarially.
 - `/define`;
 - `/resume`;
 - `/develop`;
-- `/status`;
+- `/state`;
 - `/milestone`;
 - `/decision`.
 
@@ -799,7 +812,7 @@ The final model must be tested adversarially.
 - live `~/.config/opencode` linkage;
 - dotfiles or chezmoi integration;
 - Herdr integration restoration;
-- deployed-topology guardrail validation;
+- effective managed and user configuration verification;
 - controlled live testing.
 
 ### Phase 7 — Research
@@ -815,12 +828,12 @@ The final model must be tested adversarially.
 The project is successful when:
 
 1. OpenCode starts with `lead` as the only normal user-facing primary agent.
-2. `build` and `general` are disabled.
-3. `explore` remain available for read-only delegation.
+2. `build`, `plan`, and `general` are disabled.
+3. `explore` remains available for read-only delegation.
 4. `lead` selects workflows without repeatedly reopening approved scope.
 5. explicit commands override automatic routing.
-6. source files cannot be modified through built-in edit tools or permitted shell
-   paths.
+6. generic source-editing tools are denied, while shell execution remains
+   permission-gated and must not bypass source ownership rules.
 7. Development produces reviewable code blocks only.
 8. documentation changes require preview, revision, approval, permission, and
    constrained application.
@@ -836,7 +849,8 @@ The project is successful when:
 15. research is not published to the vault without explicit acceptance.
 16. the configuration repository is independently versioned and integrated into
     dotfiles without duplicated source files.
-17. permission assumptions are covered by repeatable adversarial tests.
+17. permission assumptions are validated adversarially before release and after
+    material OpenCode permission-model changes.
 
 ## 22. Definition Completion
 
@@ -844,14 +858,13 @@ The project definition is sufficiently complete to begin Development.
 
 The remaining unresolved items are implementation decisions, not scope blockers:
 
-- exact configuration file layouts;
 - exact wording of agent, skill, and command prompts;
 - exact custom-tool interfaces;
-- exact immutable-permission mechanism;
 - exact TOML schemas;
 - exact transaction implementation;
 - exact vault taxonomy and templates;
-- exact validation command profiles.
+- exact validation command profiles;
+- exact live deployment and dotfiles linkage mechanism.
 
 These must be resolved and tested within their implementation phases while
 remaining consistent with this approved definition.

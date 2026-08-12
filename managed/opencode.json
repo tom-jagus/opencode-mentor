@@ -4,6 +4,11 @@
   "permission": {
     "edit": "deny",
     "bash": "ask",
+    "external_directory": "deny",
+    "git_state": "deny",
+    "skill": {
+      "*": "deny"
+    },
     "task": {
       "*": "deny",
       "explore": "allow"
@@ -28,6 +33,7 @@
         "glob": "allow",
         "grep": "allow",
         "list": "allow",
+        "git_state": "allow",
         "bash": "ask",
         "task": {
           "*": "deny",
@@ -36,9 +42,16 @@
         "webfetch": "allow",
         "websearch": "allow",
         "todowrite": "allow",
-        "skill": "allow",
+        "skill": {
+          "*": "deny",
+          "project-definition": "allow",
+          "project-progress": "allow",
+          "development": "allow",
+          "omarchy": "allow",
+          "herdr": "allow"
+        },
         "doom_loop": "ask",
-        "external_directory": "ask",
+        "external_directory": "deny",
         "edit": "deny"
       }
     },
@@ -50,6 +63,7 @@
         "glob": "allow",
         "grep": "allow",
         "list": "allow",
+        "git_state": "deny",
         "edit": "deny",
         "bash": "deny",
         "task": "deny"

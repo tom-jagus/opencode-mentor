@@ -11,10 +11,48 @@ readonly repo_root="$(
 readonly runtime_root="${OPENCODE_DEV_RUNTIME:-$HOME/.local/share/opencode-workflow-dev}"
 readonly guardrails_file="$repo_root/managed/opencode.json"
 readonly validator="$script_dir/validate-opencode-config"
+readonly launch_directory="$(pwd -P)"
 
 fail() {
   printf 'Error: %s\n' "$1" >&2
   exit 1
+}
+
+reject_project_custom_tools() {
+  local workspace_root="$launch_directory"
+  local detected_root=''
+  local current=''
+  local parent=''
+  local candidate=''
+
+  if command -v git >/dev/null 2>&1 &&
+    detected_root="$(
+      git -C "$launch_directory" rev-parse --show-toplevel 2>/dev/null
+    )"; then
+    workspace_root="$(
+      CDPATH='' cd -- "$detected_root" && pwd -P
+    )"
+  fi
+
+  current="$launch_directory"
+
+  while :; do
+    for candidate in \
+      "$current/.opencode/tool" \
+      "$current/.opencode/tools"; do
+      if [[ -e "$candidate" || -L "$candidate" ]]; then
+        fail \
+          "project-local custom tools are prohibited by the hardened launcher: $candidate"
+      fi
+    done
+
+    [[ "$current" == "$workspace_root" ]] && break
+
+    parent="$(dirname -- "$current")"
+    [[ "$parent" == "$current" ]] && break
+
+    current="$parent"
+  done
 }
 
 if ! command -v opencode >/dev/null 2>&1; then
@@ -39,6 +77,8 @@ for argument in "$@"; do
       ;;
   esac
 done
+
+reject_project_custom_tools
 
 mkdir -p \
   "$runtime_root/config" \
