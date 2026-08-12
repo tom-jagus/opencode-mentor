@@ -151,7 +151,8 @@ Those remain in their owning workflows.
 
 ## Definition Change Classification
 
-For an existing approved definition, classify the outcome as:
+For Material Re-entry against an established approved project definition,
+classify the outcome as:
 
 - **material**
 - **editorial**
@@ -511,7 +512,7 @@ This includes a new project with no artifacts and a partially established
 artifact set that can be completed without materially redefining approved scope.
 
 Use Material Re-entry when an approved coordinated project artifact set already
-exists and the current request may materially change approved project scope.
+exists and new evidence may require changing approved scope.
 
 If an approved definition exists but the requested change is clearly editorial,
 continue far enough to classify it correctly rather than forcing a material
@@ -1181,6 +1182,19 @@ Do not pretend the proposal was applied atomically.
 
 Recommend completing or correcting the coordinated manual change before normal
 Development continues.
+
+### Approved `definition.md` exists but the coordinated artifact set is partial
+
+Continue Initial Definition to establish the missing coordinated project state.
+
+Preserve the approved definition content and version unless project meaning
+actually changes.
+
+Do not classify completion of the artifact set as Material Re-entry merely
+because `definition.md` is already approved.
+
+Report material contradictions in existing artifacts rather than silently
+reconstructing them.
 
 ## Completion Condition
 
