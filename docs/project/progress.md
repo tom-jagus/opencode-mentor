@@ -2,7 +2,7 @@
 title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
-active_milestone: none
+active_milestone: Documentation Transaction
 updated_at: 2026-08-12
 ---
 
@@ -15,7 +15,7 @@ updated_at: 2026-08-12
 * **Definition version:** 3
 * **Current phase:** Development
 * **Completed milestones:** Configuration Foundation, Project Workflows
-* **Active milestone:** none
+* **Active milestone:** Documentation Transaction
 * **Implementation status:** `/state`, `/resume`, `/develop`, `/define`,
   `/milestone`, and `/decision` are implemented and validated.
   `project-progress` provides State, Resume, Milestone, and Decision procedures;
@@ -26,9 +26,11 @@ updated_at: 2026-08-12
   Production configuration hardening is established through the managed
   `/etc/opencode` policy, explicit skill allowlisting, and the production trust
   boundary recorded in DEC-042. A dedicated `project-critic` is deferred by
-  DEC-043.
+  DEC-043. The Documentation Transaction milestone is active; implementation has
+  not yet begun.
 * **Blocking issues:** none
-* **Next action:** start the Documentation Transaction milestone when ready.
+* **Next action:** resolve the Documentation Transaction design questions and
+  propose its first coherent implementation unit.
 
 ## Phase Transition
 
@@ -106,7 +108,7 @@ Completed implementation:
 
 ### 3. Documentation Transaction
 
-Status: planned
+Status: active
 
 Deliver:
 
@@ -258,4 +260,5 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Start the Documentation Transaction milestone when ready.
+Resolve the Documentation Transaction design questions and propose its first
+coherent implementation unit.
