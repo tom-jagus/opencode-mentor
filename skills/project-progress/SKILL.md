@@ -1135,8 +1135,27 @@ that conflict.
 Do not claim completion merely because repository implementation appears
 finished.
 
-If the user explicitly confirms completion despite remaining recorded work,
-represent that choice accurately rather than silently deleting the discrepancy.
+If the user explicitly confirms completion despite remaining recorded work, the
+milestone may be proposed as completed, but preserve the discrepancy accurately.
+
+Completion of the milestone and completion of every recorded work item are
+separate facts.
+
+Do not:
+
+- describe recorded unfinished work as completed without evidence;
+- remove unresolved questions merely because the milestone is being completed;
+- imply that blockers, deliverables, or questions were resolved, waived,
+  cancelled, or transferred unless the user established that disposition;
+- replace detailed recorded state with a blanket statement that all milestone
+  work is complete.
+
+When unfinished work remains at completion, preserve it as unresolved milestone
+history or follow-on work without inventing where it belongs.
+
+If the requested completion cannot be represented coherently without deciding
+the disposition of unfinished work, return `needs clarification` and ask only
+for that disposition.
 
 **Block**
 
@@ -1278,6 +1297,9 @@ relevant:
 - `updated_at`.
 
 Preserve unrelated milestone history, risks, questions, and future plans.
+
+Completing a milestone does not by itself authorize removing unresolved work or
+open questions associated with that milestone.
 
 Do not rewrite the entire progress artifact merely because one milestone changes
 state.
