@@ -357,8 +357,6 @@ After the targets, state:
 No project files have been modified.
 ```
 
-No project files have been modified.
-
 Invite the user to approve the proposal or request revisions.
 
 ### 8. Handle revision
