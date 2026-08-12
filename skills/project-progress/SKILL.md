@@ -1060,7 +1060,7 @@ Typical states are:
 - active;
 - blocked;
 - completed;
-- canceled.
+- cancelled.
 
 Also determine whether another milestone is currently active.
 
@@ -1299,9 +1299,9 @@ Check when applicable:
 
 A completed milestone must not remain recorded as active.
 
-A canceled milestone must not remain recorded as active.
+A cancelled milestone must not remain recorded as active.
 
-A canceled milestone must not also be recorded as completed.
+A cancelled milestone must not also be recorded as completed.
 
 A blocked milestone must not be reported as unblocked elsewhere in the same
 artifact.
