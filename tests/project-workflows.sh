@@ -8,16 +8,25 @@ readonly script_dir="$(
 readonly repo_root="$(
   CDPATH='' cd -- "$script_dir/.." && pwd
 )"
+
 readonly state_command_file="$repo_root/commands/state.md"
 readonly resume_command_file="$repo_root/commands/resume.md"
 readonly develop_command_file="$repo_root/commands/develop.md"
+readonly define_command_file="$repo_root/commands/define.md"
+readonly milestone_command_file="$repo_root/commands/milestone.md"
+readonly decision_command_file="$repo_root/commands/decision.md"
 readonly legacy_command_file="$repo_root/commands/status.md"
+
+readonly lead_agent_file="$repo_root/agents/lead.md"
 
 readonly project_progress_skill_file="$repo_root/skills/project-progress/SKILL.md"
 readonly development_skill_file="$repo_root/skills/development/SKILL.md"
+readonly project_definition_skill_file="$repo_root/skills/project-definition/SKILL.md"
+
 readonly definition_file="$repo_root/docs/project/definition.md"
 readonly progress_file="$repo_root/docs/project/progress.md"
 readonly decisions_file="$repo_root/docs/project/decisions.md"
+
 readonly launcher="$repo_root/scripts/opencode-dev"
 
 pass_count=0
@@ -81,9 +90,37 @@ assert_not_contains() {
 
 printf 'Running Project Workflows tests\n\n'
 
+###############################################################################
+# Repository surface
+###############################################################################
+
+assert_file \
+  "$lead_agent_file" \
+  'lead agent exists'
+
 assert_file \
   "$state_command_file" \
   'state command exists'
+
+assert_file \
+  "$resume_command_file" \
+  'resume command exists'
+
+assert_file \
+  "$develop_command_file" \
+  'develop command exists'
+
+assert_file \
+  "$define_command_file" \
+  'define command exists'
+
+assert_file \
+  "$milestone_command_file" \
+  'milestone command exists'
+
+assert_file \
+  "$decision_command_file" \
+  'decision command exists'
 
 assert_absent \
   "$legacy_command_file" \
@@ -92,6 +129,126 @@ assert_absent \
 assert_file \
   "$project_progress_skill_file" \
   'project-progress skill exists'
+
+assert_file \
+  "$development_skill_file" \
+  'development skill exists'
+
+assert_file \
+  "$project_definition_skill_file" \
+  'project-definition skill exists'
+
+###############################################################################
+# Lead routing
+###############################################################################
+
+assert_contains \
+  "$lead_agent_file" \
+  '## Workflow Routing' \
+  'lead defines workflow routing'
+
+assert_contains \
+  "$lead_agent_file" \
+  '1. explicit slash command;' \
+  'lead routing prioritises explicit slash commands'
+
+assert_contains \
+  "$lead_agent_file" \
+  '2. explicit wording in the current request;' \
+  'lead routing considers explicit wording second'
+
+assert_contains \
+  "$lead_agent_file" \
+  '3. recorded project state;' \
+  'lead routing considers recorded project state'
+
+assert_contains \
+  "$lead_agent_file" \
+  '4. safe inference;' \
+  'lead routing permits safe inference'
+
+assert_contains \
+  "$lead_agent_file" \
+  '5. safe read-only fallback.' \
+  'lead routing defines safe read-only fallback'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**Project Definition**' \
+  'lead routes Project Definition work'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**Development**' \
+  'lead routes Development work'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**Project Progress / State**' \
+  'lead routes State work'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**Project Progress / Resume**' \
+  'lead routes Resume work'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**Project Progress / Milestone**' \
+  'lead routes Milestone work'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**Project Progress / Decision**' \
+  'lead routes Decision work'
+
+###############################################################################
+# Project-state bootstrap
+###############################################################################
+
+assert_contains \
+  "$lead_agent_file" \
+  '## Project State Bootstrap' \
+  'lead defines project-state bootstrap'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**uninitialised**' \
+  'lead recognises uninitialised project state'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**partial**' \
+  'lead recognises partial project state'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**established**' \
+  'lead recognises established project state'
+
+assert_contains \
+  "$lead_agent_file" \
+  '**inconsistent**' \
+  'lead recognises inconsistent project state'
+
+assert_contains \
+  "$lead_agent_file" \
+  'Missing project artifacts do not automatically route ordinary repository work to' \
+  'missing artifacts do not force Project Definition'
+
+assert_contains \
+  "$lead_agent_file" \
+  'allow another clearly requested workflow to proceed when the usable recorded' \
+  'partial bootstrap permits safe unrelated workflows'
+
+assert_contains \
+  "$lead_agent_file" \
+  'report the conflicting values and their owning artifacts' \
+  'inconsistent bootstrap reports authoritative conflicts'
+
+###############################################################################
+# State command and procedure
+###############################################################################
 
 assert_contains \
   "$state_command_file" \
@@ -114,78 +271,48 @@ assert_contains \
   'state command declares read-only operation'
 
 assert_contains \
+  "$state_command_file" \
+  'accepts no arguments' \
+  'state command rejects arguments'
+
+assert_contains \
   "$project_progress_skill_file" \
   'name: project-progress' \
-  'skill name matches its directory'
+  'project-progress skill name matches its directory'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  'workflow: project-progress' \
+  'project-progress skill declares workflow metadata'
 
 assert_contains \
   "$project_progress_skill_file" \
   '## State Procedure' \
-  'skill defines the State procedure'
+  'project-progress defines State procedure'
 
 assert_contains \
   "$project_progress_skill_file" \
   '## State Output Contract' \
-  'skill defines the State output contract'
-
-assert_contains \
-  "$project_progress_skill_file" \
-  'docs/project/definition.md' \
-  'skill references definition artifact'
-
-assert_contains \
-  "$project_progress_skill_file" \
-  'docs/project/progress.md' \
-  'skill references progress artifact'
-
-assert_contains \
-  "$project_progress_skill_file" \
-  'docs/project/decisions.md' \
-  'skill references decision artifact'
-
-assert_contains \
-  "$project_progress_skill_file" \
-  'Milestone transitions and decision recording remain inactive' \
-  'skill keeps mutating procedures inactive'
-
-assert_contains \
-  "$definition_file" \
-  '/state' \
-  'definition contains the state command'
-
-assert_not_contains \
-  "$definition_file" \
-  '/status' \
-  'definition no longer specifies the status command'
-
-assert_contains \
-  "$decisions_file" \
-  'DEC-040' \
-  'decision register records the state-command rename'
-
-assert_contains \
-  "$progress_file" \
-  'active_milestone: project-workflows' \
-  'progress frontmatter identifies Project Workflows'
+  'project-progress defines State output contract'
 
 assert_contains \
   "$project_progress_skill_file" \
   'Do not inspect the type, metadata, contents, ownership, or purpose' \
-  'state procedure does not investigate changed paths'
+  'State does not investigate changed paths automatically'
 
 assert_contains \
   "$project_progress_skill_file" \
   'An unusual filename is not by itself a blocker' \
-  'state procedure treats unusual paths as ordinary repository state'
+  'State treats unusual paths as ordinary repository state'
 
 assert_contains \
   "$project_progress_skill_file" \
   'Do not run additional commands or tools to inspect paths' \
-  'git state output is sufficient for path reporting'
+  'State treats git_state output as sufficient for path reporting'
 
-assert_file \
-  "$resume_command_file" \
-  'resume command exists'
+###############################################################################
+# Resume command and procedure
+###############################################################################
 
 assert_contains \
   "$resume_command_file" \
@@ -200,7 +327,7 @@ assert_contains \
 assert_contains \
   "$resume_command_file" \
   'Resume procedure' \
-  'resume command selects the Resume procedure'
+  'resume command selects Resume procedure'
 
 assert_contains \
   "$resume_command_file" \
@@ -225,17 +352,17 @@ assert_contains \
 assert_contains \
   "$project_progress_skill_file" \
   '## Resume Procedure' \
-  'project-progress defines the Resume procedure'
+  'project-progress defines Resume procedure'
 
 assert_contains \
   "$project_progress_skill_file" \
   '## Resume Output Contract' \
-  'project-progress defines the Resume output contract'
+  'project-progress defines Resume output contract'
 
 assert_contains \
   "$project_progress_skill_file" \
   '## Resume Completion Condition' \
-  'project-progress defines Resume completion'
+  'project-progress defines Resume completion condition'
 
 assert_contains \
   "$project_progress_skill_file" \
@@ -252,13 +379,9 @@ assert_contains \
   'Never present an inferred recommendation as though it were already recorded' \
   'Resume separates recorded state from inference'
 
-assert_file \
-  "$develop_command_file" \
-  'develop command exists'
-
-assert_file \
-  "$development_skill_file" \
-  'development skill exists'
+###############################################################################
+# Development command and skill
+###############################################################################
 
 assert_contains \
   "$develop_command_file" \
@@ -273,17 +396,22 @@ assert_contains \
 assert_contains \
   "$develop_command_file" \
   'Development procedure' \
-  'develop command selects the Development procedure'
+  'develop command selects Development procedure'
 
 assert_contains \
   "$develop_command_file" \
   '$ARGUMENTS' \
-  'develop command forwards its arguments'
+  'develop command forwards arguments'
 
 assert_contains \
   "$develop_command_file" \
   'proposal-only' \
   'develop command preserves manual source ownership'
+
+assert_contains \
+  "$develop_command_file" \
+  'Bash is validation-only' \
+  'develop command restricts Bash to validation'
 
 assert_contains \
   "$development_skill_file" \
@@ -293,7 +421,7 @@ assert_contains \
 assert_contains \
   "$development_skill_file" \
   'workflow: development' \
-  'development skill declares its workflow metadata'
+  'development skill declares workflow metadata'
 
 assert_contains \
   "$development_skill_file" \
@@ -303,12 +431,12 @@ assert_contains \
 assert_contains \
   "$development_skill_file" \
   '## Development Procedure' \
-  'development skill defines the Development procedure'
+  'development defines Development procedure'
 
 assert_contains \
   "$development_skill_file" \
   '### 9. Stop for manual application' \
-  'development stops before user source application'
+  'development stops before manual source application'
 
 assert_contains \
   "$development_skill_file" \
@@ -328,17 +456,17 @@ assert_contains \
 assert_contains \
   "$development_skill_file" \
   '## Development Proposal Output Contract' \
-  'development defines proposal output'
+  'development defines proposal output contract'
 
 assert_contains \
   "$development_skill_file" \
   '## Development Review Output Contract' \
-  'development defines review output'
+  'development defines review output contract'
 
 assert_contains \
   "$development_skill_file" \
   '## Debugging Output Contract' \
-  'development defines debugging output'
+  'development defines debugging output contract'
 
 assert_contains \
   "$development_skill_file" \
@@ -353,27 +481,381 @@ assert_contains \
 assert_contains \
   "$development_skill_file" \
   'Bash is permission-gated and validation-only during Development.' \
-  'development restricts Bash to validation'
+  'development skill restricts Bash to validation'
 
 assert_contains \
   "$development_skill_file" \
   'investigating paths outside the active workspace' \
   'development prohibits external-path Bash investigation'
 
+###############################################################################
+# Project Definition command and skill
+###############################################################################
+
+assert_contains \
+  "$define_command_file" \
+  'agent: lead' \
+  'define command routes through lead'
+
+assert_contains \
+  "$define_command_file" \
+  'project-definition' \
+  'define command loads project-definition skill'
+
+assert_contains \
+  "$define_command_file" \
+  'Project Definition procedure' \
+  'define command selects Project Definition procedure'
+
+assert_contains \
+  "$define_command_file" \
+  '$ARGUMENTS' \
+  'define command forwards arguments'
+
+assert_contains \
+  "$define_command_file" \
+  'proposal-only' \
+  'define command declares proposal-only operation'
+
+assert_contains \
+  "$define_command_file" \
+  'Do not use Bash' \
+  'define command prohibits Bash'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'name: project-definition' \
+  'project-definition skill name matches its directory'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'workflow: project-definition' \
+  'project-definition skill declares workflow metadata'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  '### Initial Definition' \
+  'project-definition defines Initial Definition mode'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  '### Material Re-entry' \
+  'project-definition defines Material Re-entry mode'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'For Material Re-entry against an established approved project definition' \
+  'definition classification is scoped to established project state'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  '## Initial Project Artifact Templates' \
+  'project-definition embeds initial artifact templates'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'title: <project-name> Project Definition' \
+  'definition template is present'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'active_milestone: <milestone-id>' \
+  'progress template is present'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  '# Decision Register' \
+  'decision-register template is present'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'accepted | rejected | proposed' \
+  'decision template supports durable decision statuses'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  '## Project Definition Procedure' \
+  'project-definition defines Project Definition procedure'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'Use Initial Definition when approved coordinated project state has not yet been' \
+  'Project Definition supports project bootstrap'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'Use Material Re-entry when an approved coordinated project artifact set already' \
+  'Project Definition separates re-entry from partial bootstrap'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'For Initial Definition, use the Initial Project Artifact Templates as the' \
+  'Initial Definition uses embedded artifact templates'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'Approved `definition.md` exists but the coordinated artifact set is partial' \
+  'Project Definition handles approved partial bootstrap state'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'Do not use Bash.' \
+  'project-definition skill prohibits Bash'
+
+assert_contains \
+  "$project_definition_skill_file" \
+  'Do not modify project artifacts.' \
+  'project-definition remains proposal-only'
+
+###############################################################################
+# Milestone command and procedure
+###############################################################################
+
+assert_contains \
+  "$milestone_command_file" \
+  'agent: lead' \
+  'milestone command routes through lead'
+
+assert_contains \
+  "$milestone_command_file" \
+  'project-progress' \
+  'milestone command loads project-progress'
+
+assert_contains \
+  "$milestone_command_file" \
+  'Milestone procedure' \
+  'milestone command selects Milestone procedure'
+
+assert_contains \
+  "$milestone_command_file" \
+  '$ARGUMENTS' \
+  'milestone command forwards arguments'
+
+assert_contains \
+  "$milestone_command_file" \
+  'proposal-only' \
+  'milestone command declares proposal-only operation'
+
+assert_contains \
+  "$milestone_command_file" \
+  'Do not use Bash' \
+  'milestone command prohibits Bash'
+
+assert_contains \
+  "$milestone_command_file" \
+  'docs/project/progress.md' \
+  'milestone command owns progress artifact changes'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  'proposal-only **Milestone**' \
+  'project-progress activates proposal-only Milestone'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '## Milestone Procedure' \
+  'project-progress defines Milestone procedure'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '## Milestone Output Contract' \
+  'project-progress defines Milestone output contract'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '**Start**' \
+  'Milestone defines Start transition'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '**Complete**' \
+  'Milestone defines Complete transition'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '**Block**' \
+  'Milestone defines Block transition'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '**Unblock**' \
+  'Milestone defines Unblock transition'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '**Cancel**' \
+  'Milestone defines Cancel transition'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  'A cancelled milestone must not remain recorded as active.' \
+  'Milestone keeps cancelled state internally consistent'
+
+###############################################################################
+# Decision command and procedure
+###############################################################################
+
+assert_contains \
+  "$decision_command_file" \
+  'agent: lead' \
+  'decision command routes through lead'
+
+assert_contains \
+  "$decision_command_file" \
+  'project-progress' \
+  'decision command loads project-progress'
+
+assert_contains \
+  "$decision_command_file" \
+  'Decision procedure' \
+  'decision command selects Decision procedure'
+
+assert_contains \
+  "$decision_command_file" \
+  '$ARGUMENTS' \
+  'decision command forwards arguments'
+
+assert_contains \
+  "$decision_command_file" \
+  'proposal-only' \
+  'decision command declares proposal-only operation'
+
+assert_contains \
+  "$decision_command_file" \
+  'Do not use Bash' \
+  'decision command prohibits Bash'
+
+assert_contains \
+  "$decision_command_file" \
+  'docs/project/decisions.md' \
+  'decision command owns decision-register changes'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  'proposal-only **Decision**' \
+  'project-progress activates proposal-only Decision'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '## Decision Procedure' \
+  'project-progress defines Decision procedure'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '## Decision Output Contract' \
+  'project-progress defines Decision output contract'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '**New accepted decision**' \
+  'Decision supports accepted decisions'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '**New rejected decision**' \
+  'Decision supports rejected decisions'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '**Supersede**' \
+  'Decision supports supersession'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '**Partial supersession**' \
+  'Decision supports partial supersession'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '- date;' \
+  'Decision proposal records decision date'
+
+assert_contains \
+  "$project_progress_skill_file" \
+  '- related milestone;' \
+  'Decision proposal can record related milestone'
+
+###############################################################################
+# Obsolete workflow state must be gone
+###############################################################################
+
+assert_not_contains \
+  "$project_progress_skill_file" \
+  'Milestone transitions and decision recording remain inactive' \
+  'Milestone and Decision are no longer marked inactive'
+
+###############################################################################
+# Authoritative project artifacts
+###############################################################################
+
+assert_contains \
+  "$definition_file" \
+  '/state' \
+  'definition contains state command'
+
 assert_contains \
   "$definition_file" \
   '/resume' \
-  'definition contains the resume command'
+  'definition contains resume command'
 
 assert_contains \
   "$definition_file" \
   '/develop' \
-  'definition contains the develop command'
+  'definition contains develop command'
+
+assert_contains \
+  "$definition_file" \
+  '/define' \
+  'definition contains define command'
+
+assert_contains \
+  "$definition_file" \
+  '/milestone' \
+  'definition contains milestone command'
+
+assert_contains \
+  "$definition_file" \
+  '/decision' \
+  'definition contains decision command'
+
+assert_not_contains \
+  "$definition_file" \
+  '/status' \
+  'definition no longer specifies custom status command'
 
 assert_contains \
   "$definition_file" \
   'never modify source files' \
   'definition preserves proposal-only Development'
+
+assert_contains \
+  "$decisions_file" \
+  'DEC-040' \
+  'decision register records state-command rename'
+
+assert_contains \
+  "$decisions_file" \
+  'DEC-041' \
+  'decision register records deterministic git_state tool'
+
+assert_contains \
+  "$progress_file" \
+  'active_milestone: project-workflows' \
+  'progress identifies Project Workflows as active milestone'
+
+assert_contains \
+  "$progress_file" \
+  'integrated validation of the completed' \
+  'progress records integrated validation as pending'
+
+assert_contains \
+  "$progress_file" \
+  'expand and reconcile the Project Workflows automated test suite' \
+  'progress records current testing action'
+
+###############################################################################
+# Runtime discovery
+###############################################################################
 
 runtime_root="$(mktemp -d)"
 trap 'rm -rf -- "$runtime_root"' EXIT
@@ -402,6 +884,8 @@ else
   cat "$skills_stderr" >&2
 fi
 
+# The launcher validator may print text before OpenCode emits JSON.
+# Retain everything beginning with the first JSON array.
 awk '
   found || /^[[:space:]]*\[/ {
     found = 1
@@ -433,7 +917,16 @@ else
   fail 'development skill is discovered at runtime'
 fi
 
-# The launcher validator prints its PASS message before OpenCode emits JSON.
+if jq -e '
+  type == "array"
+  and any(.[]; .name == "project-definition")
+' "$skills_json" >/dev/null 2>&1; then
+  pass 'project-definition skill is discovered at runtime'
+else
+  fail 'project-definition skill is discovered at runtime'
+fi
+
+# The launcher validator may print text before OpenCode emits JSON.
 # Retain everything beginning with the first JSON object.
 awk '
   found || /^[[:space:]]*\{/ {
@@ -448,7 +941,12 @@ else
   fail 'resolved OpenCode configuration is valid JSON'
 fi
 
-if jq -e '.command.state != null' "$resolved_config" >/dev/null 2>&1; then
+###############################################################################
+# Runtime command discovery: State
+###############################################################################
+
+if jq -e '.command.state != null' \
+  "$resolved_config" >/dev/null 2>&1; then
   pass 'state command is discovered at runtime'
 else
   fail 'state command is discovered at runtime'
@@ -465,11 +963,16 @@ if jq -e '
   .command.state.template
   | type == "string"
     and contains("project-progress")
+    and contains("State procedure")
 ' "$resolved_config" >/dev/null 2>&1; then
-  pass 'resolved state command loads project-progress'
+  pass 'resolved state command selects project-progress State'
 else
-  fail 'resolved state command loads project-progress'
+  fail 'resolved state command selects project-progress State'
 fi
+
+###############################################################################
+# Runtime command discovery: Resume
+###############################################################################
 
 if jq -e '.command.resume != null' \
   "$resolved_config" >/dev/null 2>&1; then
@@ -495,6 +998,10 @@ if jq -e '
 else
   fail 'resolved resume command selects project-progress Resume'
 fi
+
+###############################################################################
+# Runtime command discovery: Develop
+###############################################################################
 
 if jq -e '.command.develop != null' \
   "$resolved_config" >/dev/null 2>&1; then
@@ -530,6 +1037,127 @@ if jq -e '
 else
   fail 'resolved develop command preserves argument placeholder'
 fi
+
+###############################################################################
+# Runtime command discovery: Define
+###############################################################################
+
+if jq -e '.command.define != null' \
+  "$resolved_config" >/dev/null 2>&1; then
+  pass 'define command is discovered at runtime'
+else
+  fail 'define command is discovered at runtime'
+fi
+
+if jq -e '.command.define.agent == "lead"' \
+  "$resolved_config" >/dev/null 2>&1; then
+  pass 'resolved define command targets lead'
+else
+  fail 'resolved define command targets lead'
+fi
+
+if jq -e '
+  .command.define.template
+  | type == "string"
+    and contains("project-definition")
+    and contains("Project Definition procedure")
+' "$resolved_config" >/dev/null 2>&1; then
+  pass 'resolved define command selects Project Definition procedure'
+else
+  fail 'resolved define command selects Project Definition procedure'
+fi
+
+if jq -e '
+  .command.define.template
+  | type == "string"
+    and contains("$ARGUMENTS")
+' "$resolved_config" >/dev/null 2>&1; then
+  pass 'resolved define command preserves argument placeholder'
+else
+  fail 'resolved define command preserves argument placeholder'
+fi
+
+###############################################################################
+# Runtime command discovery: Milestone
+###############################################################################
+
+if jq -e '.command.milestone != null' \
+  "$resolved_config" >/dev/null 2>&1; then
+  pass 'milestone command is discovered at runtime'
+else
+  fail 'milestone command is discovered at runtime'
+fi
+
+if jq -e '.command.milestone.agent == "lead"' \
+  "$resolved_config" >/dev/null 2>&1; then
+  pass 'resolved milestone command targets lead'
+else
+  fail 'resolved milestone command targets lead'
+fi
+
+if jq -e '
+  .command.milestone.template
+  | type == "string"
+    and contains("project-progress")
+    and contains("Milestone procedure")
+' "$resolved_config" >/dev/null 2>&1; then
+  pass 'resolved milestone command selects project-progress Milestone'
+else
+  fail 'resolved milestone command selects project-progress Milestone'
+fi
+
+if jq -e '
+  .command.milestone.template
+  | type == "string"
+    and contains("$ARGUMENTS")
+' "$resolved_config" >/dev/null 2>&1; then
+  pass 'resolved milestone command preserves argument placeholder'
+else
+  fail 'resolved milestone command preserves argument placeholder'
+fi
+
+###############################################################################
+# Runtime command discovery: Decision
+###############################################################################
+
+if jq -e '.command.decision != null' \
+  "$resolved_config" >/dev/null 2>&1; then
+  pass 'decision command is discovered at runtime'
+else
+  fail 'decision command is discovered at runtime'
+fi
+
+if jq -e '.command.decision.agent == "lead"' \
+  "$resolved_config" >/dev/null 2>&1; then
+  pass 'resolved decision command targets lead'
+else
+  fail 'resolved decision command targets lead'
+fi
+
+if jq -e '
+  .command.decision.template
+  | type == "string"
+    and contains("project-progress")
+    and contains("Decision procedure")
+' "$resolved_config" >/dev/null 2>&1; then
+  pass 'resolved decision command selects project-progress Decision'
+else
+  fail 'resolved decision command selects project-progress Decision'
+fi
+
+if jq -e '
+  .command.decision.template
+  | type == "string"
+    and contains("$ARGUMENTS")
+' "$resolved_config" >/dev/null 2>&1; then
+  pass 'resolved decision command preserves argument placeholder'
+else
+  fail 'resolved decision command preserves argument placeholder'
+fi
+
+###############################################################################
+# Result
+###############################################################################
 
 printf '\nProject Workflows tests: %d passed, %d failed\n' \
   "$pass_count" \
