@@ -39,7 +39,14 @@
         "webfetch": "allow",
         "websearch": "allow",
         "todowrite": "allow",
-        "skill": "allow",
+        "skill": {
+          "*": "deny",
+          "project-definition": "allow",
+          "project-progress": "allow",
+          "development": "allow",
+          "omarchy": "allow",
+          "herdr": "allow"
+        },
         "doom_loop": "ask",
         "external_directory": "deny",
         "edit": "deny"
