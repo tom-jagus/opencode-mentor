@@ -6,6 +6,9 @@
     "bash": "ask",
     "external_directory": "deny",
     "git_state": "deny",
+    "skill": {
+      "*": "deny"
+    },
     "task": {
       "*": "deny",
       "explore": "allow"
