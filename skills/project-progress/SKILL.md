@@ -26,14 +26,11 @@ The current implementation provides:
 
 - read-only **State**;
 - read-only **Resume**;
-- proposal-only **Milestone**.
-
-Decision recording remains inactive until its proposal-only procedure is
-implemented.
+- proposal-only **Milestone**;
+- proposal-only **Decision**.
 
 Project Progress does not modify authoritative artifacts directly until the
 constrained documentation transaction is available.
-
 
 ## Scope Boundary
 
@@ -131,11 +128,11 @@ must not be removed merely because a later decision supersedes them.
 - Do not silently repair contradictions.
 - Report conflicting values together and identify their sources.
 - Do not mutate files, Git state, GitHub state, or runtime configuration during
-  the State, Resume, or Milestone procedures.
+  the State, Resume, Milestone, or Decision procedures.
 - Do not stage, commit, push, switch branches, fetch, pull, merge, rebase, tag,
   release, or create pull requests.
 - Do not invoke documentation or vault write tools.
-- Do not call the Bash tool anywhere in the State, Resume, or Milestone
+- Do not call the Bash tool anywhere in the State, Resume, Milestone, or Decision
   procedures.
 - Treat a milestone as currently complete only when completion is recorded
   explicitly in `progress.md`.
@@ -156,6 +153,12 @@ must not be removed merely because a later decision supersedes them.
 - Milestone proposals affect operational state in `progress.md` only.
 - Do not use a milestone transition to redefine approved project scope.
 - Do not infer milestone completion from repository activity alone.
+- Decision proposals affect durable decision history in `decisions.md` only.
+- Do not use a decision update to redefine approved project scope.
+- Do not use a decision update to perform a milestone transition.
+- Preserve historical decision entries when they are superseded or rejected.
+- Do not invent user motivations or rationale that are not established by the
+  request, authoritative artifacts, or evidence available to the procedure.
 
 ## State Procedure
 
@@ -1363,21 +1366,451 @@ needs clarification | inconsistent | unavailable | scope change
 
 Do not include `Proposed progress.md Changes` when no safe transition proposal exists.
 
+## Decision Procedure
+
+Use this procedure when the user invokes `/decision` or explicitly asks to
+record, accept, reject, supersede, partially supersede, or propose a durable
+project decision.
+
+The procedure is proposal-only.
+
+It proposes durable decision-history changes to:
+
+```text
+docs/project/decisions.md
+```
+
+It does not modify the file.
+
+### 1. Establish the requested decision action
+
+Identify:
+
+- the decision being expressed;
+- whether the user is accepting, rejecting, proposing, superseding, or partially
+superseding something;
+- any rationale explicitly supplied by the user;
+- any consequences explicitly supplied by the user;
+- any existing decision identifiers referenced by the request.
+
+Interpret the user's wording naturally.
+
+Examples of explicit accepted intent include:
+
+- `use X`;
+- `we decided X`;
+- `record X`;
+- `accept X`.
+
+Examples of rejected intent include:
+
+- `reject X`;
+- `do not use X`;
+- `we decided against X`.
+
+A question such as:
+
+```text
+should we use X?
+```
+
+does not by itself establish an accepted decision.
+
+Do not record an unresolved discussion as accepted merely because `/decision`
+was invoked.
+
+### 2. Read project instructions
+
+Read the applicable project `AGENTS.md` when present.
+
+Use it to understand:
+
+- workflow boundaries;
+- project terminology;
+- artifact locations;
+- durable decision conventions.
+
+Do not allow project instructions to weaken global permission or source-ownership
+boundaries.
+
+### 3. Read the decision register
+
+Read:
+
+```
+docs/project/decisions.md
+```
+
+Recover:
+
+- existing decision identifiers;
+- statuses;
+- decision subjects;
+- supersession relationships;
+- relevant rejected alternatives;
+- register frontmatter when present.
+
+Treat the register as append-oriented.
+
+Do not rewrite historical rationale or consequences merely because a later
+decision changes direction.
+
+If the register is unavailable, do not invent existing decision history or the
+next decision identifier.
+
+### 4. Read scope context when needed
+
+Read `definition.md` when necessary to determine whether the requested decision
+would materially change approved project meaning.
+
+Read `progress.md` when necessary to determine whether the requested action is
+actually an operational milestone or progress-state change.
+
+Do not read either artifact merely to add unrelated context.
+
+Do not inspect repository implementation unless evidence is required to
+understand the decision the user is explicitly recording.
+
+Do not use Git or Bash to build a general implementation impact inventory.
+
+### 5. Validate workflow ownership
+
+Continue with Decision when the requested action records a durable choice within
+approved project scope.
+
+Use `/define` when the proposed decision would materially change:
+
+- project objectives;
+- non-goals;
+- core constraints;
+- accepted architecture;
+- required capabilities;
+- acceptance criteria;
+- planned implementation phases.
+
+Use `/milestone` when the requested action primarily changes:
+
+- active milestone;
+- milestone completion;
+- milestone blocker state;
+- current operational progress.
+
+Do not record a decision first and leave the authoritative definition knowingly
+contradictory.
+
+### 6. Identify related existing decisions
+
+Determine whether the requested decision:
+
+- is new;
+- duplicates an existing effective decision;
+- resolves an existing proposed decision;
+- rejects an existing proposed decision;
+- supersedes an accepted decision;
+- partially supersedes an accepted decision;
+- conflicts with an existing effective decision without explicitly resolving it.
+
+When the same durable decision is already recorded and effective, do not create
+a duplicate entry.
+
+When the request conflicts with an existing effective decision, determine
+whether the user explicitly intends to supersede it.
+
+If supersession intent is materially ambiguous, ask for clarification rather
+than silently creating conflicting accepted decisions.
+
+### 7. Determine the decision identifier
+
+For a new decision entry:
+
+1. collect all valid `DEC-###` identifiers from the register;
+2. ensure identifiers relevant to sequencing are unambiguous;
+3. identify the highest recorded numeric identifier;
+4. use the next numeric identifier;
+5. preserve zero-padded `DEC-###` formatting.
+
+Do not fill earlier gaps or reuse historical identifiers.
+
+For example:
+
+```text
+DEC-039
+DEC-040
+DEC-041
+```
+
+produces:
+
+```text
+DEC-042
+```
+
+If duplicate, malformed, or contradictory identifiers make the next identifier
+unsafe to determine, report the inconsistency rather than inventing one.
+
+### 8. Determine the durable status change
+
+Supported durable outcomes include:
+
+- `proposed`;
+- `accepted`;
+- `rejected`;
+- `superseded`;
+- `partially superseded`.
+
+**New accepted decision**
+
+Append a new accepted decision.
+
+**New rejected decision**
+
+Append a rejected decision when preserving the rejected alternative has durable
+value.
+
+Do not create a decision entry for every discarded conversational idea.
+
+**Proposed decision**
+
+Use `proposed` only when the user explicitly wants an unresolved candidate
+preserved in durable history.
+
+Do not treat a proposed decision as effective project policy.
+
+**Resolve an existing proposed decision**
+
+When an existing `proposed` decision is accepted or rejected, update that
+decision's status rather than creating a second identifier for the same
+decision.
+
+Preserve its original decision text and historical context unless the user is
+actually making a materially different decision.
+
+**Supersede**
+
+For a replacement of an effective historical decision:
+
+- preserve the existing decision entry;
+- update its status to reference the replacement;
+- append the new replacement decision;
+- include the supersession relationship in the new entry.
+
+**Partial supersession**
+
+When only part of an earlier decision changes:
+
+- preserve the earlier decision;
+- mark it partially superseded by the new decision;
+- clearly state which part the new decision replaces;
+- leave unaffected parts effective.
+
+### 9. Build evidence-based rationale
+
+Use rationale supported by:
+
+- explicit user statements;
+- authoritative project facts;
+- evidence established while handling the current decision;
+- clearly labelled inference when inference is necessary.
+
+Do not invent:
+
+- preferences;
+- frustrations;
+- motivations;
+- performance claims;
+- safety concerns;
+- historical reasons
+
+that the user or project artifacts did not establish.
+
+When user motivation is unknown, describe the architectural, workflow, or
+operational reason for the recorded choice instead.
+
+### 10. Determine consequences
+
+Record consequences that have durable value.
+
+Prefer consequences that explain:
+
+- what future work must follow this decision;
+- what previous behavior is replaced;
+- what remains unchanged;
+- which workflow or component is affected;
+- what future interpretation of the decision register should understand.
+
+Do not turn the Consequences section into a complete implementation plan.
+
+Implementation details that remain undecided should remain undecided.
+
+### 11. Check register consistency
+
+Before presenting the proposal, verify that the resulting decision history would
+be internally coherent.
+
+Check when applicable:
+
+- unique decision identifiers;
+- status of superseded decisions;
+- replacement references;
+- partial supersession wording;
+- duplicate effective decisions;
+- contradictory accepted decisions;
+- proposed decisions being treated as non-effective;
+- register `updated_at`.
+
+Do not silently repair unrelated historical inconsistencies.
+
+Report them separately when they do not prevent the requested decision.
+
+### 12. Determine the decision result
+
+Classify the request as:
+
+- **valid** - a safe durable decision proposal can be produced;
+- **already recorded** - the effective decision already exists;
+- **needs clarification** - material decision intent is ambiguous;
+- **inconsistent** - existing decision history conflicts enough that a safe
+update cannot be determined;
+- **unavailable** - required authoritative decision state is unavailable;
+- **scope change** - the requested decision belongs to Project Definition;
+- **operational change** - the requested action belongs to Milestone.
+
+For `already recorded`, identify the existing effective decision and propose no
+artifact change.
+
+For `needs clarification`, ask only the question required to determine durable
+decision intent.
+
+For `scope change`, explain why `/define` owns the requested change.
+
+For `operational change`, explain why `/milestone` owns the requested change.
+
+### 13. Prepare the decision proposal
+
+For a valid decision action, prepare the smallest coherent proposal for
+`docs/project/decisions.md`.
+
+When relevant, propose:
+
+- frontmatter `updated_at`;
+- status change to an existing decision;
+- one appended decision entry.
+
+For each proposed change, provide:
+
+- current state when applicable;
+- proposed state;
+- reason for the change.
+
+Do not propose changes to:
+
+- `definition.md`;
+- `progress.md`;
+- `AGENTS.md`;
+- source files;
+- configuration;
+- Git state.
+
+Identify follow-on work in those areas only when relevant.
+
+### 14. Stop for review
+
+Present the decision proposal and stop.
+
+Do not treat presentation as approval.
+
+Do not modify `decisions.md`.
+
+During the current proposal-only phase, even explicit approval does not authorize
+automatic artifact mutation.
+
+If the user approves the proposal:
+
+- provide the final exact `decisions.md` changes for manual application;
+- do not claim the decision is durably recorded until `decisions.md` is updated
+and reread.
+
+## Decision Output Contract
+
+For a valid decision proposal, use:
+
+````markdown
+# Decision Proposal
+
+## Decision
+
+- **Action:** propose | accept | reject | supersede | partially supersede
+- **Identifier:** DEC-...
+- **Status:** proposed | accepted | rejected
+- **Decision:** ...
+
+## Existing Decision Impact
+
+- none | DEC-... remains unchanged | DEC-... becomes superseded | ...
+
+## Validation
+
+- **Result:** valid
+- **Scope:** within approved project scope
+- **Relevant findings:** ...
+
+## Proposed `decisions.md` Changes
+
+### <frontmatter, existing decision, or appended entry>
+
+Current:
+...
+
+Proposed:
+...
+
+## Consequences
+
+- ...
+
+## Follow-on Work
+
+- none | ...
+````
+
+For a request that does not produce a decision proposal, use:
+
+````markdown
+# Decision
+
+## Requested Action
+
+- ...
+
+## Result
+
+already recorded | needs clarification | inconsistent | unavailable |
+scope change | operational change
+
+## Reason
+
+- ...
+
+## Required Next Step
+
+- ...
+````
+
+Do not include `Proposed decisions.md Changes` when no safe durable update exists.
+
 ## Inactive Procedures
 
-The following Project Progress procedures are planned but not active in this
+The following Project Progress capabilities are planned but not active in this
 skill version:
 
-- decision creation;
-- decision rejection;
-- decision supersession;
 - constrained progress-file application;
+- constrained decision-file application;
 - coordinated project-artifact writes.
 
 Until constrained documentation transactions are implemented:
 
 - `/milestone` remains proposal-only;
-- `/decision` remains proposal-only once its procedure is implemented;
+- `/decision` remains proposal-only;
 - no project artifact may be modified through this skill;
 - proposed updates must be shown in the conversation for manual review.
 
