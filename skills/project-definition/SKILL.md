@@ -104,6 +104,23 @@ Use Initial Definition when:
 Initial Definition establishes the first coherent project scope and coordinated
 project artifacts.
 
+Initial Definition also owns establishment of the coordinated project artifact
+set.
+
+The existence of one project artifact does not by itself mean project bootstrap
+is complete.
+
+When existing partial artifacts contain usable approved information:
+
+- preserve that information;
+- use it as input to the coordinated initial proposal;
+- do not rewrite approved project meaning merely to complete bootstrap;
+- do not increment an existing definition version unless project meaning changes.
+
+When partial artifacts conflict materially or appear to represent an incomplete
+coordinated application, report the inconsistency rather than silently
+reconstructing the missing state.
+
 ### Material Re-entry
 
 Use Material Re-entry when an approved definition already exists and new evidence
@@ -289,6 +306,136 @@ Distinguish external evidence from recorded project facts.
 Do not silently redefine the project because an external source recommends a
 different architecture.
 
+## Initial Project Artifact Templates
+
+Use these templates as structural baselines for Initial Definition.
+
+They define artifact responsibilities and minimum durable structure, not fixed
+project content.
+
+Adapt them to the project rather than filling sections mechanically.
+
+Omit optional sections that have no useful content.
+
+### `definition.md`
+
+```markdown
+---
+title: <project-name> Project Definition
+status: approved
+version: 1
+approved_at: <YYYY-MM-DD>
+---
+
+# Project Definition
+
+## Purpose
+
+<Why the project exists.>
+
+## Problem
+
+<Problem or current state being addressed.>
+
+## Objectives
+
+- <required outcome>
+
+## Non-Goals
+
+- <explicitly excluded outcome when useful>
+
+## Constraints
+
+- <material constraint>
+
+## Assumptions
+
+- <material assumption when useful>
+
+## Approved Approach
+
+<Approved architectural or solution direction at the level needed to guide
+Development.>
+
+## Acceptance Criteria
+
+1. <observable project-level criterion>
+
+## Planned Implementation Phases
+
+### 1. <phase>
+
+<purpose and intended outcome>
+```
+
+### `progress.md`
+
+```markdown
+---
+title: <project-name> Project Progress
+status: active
+current_phase: development
+active_milestone: <milestone-id>
+updated_at: <YYYY-MM-DD>
+---
+
+# Project Progress
+
+## Current State
+
+- **Definition status:** approved
+- **Definition version:** 1
+- **Current phase:** Development
+- **Completed milestones:** none
+- **Active milestone:** <milestone-name>
+- **Implementation status:** <current durable status>
+- **Blocking issues:** none
+- **Next action:** <next documented action>
+
+## Planned Milestones
+
+### 1. <milestone-name>
+
+Status: active
+
+<deliverable or intended outcome>
+
+## Open Implementation Questions
+
+- none | <question>
+
+## Risks
+
+- none | <risk>
+```
+
+### `decisions.md`
+
+```markdown
+---
+title: <project-name> Project Decisions
+status: active
+updated_at: <YYYY-MM-DD>
+---
+
+# Decision Register
+
+This file is append-oriented. Historical decisions remain in the register when
+later decisions supersede them.
+
+## DEC-001 — <decision title>
+
+- **Date:** <YYYY-MM-DD>
+- **Status:** accepted
+- **Decision:** <durable choice>
+- **Rationale:** <supported reason>
+- **Consequences:** <durable consequence>
+```
+
+If Initial Definition produces no decision worth recording yet, keep the
+Decision Register header and omit an artificial `DEC-001` entry.
+
 ## Project Definition Procedure
 
 Use this procedure when the user invokes `/define` or explicitly asks to create
@@ -357,7 +504,11 @@ Select:
 - **Initial Definition**, or
 - **Material Re-entry**.
 
-Use Initial Definition when approved scope has not yet been established.
+Use Initial Definition when approved coordinated project state has not yet been
+established.
+
+This includes a new project with no artifacts and a partially established
+artifact set that can be completed without materially redefining approved scope.
 
 Use Material Re-entry when an approved definition exists.
 
@@ -719,6 +870,16 @@ Report unrelated inconsistencies separately.
 ### 18. Prepare the coordinated artifact proposal
 
 When artifact changes are required, produce one coordinated proposal.
+
+For Initial Definition, use the Initial Project Artifact Templates as the
+structural baseline.
+
+Adapt the templates to the actual project:
+
+- preserve artifact ownership;
+- include only useful sections;
+- expand structure when the project genuinely requires it;
+- do not copy placeholder or empty boilerplate into the proposed artifact.
 
 For a new artifact, provide complete proposed file content.
 
