@@ -2,7 +2,7 @@
 title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
-active_milestone: project-workflows
+active_milestone: none
 updated_at: 2026-08-12
 ---
 
@@ -14,8 +14,8 @@ updated_at: 2026-08-12
 * **Definition status:** approved
 * **Definition version:** 3
 * **Current phase:** Development
-* **Completed milestones:** Configuration Foundation
-* **Active milestone:** Project Workflows
+* **Completed milestones:** Configuration Foundation, Project Workflows
+* **Active milestone:** none
 * **Implementation status:** `/state`, `/resume`, `/develop`, `/define`,
   `/milestone`, and `/decision` are implemented and validated.
   `project-progress` provides State, Resume, Milestone, and Decision procedures;
@@ -28,8 +28,7 @@ updated_at: 2026-08-12
   boundary recorded in DEC-042. A dedicated `project-critic` is deferred by
   DEC-043.
 * **Blocking issues:** none
-* **Next action:** perform the final Project Workflows milestone review and
-  propose milestone completion.
+* **Next action:** start the Documentation Transaction milestone when ready.
 
 ## Phase Transition
 
@@ -67,9 +66,9 @@ initial permission controls.
 
 ### 2. Project Workflows
 
-Status: active
+Status: completed
 
-Deliver:
+Delivered:
 
 - skills;
 - command catalogue;
@@ -82,7 +81,7 @@ Deliver:
 - `/milestone`;
 - `/decision`.
 
-Current implementation status:
+Completed implementation:
 
 **Implemented:**
 
@@ -104,11 +103,6 @@ Current implementation status:
 * manual semantic smoke validation of implemented workflows;
 * production configuration and trust-boundary hardening;
 * deny-by-default managed skill policy with explicit trusted-skill allowlisting.
-
-**Remaining in this milestone:**
-
-* Project Workflows documentation reconciliation;
-* final milestone review and completion.
 
 ### 3. Documentation Transaction
 
@@ -264,7 +258,4 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Perform the final Project Workflows milestone review and, if no remaining
-milestone requirements are unresolved, complete the Project Workflows milestone.
-
-The next planned milestone is Documentation Transaction.
+Start the Documentation Transaction milestone when ready.
