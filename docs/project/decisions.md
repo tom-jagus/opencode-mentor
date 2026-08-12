@@ -1,7 +1,7 @@
 ---
 title: OpenCode Mentor Project Decisions
 status: active
-updated_at: 2026-08-06
+updated_at: 2026-08-12
 ---
 
 # Decision Register
@@ -504,3 +504,48 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
   - repository-controlled Git hooks and FSMonitor commands are disabled during
     inspection;
   - Git lifecycle mutations will use separate permission-gated mechanisms;
+
+## DEC-042 — Production Configuration and Trust Boundary
+
+- **Date:** 2026-08-12
+- **Status:** accepted
+- **Decision:**
+  - normal production use launches OpenCode directly with `opencode`;
+  - `~/.config/opencode/` contains OpenCode Mentor behaviour, agents, commands,
+    skills, tools, and normal user configuration;
+  - `/etc/opencode/opencode.json`, deployed from `managed/opencode.json`, contains
+    non-overridable safety policy;
+  - `~/.agents/skills/` may provide shared personal skills, but `lead` may load
+    only skill identifiers explicitly allowed by managed policy;
+  - project-local OpenCode configuration is treated as trusted project
+    configuration rather than as an adversarial sandbox boundary;
+  - development launchers, validators, and test suites are development
+    scaffolding rather than part of the production runtime architecture.
+- **Rationale:** Production should use OpenCode normally without requiring a
+  wrapper while preserving hard safety rules through OpenCode's managed
+  configuration layer. Shared personal skills remain usable without implicitly
+  granting every discovered skill to `lead`.
+- **Consequences:**
+  - production operation does not depend on `scripts/opencode-dev`;
+  - managed permissions remain the hard capability boundary;
+  - behavioural and workflow configuration remains under
+    `~/.config/opencode/`;
+  - newly implemented Mentor skills must be explicitly added to the managed
+    `lead` skill allowlist;
+  - development-only tests and scripts are removed before the final release,
+    except for an installation/bootstrap script if one is ultimately required;
+  - Mentor v1 does not claim to protect against malicious executable OpenCode
+    configuration intentionally present in a repository.
+
+## DEC-043 — Defer Dedicated Project Critic
+
+- **Date:** 2026-08-12
+- **Status:** accepted
+- **Decision:** Do not implement `project-critic` in the first OpenCode Mentor
+  version.
+- **Rationale:** Current validation shows that `lead` with the
+  `project-definition` workflow already provides the required critical analysis,
+  clarification, and scope challenge. A separate critic has no demonstrated
+  permission, context, or output-contract advantage.
+- **Consequences:** Reconsider a dedicated critic only if practical use shows that
+  independent critique materially improves definition quality.

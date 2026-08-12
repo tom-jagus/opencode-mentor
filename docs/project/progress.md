@@ -25,8 +25,9 @@ updated_at: 2026-08-12
   have been validated individually; integrated validation of the completed
   Project Workflows surface remains pending.
 * **Blocking issues:** none
-* **Next action:** expand and reconcile the Project Workflows automated test suite
-  against the complete implemented workflow surface.
+* **Next action:** reconcile Project Workflows documentation with the validated
+  production configuration and resolve the remaining `project-critic`
+  implementation question.
 
 ## Phase Transition
 
@@ -99,14 +100,13 @@ Current implementation status:
 * protected external-workspace boundary;
 * command and skill runtime discovery infrastructure;
 * existing Project Workflows and permission guardrail regression tests.
+* integrated automated testing of the complete Project Workflows surface;
 
 **Remaining in this milestone:**
 
-* integrated automated testing of the complete Project Workflows surface;
-* final protection model and hardening for project-local commands, skills,
-  agents, and other workflow overrides;
-* final workflow validation and manual smoke testing;
-* Project Workflows documentation reconciliation.
+* Project Workflows documentation reconciliation;
+* resolve whether `project-critic` is required in the first implementation;
+* final milestone review and completion.
 
 ### 3. Documentation Transaction
 
