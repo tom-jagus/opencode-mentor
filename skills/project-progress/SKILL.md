@@ -996,7 +996,8 @@ Typical transitions include:
 - start;
 - complete;
 - block;
-- unblock.
+- unblock;
+- cancel.
 
 A single request may contain a coherent transition such as completing one
 milestone and starting the next.
@@ -1024,7 +1025,6 @@ Read when available:
 ```text
 docs/project/definition.md
 docs/project/progress.md
-
 ```
 
 Read `decisions.md` only when the requested transition depends on a recorded
@@ -1165,6 +1165,10 @@ Do not remove unrelated blockers.
 Return the milestone to active state unless the user explicitly requests another
 transition.
 
+**Cancel**
+
+
+
 ### 7. Handle combined transitions
 
 When the user explicitly requests a coherent sequence such as:
@@ -1197,7 +1201,7 @@ Classify the requested transition as:
 - **inconsistent** - authoritative project state conflicts enough that the
 transition cannot be proposed safely;
 - **scope change** - the request belongs to Project Definition.
-- **unavailable** - authoratative operational state required for the transition
+- **unavailable** - authoritative operational state required for the transition
 is unavailable.
 
 For `needs clarification`, ask only the question required to resolve the
@@ -1317,7 +1321,7 @@ For a valid transition, use:
 
 ## Transition
 
-- Action: start | complete | block | unblock | ...
+- Action: start | complete | block | unblock | cancel | ...
 - Milestone: ...
 - Resulting status: ...
 
@@ -1702,6 +1706,21 @@ For each proposed change, provide:
 - proposed state;
 - reason for the change.
 
+For a new decision entry, include:
+
+- date;
+- status;
+- decision;
+- rationale;
+- consequences.
+
+Include when materially relevant:
+
+- context;
+- rejected or considered alternatives;
+- related milestone;
+- supersession links.
+
 Do not propose changes to:
 
 - `definition.md`;
@@ -1743,6 +1762,7 @@ For a valid decision proposal, use:
 - **Identifier:** DEC-...
 - **Status:** proposed | accepted | rejected
 - **Decision:** ...
+- **Date:** ...
 
 ## Existing Decision Impact
 
