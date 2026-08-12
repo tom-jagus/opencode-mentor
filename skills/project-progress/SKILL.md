@@ -137,8 +137,10 @@ must not be removed merely because a later decision supersedes them.
 - Do not invoke documentation or vault write tools.
 - Do not call the Bash tool anywhere in the State, Resume, or Milestone
   procedures.
-- Do not claim that a milestone is complete merely because implementation appears
-  finished. Completion must be recorded explicitly in `progress.md`.
+- Treat a milestone as currently complete only when completion is recorded
+  explicitly in `progress.md`.
+- The Milestone procedure may propose completion only from explicit user intent;
+  implementation appearance alone is insufficient.
 - Do not treat an implementation-level unknown as a scope problem unless it
   materially affects approved objectives, constraints, architecture, or
   acceptance criteria.
@@ -1192,6 +1194,8 @@ Classify the requested transition as:
 - **inconsistent** - authoritative project state conflicts enough that the
 transition cannot be proposed safely;
 - **scope change** - the request belongs to Project Definition.
+- **unavailable** - authoratative operational state required for the transition
+is unavailable.
 
 For `needs clarification`, ask only the question required to resolve the
 transition.
@@ -1200,6 +1204,9 @@ For `inconsistent`, identify the conflicting state and its authoritative
 location.
 
 For `scope change`, explain why `/define` owns the requested change.
+
+For `unavailable`, identify the missing authoritative state and do not propose a
+transition from assumptions or conversation history.
 
 ### 9. Determine affected progress state
 
@@ -1293,7 +1300,7 @@ If the user approves the proposal:
 
 ## Milestone Output Contract
 
-For a vaild transition, use:
+For a valid transition, use:
 
 ````markdown
 # Milestone Transition Proposal
@@ -1303,6 +1310,7 @@ For a vaild transition, use:
 - Milestone: ...
 - Status: ...
 - Active milestone: ...
+- Blockers: none | ...
 
 ## Transition
 
@@ -1342,7 +1350,7 @@ For a transition that cannot yet be proposed, use:
 
 ## Result
 
-needs clarification | inconsistent | scope change
+needs clarification | inconsistent | unavailable | scope change
 
 ## Reason
 
