@@ -6,6 +6,7 @@
     "bash": "ask",
     "external_directory": "deny",
     "git_state": "deny",
+    "documentation_preview": "deny",
     "skill": {
       "*": "deny"
     },
@@ -34,6 +35,7 @@
         "grep": "allow",
         "list": "allow",
         "git_state": "allow",
+        "documentation_preview": "allow",
         "bash": "ask",
         "task": {
           "*": "deny",
