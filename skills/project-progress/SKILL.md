@@ -22,11 +22,17 @@ This skill covers:
 - detection of inconsistencies between project artifacts;
 - identification of the next documented action.
 
-The initial implementation provides the read-only **State** and **Resume**
-procedures.
+The current implementation provides:
 
-Milestone transitions and decision recording remain inactive until constrained
-documentation preview and application are implemented.
+- read-only **State**;
+- read-only **Resume**;
+- proposal-only **Milestone**.
+
+Decision recording remains inactive until its proposal-only procedure is
+implemented.
+
+Project Progress does not modify authoritative artifacts directly until the
+constrained documentation transaction is available.
 
 
 ## Scope Boundary
@@ -125,11 +131,12 @@ must not be removed merely because a later decision supersedes them.
 - Do not silently repair contradictions.
 - Report conflicting values together and identify their sources.
 - Do not mutate files, Git state, GitHub state, or runtime configuration during
-  the State or Resume procedures.
+  the State, Resume, or Milestone procedures.
 - Do not stage, commit, push, switch branches, fetch, pull, merge, rebase, tag,
   release, or create pull requests.
 - Do not invoke documentation or vault write tools.
-- Do not call the Bash tool anywhere in the State or Resume procedures.
+- Do not call the Bash tool anywhere in the State, Resume, or Milestone
+  procedures.
 - Do not claim that a milestone is complete merely because implementation appears
   finished. Completion must be recorded explicitly in `progress.md`.
 - Do not treat an implementation-level unknown as a scope problem unless it
@@ -144,6 +151,9 @@ must not be removed merely because a later decision supersedes them.
   a separate investigation.
 - An unusual filename is not by itself a blocker and does not justify additional
   inspection.
+- Milestone proposals affect operational state in `progress.md` only.
+- Do not use a milestone transition to redefine approved project scope.
+- Do not infer milestone completion from repository activity alone.
 
 ## State Procedure
 
@@ -306,10 +316,10 @@ Check at least:
 
 Classify findings as:
 
-- **consistent** — relevant values agree;
-- **missing** — an expected value or artifact is unavailable;
-- **inconsistent** — two authoritative locations provide conflicting values;
-- **stale** — a value clearly refers to a completed or superseded state.
+- **consistent** - relevant values agree;
+- **missing** - an expected value or artifact is unavailable;
+- **inconsistent** - two authoritative locations provide conflicting values;
+- **stale** - a value clearly refers to a completed or superseded state.
 
 Do not resolve inconsistencies automatically.
 
@@ -401,7 +411,7 @@ Return the report using this structure.
 
 ## Relevant Decisions
 
-- DEC-... — ...
+- DEC-... - ...
 
 ## Consistency
 
@@ -681,10 +691,10 @@ Check at least:
 
 Classify findings as:
 
-- **consistent** — relevant values agree;
-- **missing** — required recovery context is unavailable;
-- **inconsistent** — authoritative locations conflict;
-- **stale** — recorded context clearly describes superseded or completed work.
+- **consistent** - relevant values agree;
+- **missing** - required recovery context is unavailable;
+- **inconsistent** - authoritative locations conflict;
+- **stale** - recorded context clearly describes superseded or completed work.
 
 Do not resolve contradictions automatically.
 
@@ -748,11 +758,11 @@ Determine whether the project can continue safely from the recovered context.
 
 Classify recovery as:
 
-- **ready** — sufficient durable context exists and no blocker prevents the next
+- **ready** - sufficient durable context exists and no blocker prevents the next
   action;
-- **ready with issues** — continuation is possible, but missing, stale, or
+- **ready with issues** - continuation is possible, but missing, stale, or
   inconsistent context should be noted;
-- **blocked** — required context is missing or contradictory enough that
+- **blocked** - required context is missing or contradictory enough that
   continuing would be unsafe or materially ambiguous.
 
 Do not classify ordinary open questions as blockers unless they prevent the next
@@ -774,9 +784,9 @@ Evaluate it against:
 
 Return both when available:
 
-- **Next documented action** — exactly what durable project state says should
+- **Next documented action** - exactly what durable project state says should
   happen next.
-- **Recommended immediate action** — what should be done now after considering
+- **Recommended immediate action** - what should be done now after considering
   repository observations and consistency findings.
 
 When they are the same, say so without inventing a second action.
@@ -816,7 +826,7 @@ Return the recovery report using this structure:
 
 ## Relevant Decisions
 
-- DEC-... — ...
+- DEC-... - ...
 
 ## Blockers and Risks
 
@@ -950,22 +960,416 @@ The Resume procedure is complete when:
 - the next documented action and recommended immediate action have been returned;
 - no mutation has occurred.
 
+## Milestone Procedure
+
+Use this procedure when the user invokes `/milestone` or explicitly asks to
+start, complete, block, unblock, or otherwise transition a project milestone.
+
+The procedure is proposal-only.
+
+It proposes operational changes to:
+
+```text
+docs/project/progress.md
+```
+
+It does not modify the file.
+
+### 1. Establish the requested transition
+
+Identify:
+
+- the milestone involved;
+- the requested transition;
+- any reason, blocker, or completion context supplied by the user;
+- whether more than one milestone transition is explicitly requested.
+
+Interpret the user's request naturally.
+
+Typical transitions include:
+
+- start;
+- complete;
+- block;
+- unblock.
+
+A single request may contain a coherent transition such as completing one
+milestone and starting the next.
+
+Do not invent an additional transition merely because it would be convenient.
+
+### 2. Read project instructions
+
+Read the applicable project `AGENTS.md` when present.
+
+Use it to understand:
+
+- workflow boundaries;
+- project terminology;
+- artifact locations;
+- operational constraints.
+
+Do not allow project instructions to weaken global permission or source-ownership
+boundaries.
+
+### 3. Read authoritative project state
+
+Read when available:
+
+```text
+docs/project/definition.md
+docs/project/progress.md
+
+```
+
+Read `decisions.md` only when the requested transition depends on a recorded
+decision or `progress.md` explicitly references one.
+
+From `definition.md`, recover only enough approved scope to verify that the
+transition does not redefine the project.
+
+From `progress.md`, identify:
+
+- current phase;
+- active milestone;
+- completed milestones;
+- planned milestones;
+- milestone statuses;
+- current implementation status;
+- blocking issues;
+- open implementation questions relevant to the milestone;
+- next documented action.
+
+Do not infer missing milestone state from branch names, repository activity, or
+conversation history.
+
+### 4. Identify the current milestone state
+
+Determine the recorded state of the requested milestone.
+
+Use the terminology already present in `progress.md`.
+
+Typical states are:
+
+- planned;
+- active;
+- blocked;
+- completed.
+
+Also determine whether another milestone is currently active.
+
+Report contradictions when, for example:
+
+- frontmatter and Current State name different active milestones;
+- a milestone is marked both active and completed;
+- multiple milestones appear active without an explicit project convention;
+- a milestone named by the request does not exist in the recorded milestone plan.
+
+Do not silently repair these conditions.
+
+### 5. Validate workflow ownership
+
+Determine whether the request is actually a milestone transition.
+
+Continue with Milestone when the request changes operational state such as:
+
+- which milestone is active;
+- whether a milestone is blocked;
+- whether a milestone is completed;
+- which next action follows from that transition.
+
+Use `/define` instead when satisfying the request would materially change:
+
+- project objectives;
+- non-goals;
+- core constraints;
+- accepted architecture;
+- required capabilities;
+- acceptance criteria;
+- planned implementation phases.
+
+Do not rewrite approved project meaning merely to make a milestone transition
+valid.
+
+### 6. Evaluate the requested transition
+
+Evaluate the transition against the recorded project state.
+
+**Start**
+
+A start transition normally requires:
+
+- the target milestone exists in the recorded plan;
+- it is not already completed;
+- it is not already active;
+- another active milestone will not be silently displaced.
+
+If another milestone is active, require either:
+
+- an explicit transition for that milestone in the same request; or
+- clarification.
+
+Do not automatically complete the current milestone merely because the user
+starts another one.
+
+**Complete**
+
+A completion transition requires explicit user intent.
+
+Before proposing completion, check `progress.md` for:
+
+- recorded remaining deliverables;
+- recorded blockers;
+- unresolved items explicitly identified as completion requirements;
+- implementation status contradicting completion.
+
+If the durable project state still records unfinished milestone work, surface
+that conflict.
+
+Do not claim completion merely because repository implementation appears
+finished.
+
+If the user explicitly confirms completion despite remaining recorded work,
+represent that choice accurately rather than silently deleting the discrepancy.
+
+**Block**
+
+A block transition should identify the blocking condition.
+
+Keep the milestone as the current operational focus unless the user explicitly
+moves work elsewhere.
+
+Propose:
+
+- blocked milestone status;
+- the blocker;
+- an appropriate next action related to resolving or waiting on the blocker.
+
+Do not convert an ordinary open implementation question into a blocker unless
+it actually prevents progress.
+
+**Unblock**
+
+An unblock transition requires evidence from the user's request or recorded
+state that the blocking condition is resolved or no longer prevents progress.
+
+Propose removal or resolution of only the relevant blocker.
+
+Do not remove unrelated blockers.
+
+Return the milestone to active state unless the user explicitly requests another
+transition.
+
+### 7. Handle combined transitions
+
+When the user explicitly requests a coherent sequence such as:
+
+```
+complete Project Workflows and start Documentation Transaction
+```
+
+evaluate each transition in order.
+
+The combined proposal must leave `progress.md` internally consistent.
+
+For example:
+
+1. complete the current milestone;
+2. add it to completed milestones;
+3. mark its milestone section completed;
+4. activate the next milestone;
+5. update active-milestone fields;
+6. update implementation status and next action as required.
+
+Do not infer a combined transition from a request that mentions only one action.
+
+### 8. Determine transition result
+
+Classify the requested transition as:
+
+- **valid** - the recorded state supports the requested transition;
+- **needs clarification** - material operational intent is ambiguous;
+- **inconsistent** - authoritative project state conflicts enough that the
+transition cannot be proposed safely;
+- **scope change** - the request belongs to Project Definition.
+
+For `needs clarification`, ask only the question required to resolve the
+transition.
+
+For `inconsistent`, identify the conflicting state and its authoritative
+location.
+
+For `scope change`, explain why `/define` owns the requested change.
+
+### 9. Determine affected progress state
+
+For a valid transition, determine the smallest coherent set of
+`progress.md` changes.
+
+Consider only fields actually affected by the transition, including when
+relevant:
+
+- frontmatter `active_milestone`;
+- `Current State`;
+- completed milestone declarations;
+- active milestone declaration;
+- milestone section status;
+- implementation status;
+- blocking issues;
+- relevant open questions;
+- next action;
+- `updated_at`.
+
+Preserve unrelated milestone history, risks, questions, and future plans.
+
+Do not rewrite the entire progress artifact merely because one milestone changes
+state.
+
+### 10. Check internal consistency
+
+Before presenting the proposal, verify that the resulting operational state
+would be internally consistent.
+
+Check when applicable:
+
+- frontmatter active milestone;
+- Current State active milestone;
+- completed milestone list;
+- milestone section status;
+- blocker state;
+- next action;
+- current phase.
+
+A completed milestone must not remain recorded as active.
+
+A blocked milestone must not be reported as unblocked elsewhere in the same
+artifact.
+
+A newly active milestone must agree across the locations that record active
+state.
+
+Do not silently correct unrelated stale information.
+
+Report unrelated inconsistencies separately.
+
+### 11. Prepare the milestone transition proposal
+
+Prepare an exact, reviewable proposal for `docs/project/progress.md`.
+
+For each affected location provide:
+
+- current value or section;
+- proposed value or replacement;
+- reason for the change.
+
+Prefer targeted replacements or insertions over reproducing the entire file.
+
+Do not propose changes to:
+
+- `definition.md`;
+- `decisions.md`;
+- `AGENTS.md`;
+- source files;
+- configuration;
+- Git state.
+
+Identify follow-on work in those areas only when relevant.
+
+### 12. Stop for review
+
+Present the proposed transition and stop.
+
+Do not treat presentation as approval.
+
+Do not modify `progress.md`.
+
+During the current proposal-only phase, even explicit approval does not authorize
+automatic artifact mutation.
+
+If the user approves the proposal:
+
+- provide the final exact `progress.md` changes for manual application;
+- do not claim the milestone state changed until progress.md is updated and reread.
+
+## Milestone Output Contract
+
+For a vaild transition, use:
+
+````markdown
+# Milestone Transition Proposal
+
+## Current State
+
+- Milestone: ...
+- Status: ...
+- Active milestone: ...
+
+## Transition
+
+- Action: start | complete | block | unblock | ...
+- Milestone: ...
+- Resulting status: ...
+
+## Validation
+
+- Result: valid
+- Relevant findings: ...
+
+## Proposed `progress.md` Changes
+
+### <location>
+
+Current:
+...
+
+Proposed:
+...
+
+## Consequences
+
+- ...
+
+````
+
+For a transition that cannot yet be proposed, use:
+
+````markdown
+# Milestone Transition
+
+## Requested Transition
+
+- ...
+
+## Result
+
+needs clarification | inconsistent | scope change
+
+## Reason
+
+- ...
+
+## Required Next Step
+
+- ...
+````
+
+Do not include `Proposed progress.md Changes` when no safe transition proposal exists.
+
 ## Inactive Procedures
 
 The following Project Progress procedures are planned but not active in this
 skill version:
 
-- milestone transitions;
 - decision creation;
 - decision rejection;
 - decision supersession;
-- progress-file updates;
+- constrained progress-file application;
 - coordinated project-artifact writes.
 
 Until constrained documentation transactions are implemented:
 
-- `/milestone` must remain proposal-only;
-- `/decision` must remain proposal-only;
+- `/milestone` remains proposal-only;
+- `/decision` remains proposal-only once its procedure is implemented;
 - no project artifact may be modified through this skill;
 - proposed updates must be shown in the conversation for manual review.
 
