@@ -83,7 +83,7 @@ The initial project will not:
 - rebuild a complete project-management platform inside Markdown;
 - implement full Polish marketplace product research in the first version;
 - rely on OpenCode's GitHub Actions integration for the local Git workflow;
-- allow OpenCode to rewrite its own live configuration without isolated testing;
+- allow OpenCode to rewrite its own live configuration directly;
 - introduce nested subagent hierarchies unless later evidence justifies them.
 
 ## 5. Operating Principles
@@ -675,6 +675,15 @@ freshness tracking, and additional tools.
 
 ## 18. Configuration Repository and Dotfiles Integration
 
+The OpenCode Mentor repository is authoritative for OpenCode Mentor configuration
+content.
+
+The dotfiles repository is authoritative for installation, linkage, bootstrap,
+dependency setup, and deployment of an accepted Mentor revision.
+
+The two repositories must not maintain duplicated authoritative copies of the
+same configuration.
+
 Production uses the accepted OpenCode Mentor configuration directly through the
 normal `opencode` command.
 
@@ -745,7 +754,7 @@ malicious executable repository configuration.
 - `lead` primary agent;
 - built-in agent restrictions;
 - managed permission guardrails;
-- development documentation.
+- development documentation;
 - managed production permission policy;
 - separation of normal and managed configuration;
 - temporary isolated validation during development;
@@ -854,8 +863,8 @@ The remaining unresolved items are implementation decisions, not scope blockers:
 - exact TOML schemas;
 - exact transaction implementation;
 - exact vault taxonomy and templates;
-- exact validation command profiles.
-- exact live deployment and dotfiles linkage mechanism;
+- exact validation command profiles;
+- exact live deployment and dotfiles linkage mechanism.
 
 These must be resolved and tested within their implementation phases while
 remaining consistent with this approved definition.

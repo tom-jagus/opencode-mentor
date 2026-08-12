@@ -28,8 +28,8 @@ updated_at: 2026-08-12
   boundary recorded in DEC-042. A dedicated `project-critic` is deferred by
   DEC-043.
 * **Blocking issues:** none
-* **Next action:** complete Project Workflows documentation reconciliation and
-  perform the final milestone review.
+* **Next action:** perform the final Project Workflows milestone review and
+  propose milestone completion.
 
 ## Phase Transition
 
@@ -100,7 +100,6 @@ Current implementation status:
 * initial project artifact templates;
 * deterministic `git_state` tool;
 * protected external-workspace boundary;
-* integrated automated testing of the complete Project Workflows surface;
 * integrated automated validation of the complete Project Workflows surface;
 * manual semantic smoke validation of implemented workflows;
 * production configuration and trust-boundary hardening;
@@ -265,15 +264,7 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Complete Project Workflows documentation reconciliation so that the project
-artifacts and development documentation consistently describe:
+Perform the final Project Workflows milestone review and, if no remaining
+milestone requirements are unresolved, complete the Project Workflows milestone.
 
-- direct production use through `opencode`;
-- normal Mentor configuration under `~/.config/opencode`;
-- non-overridable managed policy under `/etc/opencode/opencode.json`;
-- explicitly allowlisted shared skills;
-- development tests and scripts as temporary scaffolding rather than production
-  runtime dependencies.
-
-After reconciliation, perform the final Project Workflows milestone review and
-propose completion. The next planned milestone is Documentation Transaction.
+The next planned milestone is Documentation Transaction.
