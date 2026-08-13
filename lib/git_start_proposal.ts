@@ -1,9 +1,28 @@
 import { createHash, randomUUID } from "node:crypto";
-import { lstat, mkdir, rename, unlink, writeFile } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  readFile,
+  realpath,
+  rename,
+  unlink,
+  writeFile,
+} from "node:fs/promises";
 import { homedir } from "node:os";
 import { basename, isAbsolute, join, relative, sep } from "node:path";
 import type { EffectiveGitPolicyResolution, GitPolicy } from "./git_policy";
 import type { GitStartPreflight } from "./git_start";
+import { validateEffectiveGitPolicy } from "./git_policy";
+
+export type GitStartProposalState =
+  | {
+      status: "pending";
+      applied_at: null;
+    }
+  | {
+      status: "applied";
+      applied_at: string;
+    };
 
 export type GitStartProposalPayload = {
   id: string;
@@ -35,10 +54,12 @@ export type GitStartProposalRecord = {
   integrity: {
     proposal_sha256: string;
   };
-  state: {
-    status: "pending";
-    applied_at: null;
-  };
+  state: GitStartProposalState;
+};
+
+export type LoadedGitStartProposal = {
+  record: GitStartProposalRecord;
+  record_path: string;
 };
 
 export type GitStartReview = {
@@ -82,7 +103,17 @@ export type GitStartPreviewResult =
 
 export class GitStartProposalError extends Error {
   readonly code:
-    "START_PREFLIGHT_FAILED" | "START_NOT_ELIGIBLE" | "PROPOSAL_STORAGE_FAILED";
+    | "START_PREFLIGHT_FAILED"
+    | "START_NOT_ELIGIBLE"
+    | "PROPOSAL_STORAGE_FAILED"
+    | "INVALID_PROPOSAL_ID"
+    | "PROPOSAL_NOT_FOUND"
+    | "INVALID_PROPOSAL"
+    | "UNSUPPORTED_PROPOSAL_VERSION"
+    | "PROPOSAL_INTEGRITY_FAILED"
+    | "PROJECT_MISMATCH"
+    | "PROPOSAL_ALREADY_APPLIED"
+    | "STALE_PROPOSAL";
 
   constructor(code: GitStartProposalError["code"], message: string) {
     super(message);
@@ -205,7 +236,14 @@ export function buildGitStartProposal(
     state.clean !== true ||
     state.conflicts.length !== 0 ||
     eligibility.repository_root === null ||
-    eligibility.head_sha === null
+    eligibility.head_sha === null ||
+    policy_resolution.project_root !== state.root ||
+    eligibility.repository_root !== state.root ||
+    eligibility.current_branch !== state.branch ||
+    eligibility.head_sha !== state.latest_commit.sha ||
+    eligibility.base_branch !==
+      policy_resolution.effective_policy.base_branch ||
+    preflight.target_branch_exists
   ) {
     throw new GitStartProposalError(
       "START_NOT_ELIGIBLE",
@@ -410,6 +448,229 @@ export async function persistGitStartProposal(
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isSha256(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function validateProposalId(proposalId: string): void {
+  if (!/^git-start-[A-Za-z0-9-]+$/.test(proposalId)) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL_ID",
+      "Git start proposal identifier is invalid",
+    );
+  }
+}
+
+function hasExactKeys(value: Record<string, unknown>, keys: string[]): boolean {
+  const actual = Object.keys(value).sort();
+  const expected = [...keys].sort();
+
+  return (
+    actual.length === expected.length &&
+    actual.every((key, index) => key === expected[index])
+  );
+}
+
+function isGitObjectId(value: unknown): value is string {
+  return (
+    typeof value === "string" && /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(value)
+  );
+}
+
+function isIsoDate(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    !Number.isNaN(Date.parse(value))
+  );
+}
+
+function parseGitStartProposalRecord(value: unknown): GitStartProposalRecord {
+  if (!isRecord(value)) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal record must be an object",
+    );
+  }
+
+  if (value.schema_version !== 1) {
+    throw new GitStartProposalError(
+      "UNSUPPORTED_PROPOSAL_VERSION",
+      "Git start proposal schema version is unsupported",
+    );
+  }
+
+  const proposal = value.proposal;
+  const integrity = value.integrity;
+  const state = value.state;
+
+  if (!isRecord(proposal) || !isRecord(integrity) || !isRecord(state)) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal record is incomplete",
+    );
+  }
+
+  if (
+    !hasExactKeys(value, [
+      "schema_version",
+      "proposal",
+      "integrity",
+      "state",
+    ]) ||
+    !hasExactKeys(proposal, [
+      "id",
+      "created_at",
+      "project",
+      "operation",
+      "policy",
+      "repository",
+    ]) ||
+    !hasExactKeys(integrity, ["proposal_sha256"]) ||
+    !hasExactKeys(state, ["status", "applied_at"])
+  ) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal contains unknown or missing record fields",
+    );
+  }
+
+  const project = proposal.project;
+  const operation = proposal.operation;
+  const policy = proposal.policy;
+  const repository = proposal.repository;
+
+  if (
+    !isRecord(project) ||
+    !isRecord(operation) ||
+    !isRecord(policy) ||
+    !isRecord(repository)
+  ) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal payload is incomplete",
+    );
+  }
+
+  if (
+    !hasExactKeys(project, ["key", "root"]) ||
+    !hasExactKeys(operation, [
+      "kind",
+      "base_branch",
+      "target_branch",
+      "head_sha",
+    ]) ||
+    !hasExactKeys(policy, [
+      "resolution_sha256",
+      "sources",
+      "effective_policy",
+    ]) ||
+    !hasExactKeys(repository, ["clean", "conflicts"])
+  ) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal payload contains unknown or missing fields",
+    );
+  }
+
+  if (
+    !isNonEmptyString(proposal.id) ||
+    !isIsoDate(proposal.created_at) ||
+    !isNonEmptyString(project.key) ||
+    !isNonEmptyString(project.root) ||
+    operation.kind !== "create-and-switch-local-branch" ||
+    !isNonEmptyString(operation.base_branch) ||
+    !isNonEmptyString(operation.target_branch) ||
+    !isGitObjectId(operation.head_sha) ||
+    !isSha256(policy.resolution_sha256) ||
+    !isRecord(policy.sources) ||
+    !isRecord(policy.effective_policy) ||
+    repository.clean !== true ||
+    !Array.isArray(repository.conflicts) ||
+    repository.conflicts.length !== 0 ||
+    !isSha256(integrity.proposal_sha256)
+  ) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal contains invalid values",
+    );
+  }
+
+  if (state.status !== "pending" && state.status !== "applied") {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal state is invalid",
+    );
+  }
+
+  if (
+    (state.status === "pending" && state.applied_at !== null) ||
+    (state.status === "applied" && !isNonEmptyString(state.applied_at))
+  ) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal application state is inconsistent",
+    );
+  }
+
+  const sources = policy.sources;
+
+  if (
+    !isRecord(sources) ||
+    !hasExactKeys(sources, ["global", "project"]) ||
+    !isRecord(sources.global) ||
+    !hasExactKeys(sources.global, ["path"]) ||
+    !isNonEmptyString(sources.global.path) ||
+    !isRecord(sources.project) ||
+    !hasExactKeys(sources.project, ["present", "path"]) ||
+    typeof sources.project.present !== "boolean" ||
+    !isNonEmptyString(sources.project.path)
+  ) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal contains invalid policy source information",
+    );
+  }
+
+  let effectivePolicy: GitPolicy;
+
+  try {
+    effectivePolicy = validateEffectiveGitPolicy(policy.effective_policy);
+  } catch (error) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      `Git start proposal contains invalid effective policy: ${errorMessage(error)}`,
+    );
+  }
+
+  const record = value as unknown as GitStartProposalRecord;
+
+  record.proposal.policy.effective_policy = effectivePolicy;
+
+  const expectedResolutionChecksum = policyResolutionChecksum({
+    project_root: record.proposal.project.root,
+    sources: record.proposal.policy.sources,
+    effective_policy: effectivePolicy,
+  });
+
+  if (record.proposal.policy.resolution_sha256 !== expectedResolutionChecksum) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal policy checksum is inconsistent",
+    );
+  }
+
+  return record;
+}
+
 export function gitStartPreviewFailure(error: unknown): GitStartPreviewFailure {
   if (error instanceof GitStartProposalError) {
     return {
@@ -429,5 +690,137 @@ export function gitStartPreviewFailure(error: unknown): GitStartPreviewFailure {
       code: "PROPOSAL_STORAGE_FAILED",
       message: errorMessage(error),
     },
+  };
+}
+
+export async function loadGitStartProposal(
+  projectRoot: string,
+  proposalId: string,
+  storageRoot = gitStartProposalRoot(),
+): Promise<LoadedGitStartProposal> {
+  validateProposalId(proposalId);
+
+  let canonicalProjectRoot: string;
+
+  try {
+    canonicalProjectRoot = await realpath(projectRoot);
+  } catch (error) {
+    throw new GitStartProposalError(
+      "PROJECT_MISMATCH",
+      `Could not resolve current project: ${errorMessage(error)}`,
+    );
+  }
+
+  const projectKey = gitStartProjectKey(canonicalProjectRoot);
+  const projectDirectory = join(storageRoot, projectKey);
+  const recordPath = join(projectDirectory, `${proposalId}.json`);
+
+  let rootStatus;
+  let projectStatus;
+  let recordStatus;
+
+  try {
+    [rootStatus, projectStatus, recordStatus] = await Promise.all([
+      lstat(storageRoot),
+      lstat(projectDirectory),
+      lstat(recordPath),
+    ]);
+  } catch (error) {
+    if (isNodeError(error, "ENOENT")) {
+      throw new GitStartProposalError(
+        "PROPOSAL_NOT_FOUND",
+        "Git start proposal was not found for the current project",
+      );
+    }
+
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      `Could not inspect Git start proposal storage: ${errorMessage(error)}`,
+    );
+  }
+
+  if (
+    rootStatus.isSymbolicLink() ||
+    !rootStatus.isDirectory() ||
+    projectStatus.isSymbolicLink() ||
+    !projectStatus.isDirectory() ||
+    recordStatus.isSymbolicLink() ||
+    !recordStatus.isFile()
+  ) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal storage contains an unsafe path component",
+    );
+  }
+
+  if (recordStatus.size > 1024 * 1024) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal record is too large",
+    );
+  }
+
+  let text: string;
+
+  try {
+    const bytes = await readFile(recordPath);
+
+    text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (error) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      `Could not read Git start proposal: ${errorMessage(error)}`,
+    );
+  }
+
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      `Git start proposal is not valid JSON: ${errorMessage(error)}`,
+    );
+  }
+
+  const record = parseGitStartProposalRecord(parsed);
+
+  if (record.proposal.id !== proposalId) {
+    throw new GitStartProposalError(
+      "INVALID_PROPOSAL",
+      "Git start proposal identifier does not match its storage path",
+    );
+  }
+
+  if (
+    record.proposal.project.root !== canonicalProjectRoot ||
+    record.proposal.project.key !== projectKey
+  ) {
+    throw new GitStartProposalError(
+      "PROJECT_MISMATCH",
+      "Git start proposal belongs to a different project",
+    );
+  }
+
+  const expectedIntegrity = gitStartProposalIntegrity(record.proposal);
+
+  if (record.integrity.proposal_sha256 !== expectedIntegrity) {
+    throw new GitStartProposalError(
+      "PROPOSAL_INTEGRITY_FAILED",
+      "Git start proposal integrity validation failed",
+    );
+  }
+
+  if (record.state.status === "applied") {
+    throw new GitStartProposalError(
+      "PROPOSAL_ALREADY_APPLIED",
+      "Git start proposal has already been applied",
+    );
+  }
+
+  return {
+    record,
+    record_path: recordPath,
   };
 }

@@ -327,6 +327,10 @@ function normalizePolicy(
   return result;
 }
 
+export function validateEffectiveGitPolicy(input: unknown): GitPolicy {
+  return normalizePolicy(input, false, "effective policy") as GitPolicy;
+}
+
 function normalizeBranch(
   root: PolicyTable,
   result: PolicyTable,
@@ -864,7 +868,7 @@ export function resolvePolicyDocuments(
 
   const merged = mergeKnown(globalPolicy, projectPolicy);
 
-  return normalizePolicy(merged, false, "effective policy") as GitPolicy;
+  return validateEffectiveGitPolicy(merged);
 }
 
 function isWithinRoot(root: string, candidate: string): boolean {

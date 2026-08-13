@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { lstat, mkdtemp, readFile, rm } from "node:fs/promises";
+import {
+  lstat,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { GitStartPreflight } from "../lib/git_start";
@@ -7,6 +14,7 @@ import {
   buildGitStartProposal,
   buildGitStartReview,
   gitStartProposalIntegrity,
+  loadGitStartProposal,
   persistGitStartProposal,
 } from "../lib/git_start_proposal";
 import type { GitPolicy } from "../lib/git_policy";
@@ -68,7 +76,7 @@ const state: GitRepositoryState = {
   conflicts: [],
   changes: [],
   latest_commit: {
-    sha: "0123456789abcdef",
+    sha: "0123456789abcdef0123456789abcdef01234567",
     short_sha: "0123456",
     subject: "Establish project baseline",
     committed_at: "2026-08-13T20:00:00Z",
@@ -76,19 +84,24 @@ const state: GitRepositoryState = {
   warnings: [],
 };
 
-function eligiblePreflight(): GitStartPreflight {
+function eligiblePreflight(
+  projectRoot = "/workspace/project",
+): GitStartPreflight {
   return {
     ok: true,
-    state,
+    state: {
+      ...state,
+      root: projectRoot,
+    },
     policy_resolution: {
-      project_root: "/workspace/project",
+      project_root: projectRoot,
       sources: {
         global: {
           path: "/config/policies/git-defaults.toml",
         },
         project: {
           present: false,
-          path: "/workspace/project/.opencode/git-policy.toml",
+          path: join(projectRoot, ".opencode", "git-policy.toml"),
         },
       },
       effective_policy: policy,
@@ -96,10 +109,10 @@ function eligiblePreflight(): GitStartPreflight {
     target_branch_exists: false,
     eligibility: {
       eligible: true,
-      repository_root: "/workspace/project",
+      repository_root: projectRoot,
       base_branch: "main",
       current_branch: "main",
-      head_sha: "0123456789abcdef",
+      head_sha: "0123456789abcdef0123456789abcdef01234567",
       target_branch: "feature/add-start-preview",
       issues: [],
     },
@@ -122,7 +135,7 @@ describe("Git start proposal", () => {
       current_branch: "main",
       base_branch: "main",
       target_branch: "feature/add-start-preview",
-      head_sha: "0123456789abcdef",
+      head_sha: "0123456789abcdef0123456789abcdef01234567",
       working_tree: "clean",
       project_policy_present: false,
     });
@@ -203,6 +216,146 @@ describe("Git start proposal", () => {
         message: "project policy schema_version must be 1",
         source: "project policy",
       },
+    });
+  });
+
+  test("loads an intact pending proposal", async () => {
+    const temporaryRoot = await mkdtemp(
+      join(tmpdir(), "opencode-mentor-git-start-load-"),
+    );
+
+    try {
+      const projectRoot = join(temporaryRoot, "project");
+      const storageRoot = join(temporaryRoot, "proposals");
+
+      await mkdir(projectRoot);
+
+      const record = buildGitStartProposal(eligiblePreflight(projectRoot), {
+        id: "git-start-load-test",
+        created_at: "2026-08-13T20:30:00Z",
+      });
+
+      await persistGitStartProposal(record, storageRoot);
+
+      const loaded = await loadGitStartProposal(
+        projectRoot,
+        record.proposal.id,
+        storageRoot,
+      );
+
+      expect(loaded.record).toEqual(record);
+      expect(loaded.record_path).toBe(
+        join(
+          storageRoot,
+          record.proposal.project.key,
+          `${record.proposal.id}.json`,
+        ),
+      );
+    } finally {
+      await rm(temporaryRoot, {
+        recursive: true,
+        force: true,
+      });
+    }
+  });
+
+  test("rejects tampered proposal content", async () => {
+    const temporaryRoot = await mkdtemp(
+      join(tmpdir(), "opencode-mentor-git-start-tamper-"),
+    );
+
+    try {
+      const projectRoot = join(temporaryRoot, "project");
+      const storageRoot = join(temporaryRoot, "proposals");
+
+      await mkdir(projectRoot);
+
+      const record = buildGitStartProposal(eligiblePreflight(projectRoot), {
+        id: "git-start-tamper-test",
+        created_at: "2026-08-13T20:30:00Z",
+      });
+
+      await persistGitStartProposal(record, storageRoot);
+
+      const proposalPath = join(
+        storageRoot,
+        record.proposal.project.key,
+        `${record.proposal.id}.json`,
+      );
+
+      const stored = JSON.parse(await readFile(proposalPath, "utf8"));
+
+      stored.proposal.operation.target_branch = "feature/tampered-branch";
+
+      await writeFile(proposalPath, `${JSON.stringify(stored, null, 2)}\n`, {
+        encoding: "utf8",
+        mode: 0o600,
+      });
+
+      await expect(
+        loadGitStartProposal(projectRoot, record.proposal.id, storageRoot),
+      ).rejects.toMatchObject({
+        code: "PROPOSAL_INTEGRITY_FAILED",
+      });
+    } finally {
+      await rm(temporaryRoot, {
+        recursive: true,
+        force: true,
+      });
+    }
+  });
+
+  test("does not load a proposal through another project root", async () => {
+    const temporaryRoot = await mkdtemp(
+      join(tmpdir(), "opencode-mentor-git-start-binding-"),
+    );
+
+    try {
+      const firstProject = join(temporaryRoot, "first-project");
+      const secondProject = join(temporaryRoot, "second-project");
+      const storageRoot = join(temporaryRoot, "proposals");
+
+      await Promise.all([mkdir(firstProject), mkdir(secondProject)]);
+
+      const record = buildGitStartProposal(eligiblePreflight(firstProject), {
+        id: "git-start-binding-test",
+        created_at: "2026-08-13T20:30:00Z",
+      });
+
+      await persistGitStartProposal(record, storageRoot);
+
+      await expect(
+        loadGitStartProposal(secondProject, record.proposal.id, storageRoot),
+      ).rejects.toMatchObject({
+        code: "PROPOSAL_NOT_FOUND",
+      });
+    } finally {
+      await rm(temporaryRoot, {
+        recursive: true,
+        force: true,
+      });
+    }
+  });
+
+  test("rejects malformed proposal identifiers", async () => {
+    await expect(
+      loadGitStartProposal(
+        "/workspace/project",
+        "../proposal",
+        "/tmp/proposals",
+      ),
+    ).rejects.toMatchObject({
+      code: "INVALID_PROPOSAL_ID",
+    });
+
+    await expect(
+      loadGitStartProposal(
+        "/workspace/project",
+        "documentation-proposal",
+        "/tmp/proposals",
+      ),
+    ).rejects.toMatchObject({
+      code: "INVALID_PROPOSAL_ID",
     });
   });
 });
