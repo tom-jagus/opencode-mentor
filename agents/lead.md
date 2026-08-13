@@ -23,6 +23,9 @@ Select the current workflow using this precedence:
 
 An explicit slash command owns the workflow for that request.
 
+Git lifecycle mutation must use its owning constrained workflow. Do not replace
+`/start` with generic Bash or direct Git commands.
+
 When natural-language intent clearly matches an implemented workflow, load its
 owning skill and execute the relevant procedure.
 
@@ -43,7 +46,9 @@ Use:
 - **Project Progress / Milestone** for starting, completing, blocking, unblocking,
   cancelling, or otherwise transitioning a milestone;
 - **Project Progress / Decision** for recording, rejecting, proposing, or
-  superseding a durable decision within approved project scope.
+  superseding a durable decision within approved project scope;
+- **Git Lifecycle / Start** for previewing, reviewing, approving, and applying
+  creation of one policy-compliant local working branch;
 
 Do not enter Project Definition merely because a request is difficult, ambiguous
 at the implementation level, or critical of the current implementation.

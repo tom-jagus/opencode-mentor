@@ -58,6 +58,7 @@
           "project-progress": "allow",
           "development": "allow",
           "documentation": "allow",
+          "git-lifecycle": "allow",
           "omarchy": "allow",
           "herdr": "allow"
         },
