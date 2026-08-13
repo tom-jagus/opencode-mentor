@@ -967,10 +967,6 @@ content.
 When the user explicitly requests the complete proposal, present the exact stored
 before/after content returned by Preview for the requested artifacts.
 
-For `create`, present the exact proposed content.
-
-Do not paraphrase, reconstruct, shorten, or silently correct tool-returned content.
-
 State clearly:
 
 ```text

@@ -1381,10 +1381,18 @@ Milestone proposal: <proposal-id>
 Authority: milestone
 ```
 
-Then present the exact current and proposed `progress.md` content returned by the
-tool.
+Then present the exact deterministic unified diff returned in `review.diff`.
 
-Do not paraphrase or reconstruct the returned content.
+Show:
+
+- `review.additions`;
+- `review.deletions`;
+- the exact unified diff.
+
+Do not reconstruct or modify the returned diff.
+
+The complete before/after snapshots remain authoritative and may be shown when
+the user explicitly requests the full proposal.
 
 State clearly that no project artifact has yet been modified.
 
@@ -1458,7 +1466,7 @@ For a valid transition, use:
 ## Documentation Transaction
 
 - **Proposal:** <proposal-id>
-- **Authority:** decision
+- **Authority:** milestone
 - **Status:** awaiting review
 
 ### `docs/project/decisions.md`
@@ -1947,7 +1955,8 @@ For a valid decision proposal, use:
 ## Documentation Transaction
 
 - **Proposal:** <proposal-id>
-- **Authority:** milestone
+- **Authority:** decision
+
 - **Status:** awaiting review
 
 ### `docs/project/progress.md`
@@ -1972,7 +1981,7 @@ No project artifacts have been modified.
 
 For a request that does not produce a decision proposal, use:
 
-````markdown
+````margdown
 # Decision
 
 ## Requested Action
