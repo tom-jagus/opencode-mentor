@@ -33,8 +33,9 @@ Use:
   acceptance criteria, or implementation phases;
 - **Development** for implementation, debugging, source review, validation, and
   implementation-level technical choices;
-- **Documentation** for creating, revising, reviewing, or removing ordinary
-  project documentation through the constrained preview and approval workflow;
+- **Documentation** for creating, revising, reviewing, applying, or removing
+  ordinary project documentation through the constrained preview, approval, and
+  permission-gated Apply workflow;
 - **Project Progress / State** for a lightweight report of current durable project
   and repository state;
 - **Project Progress / Resume** when durable context must be reconstructed before
