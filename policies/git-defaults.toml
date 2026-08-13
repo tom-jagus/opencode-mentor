@@ -1,0 +1,43 @@
+schema_version = 1
+base_branch = "main"
+
+[branch]
+allowed_types = [
+  "feature",
+  "fix",
+  "docs",
+  "refactor",
+  "test",
+  "chore",
+]
+format = "<type>/<kebab-case-summary>"
+
+[commit_message]
+style = "descriptive"
+subject_case = "sentence"
+trailing_period = false
+forbidden_prefix_patterns = [
+  "^(?:feat|feature|fix|docs|refactor|test|chore)(?:\\([^\\r\\n()]+\\))?:\\s*",
+]
+
+[merge]
+strategy = "squash"
+delete_branch = true
+
+[branch_update]
+strategy = "rebase"
+require_before_finalization = true
+force_push = "force-with-lease"
+
+[validation]
+profile = "standard"
+
+[pull_request]
+draft = false
+generated_body = true
+
+[release]
+enabled = true
+versioning = "semantic"
+tag_prefix = "v"
+notes = "generated-reviewable"
