@@ -1469,7 +1469,7 @@ For a valid transition, use:
 - **Authority:** milestone
 - **Status:** awaiting review
 
-### `docs/project/decisions.md`
+### `docs/project/progress.md`
 
 **Operation:** replace  
 **Changes:** +<review.additions> -<review.deletions>
@@ -1959,7 +1959,7 @@ For a valid decision proposal, use:
 
 - **Status:** awaiting review
 
-### `docs/project/progress.md`
+### `docs/project/decisions.md`
 
 **Operation:** replace  
 **Changes:** +<review.additions> -<review.deletions>

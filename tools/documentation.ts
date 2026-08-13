@@ -22,7 +22,6 @@ import {
   resolve,
   sep,
 } from "node:path";
-import { diff as sequenceDiff } from "node:util";
 import { tool } from "@opencode-ai/plugin";
 
 type DocumentationAuthority =
@@ -1684,6 +1683,7 @@ function appendUnifiedLine(
 }
 
 function buildUnifiedReview(target: ProposalTarget): UnifiedReview {
+  const entries = diffLines(afterLines, beforeLines);
   const beforeLines = splitDiffLines(target.before?.content ?? "");
   const afterLines = splitDiffLines(target.after?.content ?? "");
 
@@ -1694,9 +1694,68 @@ function buildUnifiedReview(target: ProposalTarget): UnifiedReview {
    *   +1 -> line exists only in proposed content -> addition
    *   -1 -> line exists only in current content  -> deletion
    */
-  const entries = sequenceDiff(afterLines, beforeLines) as Array<
-    [number, string]
-  >;
+  type SequenceDiffEntry = [-1 | 0 | 1, string];
+
+  function diffLines(
+    actual: string[],
+    expected: string[],
+  ): SequenceDiffEntry[] {
+    const rows = expected.length + 1;
+    const columns = actual.length + 1;
+
+    const lengths = Array.from(
+      { length: rows },
+      () => new Uint32Array(columns),
+    );
+
+    for (let oldIndex = expected.length - 1; oldIndex >= 0; oldIndex -= 1) {
+      for (let newIndex = actual.length - 1; newIndex >= 0; newIndex -= 1) {
+        lengths[oldIndex]![newIndex] =
+          expected[oldIndex] === actual[newIndex]
+            ? lengths[oldIndex + 1]![newIndex + 1]! + 1
+            : Math.max(
+                lengths[oldIndex + 1]![newIndex]!,
+                lengths[oldIndex]![newIndex + 1]!,
+              );
+      }
+    }
+
+    const result: SequenceDiffEntry[] = [];
+
+    let oldIndex = 0;
+    let newIndex = 0;
+
+    while (oldIndex < expected.length && newIndex < actual.length) {
+      if (expected[oldIndex] === actual[newIndex]) {
+        result.push([0, actual[newIndex]!]);
+        oldIndex += 1;
+        newIndex += 1;
+        continue;
+      }
+
+      if (
+        lengths[oldIndex]![newIndex + 1]! >= lengths[oldIndex + 1]![newIndex]!
+      ) {
+        result.push([1, actual[newIndex]!]);
+        newIndex += 1;
+      } else {
+        result.push([-1, expected[oldIndex]!]);
+        oldIndex += 1;
+      }
+    }
+
+    while (newIndex < actual.length) {
+      result.push([1, actual[newIndex]!]);
+      newIndex += 1;
+    }
+
+    while (oldIndex < expected.length) {
+      result.push([-1, expected[oldIndex]!]);
+      oldIndex += 1;
+    }
+
+    return result;
+  }
 
   const lines: ReviewLine[] = [];
 
