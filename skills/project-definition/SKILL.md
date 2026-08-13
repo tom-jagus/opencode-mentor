@@ -1,6 +1,6 @@
 ---
 name: project-definition
-description: Define approved project scope and coordinate proposal-only changes to authoritative project artifacts.
+description: Define approved project scope and coordinate transactional changes to authoritative project artifacts.
 compatibility: opencode
 metadata:
   workflow: project-definition
@@ -983,7 +983,7 @@ No project artifacts have been modified.
 Then summarize the definition consequences and unresolved issues without
 replacing the exact artifacts review.
 
-## 20. Handle review and revision
+### 20. Handle review and revision
 
 Stop for explicit review.
 
@@ -1095,31 +1095,37 @@ ready for approval | needs clarification | blocked
 
 - none | ...
 
-## Proposed Artifact Changes
+## Documentation Transaction
+
+- **Proposal:** <proposal-id>
+- **Authority:** project-definition
+- **Status:** awaiting review
 
 ### `docs/project/definition.md`
 
-Change: create
+**Operation:** create | replace
+
+**Current:**
 
 ```markdown
-...
+<exact before.content when applicable>
+```
+
+**Proposed:**
+
+```markdown
+<exact after.content>
 ```
 
 ### `docs/project/progress.md`
 
-Change: create
-
-```markdown
-...
-```
+<same structure when included>
 
 ### `docs/project/decisions.md`
 
-Change: create
+<same structure when included>
 
-```markdown
-...
-```
+No project artifacts have been modified.
 
 ## Consequences
 
@@ -1325,3 +1331,4 @@ true:
 - coordinated artifact changes are internally consistent;
 - the user has been given a reviewable proposal;
 - no artifact mutation has occurred.
+
