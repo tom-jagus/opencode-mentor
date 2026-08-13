@@ -1181,7 +1181,7 @@ material | editorial | no-change | needs clarification | blocked
 
 ````
 
-For `no-change`, omit `Proposed Artifact Changes`.
+For `no-change`, omit `Documentation Transaction`.
 
 For an editorial change, explicitly state that the definition version does not
 change.
@@ -1282,14 +1282,15 @@ Treat the proposal as approved conversationally but not durably applied.
 Do not use the proposed values as authoritative project state in later
 procedures until the artifacts have been updated and reread.
 
-### Only some coordinated changes are applied manually
+### Coordinated artifacts are changed outside the transaction
 
-Report the authoritative artifacts as inconsistent.
+When external or manual changes leave only part of an intended coordinated
+project state applied, report the authoritative artifacts as inconsistent.
 
-Do not pretend the proposal was applied atomically.
+Do not describe those changes as a successful Documentation Transaction.
 
-Recommend completing or correcting the coordinated manual change before normal
-Development continues.
+Require reconciliation of the authoritative artifact set before relying on the
+inconsistent values as coordinated durable state.
 
 ### Approved `definition.md` exists but the coordinated artifact set is partial
 
@@ -1316,19 +1317,28 @@ true:
   coherent;
 - important accepted and rejected choices are identified;
 - implementation-level unknowns are separated from definition blockers;
-- coordinated initial artifact content has been proposed;
-- the user has been given a reviewable change set;
-- no artifact mutation has occurred.
+- coordinated initial artifact content has been prepared;
+- when artifact changes are required, an exact Documentation Transaction proposal
+  has been presented for review;
+- any requested revisions have produced a new reviewed proposal;
+- if the user approved the proposal and authorised Apply, the exact approved
+  proposal has either been applied successfully or its structured Apply failure
+  has been reported accurately.
 
 ### Material Re-entry
 
 - the requested issue has been classified correctly;
 - affected approved scope has been identified;
 - material, editorial, and no-change outcomes are distinguished;
-- definition version behavior is correct;
+- definition version behaviour is correct;
 - only affected artifacts are included;
 - relevant historical decisions are preserved;
 - coordinated artifact changes are internally consistent;
-- the user has been given a reviewable proposal;
-- no artifact mutation has occurred.
+- when artifact changes are required, an exact Documentation Transaction proposal
+  has been presented for review;
+- if the user approved the proposal and authorised Apply, the exact approved
+  proposal has either been applied successfully or its structured Apply failure
+  has been reported accurately.
 
+A `no-change`, `needs clarification`, or `blocked` outcome may complete without a
+Documentation Transaction.

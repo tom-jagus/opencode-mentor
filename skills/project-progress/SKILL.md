@@ -1455,15 +1455,29 @@ For a valid transition, use:
 - Result: valid
 - Relevant findings: ...
 
-## Proposed `progress.md` Changes
+## Documentation Transaction
 
-### <location>
+- **Proposal:** <proposal-id>
+- **Authority:** milestone
+- **Status:** awaiting review
 
-Current:
-...
+### `docs/project/progress.md`
 
-Proposed:
-...
+**Operation:** replace
+
+**Current:**
+
+```markdown
+<exact before.content returned by documentation_preview>
+```
+
+**Proposed:**
+
+```markdown
+<exact after.content returned by documentation_preview>
+```
+
+No project artifacts have been modified.
 
 ## Consequences
 
@@ -1927,15 +1941,29 @@ For a valid decision proposal, use:
 - **Scope:** within approved project scope
 - **Relevant findings:** ...
 
-## Proposed `decisions.md` Changes
+## Documentation Transaction
 
-### <frontmatter, existing decision, or appended entry>
+- **Proposal:** <proposal-id>
+- **Authority:** decision
+- **Status:** awaiting review
 
-Current:
-...
+### `docs/project/decisions.md`
 
-Proposed:
-...
+**Operation:** replace
+
+**Current:**
+
+```markdown
+<exact before.content returned by documentation_preview>
+```
+
+**Proposed:**
+
+```markdown
+<exact after.content returned by documentation_preview>
+```
+
+The decision has not yet been durably recorded.
 
 ## Consequences
 
