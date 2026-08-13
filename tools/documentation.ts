@@ -1636,7 +1636,71 @@ function applyFailure(
   });
 }
 
+type SequenceDiffEntry = [-1 | 0 | 1, string];
+
 const diffContextLines = 3;
+
+function diffLines(
+  actual: string[],
+  expected: string[],
+): SequenceDiffEntry[] {
+  const rows = expected.length + 1;
+  const columns = actual.length + 1;
+
+  const lengths = Array.from(
+    { length: rows },
+    () => new Uint32Array(columns),
+  );
+
+  for (let oldIndex = expected.length - 1; oldIndex >= 0; oldIndex -= 1) {
+    for (let newIndex = actual.length - 1; newIndex >= 0; newIndex -= 1) {
+      lengths[oldIndex]![newIndex] =
+        expected[oldIndex] === actual[newIndex]
+          ? lengths[oldIndex + 1]![newIndex + 1]! + 1
+          : Math.max(
+              lengths[oldIndex + 1]![newIndex]!,
+              lengths[oldIndex]![newIndex + 1]!,
+            );
+    }
+  }
+
+  const result: SequenceDiffEntry[] = [];
+
+  let oldIndex = 0;
+  let newIndex = 0;
+
+  while (oldIndex < expected.length && newIndex < actual.length) {
+    if (expected[oldIndex] === actual[newIndex]) {
+      result.push([0, actual[newIndex]!]);
+      oldIndex += 1;
+      newIndex += 1;
+      continue;
+    }
+
+    if (
+      lengths[oldIndex]![newIndex + 1]! >=
+      lengths[oldIndex + 1]![newIndex]!
+    ) {
+      result.push([1, actual[newIndex]!]);
+      newIndex += 1;
+    } else {
+      result.push([-1, expected[oldIndex]!]);
+      oldIndex += 1;
+    }
+  }
+
+  while (newIndex < actual.length) {
+    result.push([1, actual[newIndex]!]);
+    newIndex += 1;
+  }
+
+  while (oldIndex < expected.length) {
+    result.push([-1, expected[oldIndex]!]);
+    oldIndex += 1;
+  }
+
+  return result;
+}
 
 function splitDiffLines(content: string): string[] {
   if (content.length === 0) {
@@ -1669,8 +1733,8 @@ function appendUnifiedLine(
 
   let body = hasNewline ? value.slice(0, -1) : value;
 
-  // Make CRLF visible without allowing a carriage return to affect terminal
-  // rendering. This is presentation only; stored proposal bytes are unchanged.
+  // Keep CRLF visible without allowing carriage returns to affect rendering.
+  // This changes review presentation only; proposal content remains untouched.
   if (body.endsWith("\r")) {
     body = `${body.slice(0, -1)}\\r`;
   }
@@ -1686,75 +1750,13 @@ function buildUnifiedReview(target: ProposalTarget): UnifiedReview {
   const beforeLines = splitDiffLines(target.before?.content ?? "");
   const afterLines = splitDiffLines(target.after?.content ?? "");
 
+  /*
+   * Compare proposed content against current content:
+   *   +1 -> proposed-only line -> addition
+   *   -1 -> current-only line  -> deletion
+   *    0 -> unchanged line
+   */
   const entries = diffLines(afterLines, beforeLines);
-
-  const lines: ReviewLine[] = [];
-}
-
-  type SequenceDiffEntry = [-1 | 0 | 1, string];
-
-  const diffContextLines = 3;
-
-  function diffLines(
-    actual: string[],
-    expected: string[],
-  ): SequenceDiffEntry[] {
-    const rows = expected.length + 1;
-    const columns = actual.length + 1;
-
-    const lengths = Array.from(
-      { length: rows },
-      () => new Uint32Array(columns),
-    );
-
-    for (let oldIndex = expected.length - 1; oldIndex >= 0; oldIndex -= 1) {
-      for (let newIndex = actual.length - 1; newIndex >= 0; newIndex -= 1) {
-        lengths[oldIndex]![newIndex] =
-          expected[oldIndex] === actual[newIndex]
-            ? lengths[oldIndex + 1]![newIndex + 1]! + 1
-            : Math.max(
-                lengths[oldIndex + 1]![newIndex]!,
-                lengths[oldIndex]![newIndex + 1]!,
-              );
-      }
-    }
-
-    const result: SequenceDiffEntry[] = [];
-
-    let oldIndex = 0;
-    let newIndex = 0;
-
-    while (oldIndex < expected.length && newIndex < actual.length) {
-      if (expected[oldIndex] === actual[newIndex]) {
-        result.push([0, actual[newIndex]!]);
-        oldIndex += 1;
-        newIndex += 1;
-        continue;
-      }
-
-      if (
-        lengths[oldIndex]![newIndex + 1]! >= lengths[oldIndex + 1]![newIndex]!
-      ) {
-        result.push([1, actual[newIndex]!]);
-        newIndex += 1;
-      } else {
-        result.push([-1, expected[oldIndex]!]);
-        oldIndex += 1;
-      }
-    }
-
-    while (newIndex < actual.length) {
-      result.push([1, actual[newIndex]!]);
-      newIndex += 1;
-    }
-
-    while (oldIndex < expected.length) {
-      result.push([-1, expected[oldIndex]!]);
-      oldIndex += 1;
-    }
-
-    return result;
-  }
 
   const lines: ReviewLine[] = [];
 
@@ -1823,7 +1825,11 @@ function buildUnifiedReview(target: ProposalTarget): UnifiedReview {
 
   for (const changedIndex of changedIndexes) {
     const start = Math.max(0, changedIndex - diffContextLines);
-    const end = Math.min(lines.length, changedIndex + diffContextLines + 1);
+
+    const end = Math.min(
+      lines.length,
+      changedIndex + diffContextLines + 1,
+    );
 
     const previous = ranges.at(-1);
 
@@ -1843,23 +1849,29 @@ function buildUnifiedReview(target: ProposalTarget): UnifiedReview {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]!;
 
-    oldPrefix[index + 1] = oldPrefix[index]! + (line.kind === "add" ? 0 : 1);
+    oldPrefix[index + 1] =
+      oldPrefix[index]! + (line.kind === "add" ? 0 : 1);
 
-    newPrefix[index + 1] = newPrefix[index]! + (line.kind === "remove" ? 0 : 1);
+    newPrefix[index + 1] =
+      newPrefix[index]! + (line.kind === "remove" ? 0 : 1);
   }
 
   for (const range of ranges) {
     const oldBefore = oldPrefix[range.start]!;
     const newBefore = newPrefix[range.start]!;
 
-    const oldCount = oldPrefix[range.end]! - oldPrefix[range.start]!;
+    const oldCount =
+      oldPrefix[range.end]! - oldPrefix[range.start]!;
 
-    const newCount = newPrefix[range.end]! - newPrefix[range.start]!;
+    const newCount =
+      newPrefix[range.end]! - newPrefix[range.start]!;
 
     const oldStart = oldCount === 0 ? oldBefore : oldBefore + 1;
     const newStart = newCount === 0 ? newBefore : newBefore + 1;
 
-    output.push(`@@ -${oldStart},${oldCount} +${newStart},${newCount} @@`);
+    output.push(
+      `@@ -${oldStart},${oldCount} +${newStart},${newCount} @@`,
+    );
 
     for (let index = range.start; index < range.end; index += 1) {
       const line = lines[index]!;
