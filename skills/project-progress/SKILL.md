@@ -1478,7 +1478,7 @@ For a valid transition, use:
 <exact review.diff returned by documentation_preview>
 ```
 
-The decision has not yet been durably recorded.
+The milestone transition has not yet been durably recorded.
 
 ## Consequences
 
@@ -1956,7 +1956,6 @@ For a valid decision proposal, use:
 
 - **Proposal:** <proposal-id>
 - **Authority:** decision
-
 - **Status:** awaiting review
 
 ### `docs/project/decisions.md`
@@ -1981,7 +1980,7 @@ No project artifacts have been modified.
 
 For a request that does not produce a decision proposal, use:
 
-````margdown
+````markdown
 # Decision
 
 ## Requested Action
