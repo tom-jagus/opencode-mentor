@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import {
   copyFile,
+  link,
   lstat,
   mkdir,
   readFile,
@@ -500,6 +501,7 @@ async function inspectTargetPath(
     absolutePath,
     exists: false,
     regularFile: false,
+    mode: null,
   };
 }
 
@@ -544,20 +546,38 @@ async function buildTarget(
 
   switch (change.operation) {
     case "create": {
-      if (inspected.exists) {
+      await ensureTargetParents(projectRoot, target.path, createdDirectories);
+
+      const staged = await readFile(item.staged_path!);
+
+      try {
+        await createWithContent(
+          item.absolute_path,
+          staged,
+          0o644,
+          target.after!.sha256,
+        );
+      } catch (error) {
         throw new DocumentationError(
-          "TARGET_EXISTS",
-          "Create requested but target already exists.",
-          change.path,
+          "APPLY_FAILED",
+          `Unable to create target: ${errorMessage(error)}`,
+          target.path,
         );
       }
 
-      return {
-        path: change.path,
+      applied.push({
+        target,
+        absolute_path: item.absolute_path,
+        original_mode: null,
+      });
+
+      results.push({
+        path: target.path,
         operation: "create",
-        before: null,
-        after: afterSnapshot(change.content!),
-      };
+        sha256: target.after!.sha256,
+      });
+
+      break;
     }
 
     case "replace": {
@@ -639,17 +659,11 @@ function mentorStateRoot(): string {
 }
 
 function proposalStateRoot(): string {
-  return join(
-    mentorStateRoot(),
-    "documentation-proposals",
-  );
+  return join(mentorStateRoot(), "documentation-proposals");
 }
 
 function transactionStateRoot(): string {
-  return join(
-    mentorStateRoot(),
-    "documentation-transactions",
-  );
+  return join(mentorStateRoot(), "documentation-transactions");
 }
 
 async function persistProposal(record: ProposalRecord): Promise<void> {
@@ -694,21 +708,12 @@ async function persistProposal(record: ProposalRecord): Promise<void> {
   }
 }
 
-function isRecord(
-  value: unknown,
-): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  );
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function isSha256(value: unknown): value is string {
-  return (
-    typeof value === "string" &&
-    /^[0-9a-f]{64}$/.test(value)
-  );
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
 }
 
 function isProposalId(value: string): boolean {
@@ -731,22 +736,11 @@ function isDocumentationAuthority(
 function isDocumentationOperation(
   value: unknown,
 ): value is DocumentationOperation {
-  return (
-    value === "create" ||
-    value === "replace" ||
-    value === "delete"
-  );
+  return value === "create" || value === "replace" || value === "delete";
 }
 
-function invalidProposal(
-  message: string,
-  path?: string,
-): never {
-  throw new DocumentationError(
-    "INVALID_PROPOSAL",
-    message,
-    path,
-  );
+function invalidProposal(message: string, path?: string): never {
+  throw new DocumentationError("INVALID_PROPOSAL", message, path);
 }
 
 function validateStoredSnapshot(
@@ -758,10 +752,7 @@ function validateStoredSnapshot(
     !isSha256(value.sha256) ||
     typeof value.content !== "string"
   ) {
-    invalidProposal(
-      "Proposal contains an invalid content snapshot.",
-      path,
-    );
+    invalidProposal("Proposal contains an invalid content snapshot.", path);
   }
 
   const calculated = sha256Text(value.content);
@@ -795,11 +786,7 @@ async function loadProposal(
     );
   }
 
-  const recordPath = join(
-    proposalStateRoot(),
-    key,
-    `${proposalId}.json`,
-  );
+  const recordPath = join(proposalStateRoot(), key, `${proposalId}.json`);
 
   let rawText: string;
 
@@ -831,9 +818,7 @@ async function loadProposal(
   }
 
   if (!isRecord(raw)) {
-    invalidProposal(
-      "Documentation proposal must be a JSON object.",
-    );
+    invalidProposal("Documentation proposal must be a JSON object.");
   }
 
   if (raw.schema_version !== 1) {
@@ -844,9 +829,7 @@ async function loadProposal(
       );
     }
 
-    invalidProposal(
-      "Documentation proposal has no schema version.",
-    );
+    invalidProposal("Documentation proposal has no schema version.");
   }
 
   if (
@@ -854,9 +837,7 @@ async function loadProposal(
     !isRecord(raw.integrity) ||
     !isRecord(raw.state)
   ) {
-    invalidProposal(
-      "Documentation proposal structure is incomplete.",
-    );
+    invalidProposal("Documentation proposal structure is incomplete.");
   }
 
   const proposal = raw.proposal;
@@ -874,10 +855,7 @@ async function loadProposal(
     );
   }
 
-  if (
-    proposal.project.root !== projectRoot ||
-    proposal.project.key !== key
-  ) {
+  if (proposal.project.root !== projectRoot || proposal.project.key !== key) {
     throw new DocumentationError(
       "PROJECT_MISMATCH",
       "Documentation proposal belongs to a different project.",
@@ -885,9 +863,7 @@ async function loadProposal(
   }
 
   if (!isSha256(raw.integrity.proposal_sha256)) {
-    invalidProposal(
-      "Documentation proposal integrity checksum is invalid.",
-    );
+    invalidProposal("Documentation proposal integrity checksum is invalid.");
   }
 
   const expectedIntegrity = sha256Text(
@@ -897,23 +873,16 @@ async function loadProposal(
     }),
   );
 
-  if (
-    expectedIntegrity !==
-    raw.integrity.proposal_sha256
-  ) {
+  if (expectedIntegrity !== raw.integrity.proposal_sha256) {
     throw new DocumentationError(
       "PROPOSAL_INTEGRITY_FAILED",
       "Documentation proposal payload has changed since Preview.",
     );
   }
 
-  if (
-    raw.state.status === "applied"
-  ) {
+  if (raw.state.status === "applied") {
     if (typeof raw.state.applied_at !== "string") {
-      invalidProposal(
-        "Applied proposal has invalid lifecycle state.",
-      );
+      invalidProposal("Applied proposal has invalid lifecycle state.");
     }
 
     throw new DocumentationError(
@@ -922,13 +891,8 @@ async function loadProposal(
     );
   }
 
-  if (
-    raw.state.status !== "pending" ||
-    raw.state.applied_at !== null
-  ) {
-    invalidProposal(
-      "Documentation proposal has invalid lifecycle state.",
-    );
+  if (raw.state.status !== "pending" || raw.state.applied_at !== null) {
+    invalidProposal("Documentation proposal has invalid lifecycle state.");
   }
 
   const targets: ProposalTarget[] = [];
@@ -939,13 +903,9 @@ async function loadProposal(
     if (
       !isRecord(rawTarget) ||
       typeof rawTarget.path !== "string" ||
-      !isDocumentationOperation(
-        rawTarget.operation,
-      )
+      !isDocumentationOperation(rawTarget.operation)
     ) {
-      invalidProposal(
-        "Documentation proposal contains an invalid target.",
-      );
+      invalidProposal("Documentation proposal contains an invalid target.");
     }
 
     const path = rawTarget.path;
@@ -953,23 +913,14 @@ async function loadProposal(
     try {
       validateRelativePath(path);
     } catch {
-      invalidProposal(
-        "Proposal contains an invalid target path.",
-        path,
-      );
+      invalidProposal("Proposal contains an invalid target path.", path);
     }
 
     if (seenPaths.has(path)) {
-      invalidProposal(
-        "Proposal contains duplicate target paths.",
-        path,
-      );
+      invalidProposal("Proposal contains duplicate target paths.", path);
     }
 
-    if (
-      previousPath !== null &&
-      previousPath >= path
-    ) {
+    if (previousPath !== null && previousPath >= path) {
       invalidProposal(
         "Proposal targets are not in deterministic path order.",
         path,
@@ -981,32 +932,20 @@ async function loadProposal(
 
     if (
       !pathAllowed(proposal.authority, path) ||
-      !operationAllowed(
-        proposal.authority,
-        rawTarget.operation,
-      )
+      !operationAllowed(proposal.authority, rawTarget.operation)
     ) {
-      invalidProposal(
-        "Proposal target violates its authority contract.",
-        path,
-      );
+      invalidProposal("Proposal target violates its authority contract.", path);
     }
 
     let before: ProposalSnapshot | null = null;
     let after: ProposalSnapshot | null = null;
 
     if (rawTarget.before !== null) {
-      before = validateStoredSnapshot(
-        rawTarget.before,
-        path,
-      );
+      before = validateStoredSnapshot(rawTarget.before, path);
     }
 
     if (rawTarget.after !== null) {
-      after = validateStoredSnapshot(
-        rawTarget.after,
-        path,
-      );
+      after = validateStoredSnapshot(rawTarget.after, path);
     }
 
     switch (rawTarget.operation) {
@@ -1066,8 +1005,7 @@ async function loadProposal(
       schema_version: 1,
       proposal: validatedProposal,
       integrity: {
-        proposal_sha256:
-          raw.integrity.proposal_sha256,
+        proposal_sha256: raw.integrity.proposal_sha256,
       },
       state: {
         status: "pending",
@@ -1088,10 +1026,7 @@ async function validateFreshTarget(
   let inspected;
 
   try {
-    inspected = await inspectTargetPath(
-      projectRoot,
-      target.path,
-    );
+    inspected = await inspectTargetPath(projectRoot, target.path);
   } catch (error) {
     throw new DocumentationError(
       "STALE_TARGET",
@@ -1138,14 +1073,9 @@ async function validateFreshTarget(
     );
   }
 
-  const bytes = await readFile(
-    inspected.absolutePath,
-  );
+  const bytes = await readFile(inspected.absolutePath);
 
-  if (
-    sha256Bytes(bytes) !==
-    target.before!.sha256
-  ) {
+  if (sha256Bytes(bytes) !== target.before!.sha256) {
     throw new DocumentationError(
       "STALE_TARGET",
       "Target content has changed since Preview.",
@@ -1167,12 +1097,9 @@ async function verifyFileChecksum(
   const bytes = await readFile(path);
 
   if (sha256Bytes(bytes) !== expected) {
-    throw new Error(
-      `Checksum verification failed for ${path}`,
-    );
+    throw new Error(`Checksum verification failed for ${path}`);
   }
 }
-
 
 async function prepareTransaction(
   projectRoot: string,
@@ -1182,15 +1109,9 @@ async function prepareTransaction(
   directory: string;
   targets: PreparedTarget[];
 }> {
-  const projectTransactions = join(
-    transactionStateRoot(),
-    key,
-  );
+  const projectTransactions = join(transactionStateRoot(), key);
 
-  const transactionDirectory = join(
-    projectTransactions,
-    proposal.id,
-  );
+  const transactionDirectory = join(projectTransactions, proposal.id);
 
   try {
     await mkdir(projectTransactions, {
@@ -1215,15 +1136,9 @@ async function prepareTransaction(
     );
   }
 
-  const stagedDirectory = join(
-    transactionDirectory,
-    "staged",
-  );
+  const stagedDirectory = join(transactionDirectory, "staged");
 
-  const backupDirectory = join(
-    transactionDirectory,
-    "backup",
-  );
+  const backupDirectory = join(transactionDirectory, "backup");
 
   try {
     await mkdir(stagedDirectory, {
@@ -1236,64 +1151,32 @@ async function prepareTransaction(
 
     const prepared: PreparedTarget[] = [];
 
-    for (
-      let index = 0;
-      index < proposal.targets.length;
-      index += 1
-    ) {
+    for (let index = 0; index < proposal.targets.length; index += 1) {
       const target = proposal.targets[index]!;
-      const number = String(index + 1).padStart(
-        4,
-        "0",
-      );
+      const number = String(index + 1).padStart(4, "0");
 
-      const live = await validateFreshTarget(
-        projectRoot,
-        target,
-      );
+      const live = await validateFreshTarget(projectRoot, target);
 
       let stagedPath: string | null = null;
       let backupPath: string | null = null;
 
       if (target.after !== null) {
-        stagedPath = join(
-          stagedDirectory,
-          number,
-        );
+        stagedPath = join(stagedDirectory, number);
 
-        await writeFile(
-          stagedPath,
-          Buffer.from(
-            target.after.content,
-            "utf8",
-          ),
-          {
-            flag: "wx",
-            mode: 0o600,
-          },
-        );
+        await writeFile(stagedPath, Buffer.from(target.after.content, "utf8"), {
+          flag: "wx",
+          mode: 0o600,
+        });
 
-        await verifyFileChecksum(
-          stagedPath,
-          target.after.sha256,
-        );
+        await verifyFileChecksum(stagedPath, target.after.sha256);
       }
 
       if (target.before !== null) {
-        backupPath = join(
-          backupDirectory,
-          number,
-        );
+        backupPath = join(backupDirectory, number);
 
-        await copyFile(
-          live.absolutePath,
-          backupPath,
-        );
+        await copyFile(live.absolutePath, backupPath);
 
-        await verifyFileChecksum(
-          backupPath,
-          target.before.sha256,
-        );
+        await verifyFileChecksum(backupPath, target.before.sha256);
       }
 
       prepared.push({
@@ -1335,10 +1218,7 @@ async function ensureTargetParents(
   targetPath: string,
   createdDirectories: string[],
 ): Promise<void> {
-  const segments = targetPath.split("/").slice(
-    0,
-    -1,
-  );
+  const segments = targetPath.split("/").slice(0, -1);
 
   let current = projectRoot;
 
@@ -1348,13 +1228,8 @@ async function ensureTargetParents(
     try {
       const stat = await lstat(current);
 
-      if (
-        stat.isSymbolicLink() ||
-        !stat.isDirectory()
-      ) {
-        throw new Error(
-          `Parent path is not a safe directory: ${current}`,
-        );
+      if (stat.isSymbolicLink() || !stat.isDirectory()) {
+        throw new Error(`Parent path is not a safe directory: ${current}`);
       }
     } catch (error) {
       if (!isNodeError(error, "ENOENT")) {
@@ -1365,21 +1240,14 @@ async function ensureTargetParents(
         await mkdir(current);
         createdDirectories.push(current);
       } catch (mkdirError) {
-        if (
-          !isNodeError(mkdirError, "EEXIST")
-        ) {
+        if (!isNodeError(mkdirError, "EEXIST")) {
           throw mkdirError;
         }
 
         const stat = await lstat(current);
 
-        if (
-          stat.isSymbolicLink() ||
-          !stat.isDirectory()
-        ) {
-          throw new Error(
-            `Parent path is not a safe directory: ${current}`,
-          );
+        if (stat.isSymbolicLink() || !stat.isDirectory()) {
+          throw new Error(`Parent path is not a safe directory: ${current}`);
         }
       }
     }
@@ -1398,24 +1266,14 @@ async function replaceWithContent(
   );
 
   try {
-    await writeFile(
-      temporaryPath,
-      content,
-      {
-        flag: "wx",
-        mode,
-      },
-    );
+    await writeFile(temporaryPath, content, {
+      flag: "wx",
+      mode,
+    });
 
-    await verifyFileChecksum(
-      temporaryPath,
-      expectedSha256,
-    );
+    await verifyFileChecksum(temporaryPath, expectedSha256);
 
-    await rename(
-      temporaryPath,
-      absolutePath,
-    );
+    await rename(temporaryPath, absolutePath);
   } finally {
     try {
       await unlink(temporaryPath);
@@ -1437,31 +1295,18 @@ async function commitTargets(
     const target = item.target;
 
     // Revalidate immediately before each mutation.
-    await validateFreshTarget(
-      projectRoot,
-      target,
-    );
+    await validateFreshTarget(projectRoot, target);
 
     switch (target.operation) {
       case "create": {
-        await ensureTargetParents(
-          projectRoot,
-          target.path,
-          createdDirectories,
-        );
+        await ensureTargetParents(projectRoot, target.path, createdDirectories);
 
-        const staged = await readFile(
-          item.staged_path!,
-        );
+        const staged = await readFile(item.staged_path!);
 
         try {
-          await writeFile(
-            item.absolute_path,
-            staged,
-            {
-              flag: "wx",
-            },
-          );
+          await writeFile(item.absolute_path, staged, {
+            flag: "wx",
+          });
         } catch (error) {
           throw new DocumentationError(
             "APPLY_FAILED",
@@ -1472,15 +1317,11 @@ async function commitTargets(
 
         applied.push({
           target,
-          absolute_path:
-            item.absolute_path,
+          absolute_path: item.absolute_path,
           original_mode: null,
         });
 
-        await verifyFileChecksum(
-          item.absolute_path,
-          target.after!.sha256,
-        );
+        await verifyFileChecksum(item.absolute_path, target.after!.sha256);
 
         results.push({
           path: target.path,
@@ -1492,9 +1333,7 @@ async function commitTargets(
       }
 
       case "replace": {
-        const staged = await readFile(
-          item.staged_path!,
-        );
+        const staged = await readFile(item.staged_path!);
 
         try {
           await replaceWithContent(
@@ -1513,16 +1352,11 @@ async function commitTargets(
 
         applied.push({
           target,
-          absolute_path:
-            item.absolute_path,
-          original_mode:
-            item.original_mode,
+          absolute_path: item.absolute_path,
+          original_mode: item.original_mode,
         });
 
-        await verifyFileChecksum(
-          item.absolute_path,
-          target.after!.sha256,
-        );
+        await verifyFileChecksum(item.absolute_path, target.after!.sha256);
 
         results.push({
           path: target.path,
@@ -1546,10 +1380,8 @@ async function commitTargets(
 
         applied.push({
           target,
-          absolute_path:
-            item.absolute_path,
-          original_mode:
-            item.original_mode,
+          absolute_path: item.absolute_path,
+          original_mode: item.original_mode,
         });
 
         try {
@@ -1588,33 +1420,20 @@ async function rollbackTargets(
   const unresolved = new Set<string>();
 
   const preparedByPath = new Map(
-    prepared.map((item) => [
-      item.target.path,
-      item,
-    ]),
+    prepared.map((item) => [item.target.path, item]),
   );
 
-  for (
-    let index = applied.length - 1;
-    index >= 0;
-    index -= 1
-  ) {
+  for (let index = applied.length - 1; index >= 0; index -= 1) {
     const item = applied[index]!;
     const target = item.target;
-    const preparedItem =
-      preparedByPath.get(target.path)!;
+    const preparedItem = preparedByPath.get(target.path)!;
 
     try {
       if (target.operation === "create") {
         try {
-          const bytes = await readFile(
-            item.absolute_path,
-          );
+          const bytes = await readFile(item.absolute_path);
 
-          if (
-            sha256Bytes(bytes) !==
-            target.after!.sha256
-          ) {
+          if (sha256Bytes(bytes) !== target.after!.sha256) {
             unresolved.add(target.path);
             continue;
           }
@@ -1633,13 +1452,9 @@ async function rollbackTargets(
         let canRestore = false;
 
         try {
-          const bytes = await readFile(
-            item.absolute_path,
-          );
+          const bytes = await readFile(item.absolute_path);
 
-          canRestore =
-            sha256Bytes(bytes) ===
-            target.after!.sha256;
+          canRestore = sha256Bytes(bytes) === target.after!.sha256;
         } catch (error) {
           if (isNodeError(error, "ENOENT")) {
             canRestore = true;
@@ -1653,9 +1468,7 @@ async function rollbackTargets(
           continue;
         }
 
-        const backup = await readFile(
-          preparedItem.backup_path!,
-        );
+        const backup = await readFile(preparedItem.backup_path!);
 
         await replaceWithContent(
           item.absolute_path,
@@ -1669,14 +1482,9 @@ async function rollbackTargets(
 
       // delete
       try {
-        const bytes = await readFile(
-          item.absolute_path,
-        );
+        const bytes = await readFile(item.absolute_path);
 
-        if (
-          sha256Bytes(bytes) ===
-          target.before!.sha256
-        ) {
+        if (sha256Bytes(bytes) === target.before!.sha256) {
           continue;
         }
 
@@ -1688,9 +1496,7 @@ async function rollbackTargets(
         }
       }
 
-      const backup = await readFile(
-        preparedItem.backup_path!,
-      );
+      const backup = await readFile(preparedItem.backup_path!);
 
       await replaceWithContent(
         item.absolute_path,
@@ -1703,16 +1509,9 @@ async function rollbackTargets(
     }
   }
 
-  for (
-    let index =
-      createdDirectories.length - 1;
-    index >= 0;
-    index -= 1
-  ) {
+  for (let index = createdDirectories.length - 1; index >= 0; index -= 1) {
     try {
-      await rmdir(
-        createdDirectories[index]!,
-      );
+      await rmdir(createdDirectories[index]!);
     } catch {
       // Remove only empty transaction-created
       // directories. Leave anything else intact.
@@ -1744,19 +1543,12 @@ async function persistAppliedState(
   );
 
   try {
-    await writeFile(
-      temporaryPath,
-      `${json(updated)}\n`,
-      {
-        flag: "wx",
-        mode: 0o600,
-      },
-    );
+    await writeFile(temporaryPath, `${json(updated)}\n`, {
+      flag: "wx",
+      mode: 0o600,
+    });
 
-    await rename(
-      temporaryPath,
-      recordPath,
-    );
+    await rename(temporaryPath, recordPath);
   } catch (error) {
     try {
       await unlink(temporaryPath);
@@ -1768,6 +1560,35 @@ async function persistAppliedState(
       "PROPOSAL_STATE_FAILED",
       `Unable to persist applied proposal state: ${errorMessage(error)}`,
     );
+  }
+}
+
+async function createWithContent(
+  absolutePath: string,
+  content: Uint8Array,
+  mode: number,
+  expectedSha256: string,
+): Promise<void> {
+  const temporaryPath = join(
+    dirname(absolutePath),
+    `.${basename(absolutePath)}.${randomUUID()}.tmp`,
+  );
+
+  try {
+    await writeFile(temporaryPath, content, {
+      flag: "wx",
+      mode,
+    });
+
+    await verifyFileChecksum(temporaryPath, expectedSha256);
+
+    await link(temporaryPath, absolutePath);
+  } finally {
+    try {
+      await unlink(temporaryPath);
+    } catch {
+      // Temp may already be absent.
+    }
   }
 }
 
@@ -1792,30 +1613,21 @@ function applyFailure(
   return json({
     version: 1,
     ok: false,
-    ...(proposalId
-      ? { proposal_id: proposalId }
-      : {}),
+    ...(proposalId ? { proposal_id: proposalId } : {}),
     error: {
       code: error.code,
       message: error.message,
-      ...(error.path
-        ? { path: error.path }
-        : {}),
-      ...(error.reason
-        ? { reason: error.reason }
-        : {}),
+      ...(error.path ? { path: error.path } : {}),
+      ...(error.reason ? { reason: error.reason } : {}),
     },
     ...(rollback
       ? {
           rollback: {
             attempted: true,
-            succeeded:
-              rollback.succeeded,
-            ...(rollback.unresolved_paths
-              .length > 0
+            succeeded: rollback.succeeded,
+            ...(rollback.unresolved_paths.length > 0
               ? {
-                  unresolved_paths:
-                    rollback.unresolved_paths,
+                  unresolved_paths: rollback.unresolved_paths,
                 }
               : {}),
           },
@@ -1823,8 +1635,7 @@ function applyFailure(
       : {}),
     ...(recoveryStatePreserved !== undefined
       ? {
-          recovery_state_preserved:
-            recoveryStatePreserved,
+          recovery_state_preserved: recoveryStatePreserved,
         }
       : {}),
   });
@@ -1990,18 +1801,14 @@ export const apply = tool({
   async execute(args, context) {
     const proposalId = args.proposal_id;
 
-    let transactionDirectory:
-      | string
-      | null = null;
+    let transactionDirectory: string | null = null;
 
     let prepared: PreparedTarget[] = [];
     const applied: AppliedTarget[] = [];
     const createdDirectories: string[] = [];
 
     try {
-      const directory =
-        context.worktree ||
-        context.directory;
+      const directory = context.worktree || context.directory;
 
       if (!directory) {
         throw new DocumentationError(
@@ -2010,15 +1817,11 @@ export const apply = tool({
         );
       }
 
-      const projectRoot =
-        await resolveProjectRoot(directory);
+      const projectRoot = await resolveProjectRoot(directory);
 
       const key = projectKey(projectRoot);
 
-      const {
-        record,
-        recordPath,
-      } = await loadProposal(
+      const { record, recordPath } = await loadProposal(
         projectRoot,
         key,
         proposalId,
@@ -2026,25 +1829,17 @@ export const apply = tool({
 
       // Full freshness validation before
       // transaction preparation.
-      for (
-        const target of
-        record.proposal.targets
-      ) {
-        await validateFreshTarget(
-          projectRoot,
-          target,
-        );
+      for (const target of record.proposal.targets) {
+        await validateFreshTarget(projectRoot, target);
       }
 
-      const transaction =
-        await prepareTransaction(
-          projectRoot,
-          key,
-          record.proposal,
-        );
+      const transaction = await prepareTransaction(
+        projectRoot,
+        key,
+        record.proposal,
+      );
 
-      transactionDirectory =
-        transaction.directory;
+      transactionDirectory = transaction.directory;
 
       prepared = transaction.targets;
 
@@ -2058,12 +1853,11 @@ export const apply = tool({
           createdDirectories,
         );
       } catch (error) {
-        const rollback =
-          await rollbackTargets(
-            applied,
-            prepared,
-            createdDirectories,
-          );
+        const rollback = await rollbackTargets(
+          applied,
+          prepared,
+          createdDirectories,
+        );
 
         if (!rollback.succeeded) {
           return applyFailure(
@@ -2077,53 +1871,42 @@ export const apply = tool({
           );
         }
 
+        let recoveryStatePreserved = false;
+
         if (transactionDirectory) {
           try {
-            await rm(
-              transactionDirectory,
-              {
-                recursive: true,
-                force: true,
-              },
-            );
+            await rm(transactionDirectory, {
+              recursive: true,
+              force: true,
+            });
           } catch {
-            // Rollback succeeded; stale runtime
-            // state may be cleaned manually.
+            recoveryStatePreserved = true;
           }
         }
 
         const applyError =
           error instanceof DocumentationError
             ? error
-            : new DocumentationError(
-                "APPLY_FAILED",
-                errorMessage(error),
-              );
+            : new DocumentationError("APPLY_FAILED", errorMessage(error));
 
         return applyFailure(
           proposalId,
           applyError,
           rollback,
-          false,
+          recoveryStatePreserved,
         );
       }
 
-      const appliedAt =
-        new Date().toISOString();
+      const appliedAt = new Date().toISOString();
 
       try {
-        await persistAppliedState(
-          recordPath,
-          record,
-          appliedAt,
-        );
+        await persistAppliedState(recordPath, record, appliedAt);
       } catch (error) {
-        const rollback =
-          await rollbackTargets(
-            applied,
-            prepared,
-            createdDirectories,
-          );
+        const rollback = await rollbackTargets(
+          applied,
+          prepared,
+          createdDirectories,
+        );
 
         if (!rollback.succeeded) {
           return applyFailure(
@@ -2139,13 +1922,10 @@ export const apply = tool({
 
         if (transactionDirectory) {
           try {
-            await rm(
-              transactionDirectory,
-              {
-                recursive: true,
-                force: true,
-              },
-            );
+            await rm(transactionDirectory, {
+              recursive: true,
+              force: true,
+            });
           } catch {
             // Rollback succeeded.
           }
@@ -2164,22 +1944,16 @@ export const apply = tool({
         );
       }
 
-      let cleanupWarning:
-        | string
-        | undefined;
+      let cleanupWarning: string | undefined;
 
       if (transactionDirectory) {
         try {
-          await rm(
-            transactionDirectory,
-            {
-              recursive: true,
-              force: true,
-            },
-          );
+          await rm(transactionDirectory, {
+            recursive: true,
+            force: true,
+          });
         } catch (error) {
-          cleanupWarning =
-            `Transaction cleanup failed: ${errorMessage(error)}`;
+          cleanupWarning = `Transaction cleanup failed: ${errorMessage(error)}`;
         }
       }
 
@@ -2191,25 +1965,17 @@ export const apply = tool({
         changes,
         ...(cleanupWarning
           ? {
-              warnings: [
-                cleanupWarning,
-              ],
+              warnings: [cleanupWarning],
             }
           : {}),
       });
     } catch (error) {
-      if (
-        transactionDirectory &&
-        applied.length === 0
-      ) {
+      if (transactionDirectory && applied.length === 0) {
         try {
-          await rm(
-            transactionDirectory,
-            {
-              recursive: true,
-              force: true,
-            },
-          );
+          await rm(transactionDirectory, {
+            recursive: true,
+            force: true,
+          });
         } catch {
           // No project mutation occurred.
         }
