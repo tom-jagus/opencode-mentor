@@ -68,6 +68,19 @@ export type GitInspectionFailure = {
 export type GitState =
   GitRepositoryState | GitNotRepositoryState | GitInspectionFailure;
 
+export type LocalBranchInspection =
+  | {
+      available: true;
+      exists: boolean;
+      branch: string;
+    }
+  | {
+      available: false;
+      exists: null;
+      branch: string;
+      error: string;
+    };
+
 const conflictCodes = new Set(["DD", "AU", "UD", "UA", "DU", "AA", "UU"]);
 
 async function runGit(cwd: string, args: string[]): Promise<GitCommandResult> {
@@ -340,6 +353,52 @@ export async function inspectGitState(directory: string): Promise<GitState> {
       repository: null,
       directory,
       reason: "git-unavailable",
+      error: errorMessage(error),
+    };
+  }
+}
+
+export async function inspectLocalBranch(
+  repositoryRoot: string,
+  branchName: string,
+): Promise<LocalBranchInspection> {
+  try {
+    const result = await runGit(repositoryRoot, [
+      "show-ref",
+      "--verify",
+      "--quiet",
+      `refs/heads/${branchName}`,
+    ]);
+
+    if (result.exitCode === 0) {
+      return {
+        available: true,
+        exists: true,
+        branch: branchName,
+      };
+    }
+
+    if (result.exitCode === 1) {
+      return {
+        available: true,
+        exists: false,
+        branch: branchName,
+      };
+    }
+
+    return {
+      available: false,
+      exists: null,
+      branch: branchName,
+      error:
+        result.stderr.trim() ||
+        `git show-ref exited with code ${result.exitCode}`,
+    };
+  } catch (error) {
+    return {
+      available: false,
+      exists: null,
+      branch: branchName,
       error: errorMessage(error),
     };
   }

@@ -1,6 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
-import { inspectGitState, parseGitStatus } from "../lib/git_state";
+import {
+  inspectGitState,
+  inspectLocalBranch,
+  parseGitStatus,
+} from "../lib/git_state";
 
 describe("parseGitStatus", () => {
   test("parses staged, unstaged, and untracked paths", () => {
@@ -65,5 +69,61 @@ describe("inspectGitState", () => {
       expect(Array.isArray(state.conflicts)).toBe(true);
       expect(Array.isArray(state.changes)).toBe(true);
     }
+  });
+});
+
+describe("inspectLocalBranch", () => {
+  test("finds the current local branch", async () => {
+    const repositoryRoot = fileURLToPath(
+      new URL("..", import.meta.url),
+    ).replace(/\/$/, "");
+
+    const state = await inspectGitState(
+      repositoryRoot,
+    );
+
+    expect(state.repository).toBe(true);
+
+    if (
+      !state.repository ||
+      state.branch === null
+    ) {
+      throw new Error(
+        "Test requires a named local branch",
+      );
+    }
+
+    const inspection =
+      await inspectLocalBranch(
+        repositoryRoot,
+        state.branch,
+      );
+
+    expect(inspection).toEqual({
+      available: true,
+      exists: true,
+      branch: state.branch,
+    });
+  });
+
+  test("reports an absent local branch", async () => {
+    const repositoryRoot = fileURLToPath(
+      new URL("..", import.meta.url),
+    ).replace(/\/$/, "");
+
+    const branch =
+      "feature/__opencode-mentor-absent-test__";
+
+    const inspection =
+      await inspectLocalBranch(
+        repositoryRoot,
+        branch,
+      );
+
+    expect(inspection).toEqual({
+      available: true,
+      exists: false,
+      branch,
+    });
   });
 });

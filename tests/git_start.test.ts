@@ -1,14 +1,9 @@
-import {
-  describe,
-  expect,
-  test,
-} from "bun:test";
+import { describe, expect, test } from "bun:test";
 import type { GitPolicy } from "../lib/git_policy";
-import type {
-  GitRepositoryState,
-  GitState,
-} from "../lib/git_state";
+import type { GitRepositoryState, GitState } from "../lib/git_state";
+import { fileURLToPath } from "node:url";
 import {
+  runGitStartPreflight,
   validateGitStartEligibility,
 } from "../lib/git_start";
 
@@ -16,14 +11,7 @@ const policy: GitPolicy = {
   schema_version: 1,
   base_branch: "main",
   branch: {
-    allowed_types: [
-      "feature",
-      "fix",
-      "docs",
-      "refactor",
-      "test",
-      "chore",
-    ],
+    allowed_types: ["feature", "fix", "docs", "refactor", "test", "chore"],
     format: "<type>/<kebab-case-summary>",
   },
   commit_message: {
@@ -110,8 +98,7 @@ describe("validateGitStartEligibility", () => {
       base_branch: "main",
       current_branch: "main",
       head_sha: "0123456789abcdef",
-      target_branch:
-        "feature/add-start-workflow",
+      target_branch: "feature/add-start-workflow",
       issues: [],
     });
   });
@@ -123,8 +110,7 @@ describe("validateGitStartEligibility", () => {
 
     expect(result.issues).toContainEqual({
       code: "NOT_ON_BASE_BRANCH",
-      message:
-        'Current branch must be the effective base branch "main"',
+      message: 'Current branch must be the effective base branch "main"',
     });
   });
 
@@ -135,10 +121,7 @@ describe("validateGitStartEligibility", () => {
     });
 
     expect(
-      detached.issues.some(
-        (issue) =>
-          issue.code === "DETACHED_HEAD",
-      ),
+      detached.issues.some((issue) => issue.code === "DETACHED_HEAD"),
     ).toBe(true);
 
     const unborn = validate({
@@ -146,17 +129,11 @@ describe("validateGitStartEligibility", () => {
       latest_commit: null,
     });
 
+    expect(unborn.issues.some((issue) => issue.code === "UNBORN_HEAD")).toBe(
+      true,
+    );
     expect(
-      unborn.issues.some(
-        (issue) =>
-          issue.code === "UNBORN_HEAD",
-      ),
-    ).toBe(true);
-    expect(
-      unborn.issues.some(
-        (issue) =>
-          issue.code === "HEAD_UNAVAILABLE",
-      ),
+      unborn.issues.some((issue) => issue.code === "HEAD_UNAVAILABLE"),
     ).toBe(true);
   });
 
@@ -180,37 +157,21 @@ describe("validateGitStartEligibility", () => {
     });
 
     expect(
-      result.issues.some(
-        (issue) =>
-          issue.code === "UNRESOLVED_CONFLICTS",
-      ),
+      result.issues.some((issue) => issue.code === "UNRESOLVED_CONFLICTS"),
     ).toBe(true);
   });
 
   test("rejects invalid or existing target branches", () => {
-    const invalid = validate(
-      {},
-      "hotfix/Repair_Release",
-    );
+    const invalid = validate({}, "hotfix/Repair_Release");
 
     expect(
-      invalid.issues.some(
-        (issue) =>
-          issue.code === "TARGET_BRANCH_INVALID",
-      ),
+      invalid.issues.some((issue) => issue.code === "TARGET_BRANCH_INVALID"),
     ).toBe(true);
 
-    const existing = validate(
-      {},
-      "feature/existing-work",
-      true,
-    );
+    const existing = validate({}, "feature/existing-work", true);
 
     expect(
-      existing.issues.some(
-        (issue) =>
-          issue.code === "TARGET_BRANCH_EXISTS",
-      ),
+      existing.issues.some((issue) => issue.code === "TARGET_BRANCH_EXISTS"),
     ).toBe(true);
   });
 
@@ -227,16 +188,14 @@ describe("validateGitStartEligibility", () => {
     const result = validateGitStartEligibility({
       state,
       policy,
-      target_branch:
-        "feature/add-start-workflow",
+      target_branch: "feature/add-start-workflow",
       target_branch_exists: false,
     });
 
     expect(result.issues).toEqual([
       {
         code: "GIT_UNAVAILABLE",
-        message:
-          "Git inspection failed: git executable is unavailable",
+        message: "Git inspection failed: git executable is unavailable",
       },
     ]);
   });
@@ -253,13 +212,41 @@ describe("validateGitStartEligibility", () => {
     const result = validateGitStartEligibility({
       state,
       policy,
-      target_branch:
-        "feature/add-start-workflow",
+      target_branch: "feature/add-start-workflow",
       target_branch_exists: false,
     });
 
-    expect(result.issues[0]?.code).toBe(
-      "NOT_GIT_REPOSITORY",
-    );
+    expect(result.issues[0]?.code).toBe("NOT_GIT_REPOSITORY");
+  });
+
+  test("runs read-only preflight against the repository", async () => {
+    const configurationRoot = fileURLToPath(
+      new URL("..", import.meta.url),
+    ).replace(/\/$/, "");
+
+    const result = await runGitStartPreflight({
+      directory: configurationRoot,
+      configuration_root: configurationRoot,
+      target_branch: "feature/opencode-mentor-preflight-test",
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error(`Preflight failed at ${result.stage}`);
+    }
+
+    expect(result.state.root).toBe(configurationRoot);
+    expect(result.policy_resolution.effective_policy.base_branch).toBe("main");
+    expect(result.target_branch_exists).toBe(false);
+
+    // This repository is currently on its milestone
+    // branch rather than the effective base branch.
+    expect(result.eligibility.eligible).toBe(false);
+    expect(
+      result.eligibility.issues.some(
+        (issue) => issue.code === "NOT_ON_BASE_BRANCH",
+      ),
+    ).toBe(true);
   });
 });
