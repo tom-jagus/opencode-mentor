@@ -1304,9 +1304,12 @@ async function commitTargets(
         const staged = await readFile(item.staged_path!);
 
         try {
-          await writeFile(item.absolute_path, staged, {
-            flag: "wx",
-          });
+          await createWithContent(
+            item.absolute_path,
+            staged,
+            0o644,
+            target.after!.sha256,
+          );
         } catch (error) {
           throw new DocumentationError(
             "APPLY_FAILED",
@@ -1320,8 +1323,6 @@ async function commitTargets(
           absolute_path: item.absolute_path,
           original_mode: null,
         });
-
-        await verifyFileChecksum(item.absolute_path, target.after!.sha256);
 
         results.push({
           path: target.path,
@@ -1920,6 +1921,8 @@ export const apply = tool({
           );
         }
 
+        let recoveryStatePreserved = false;
+
         if (transactionDirectory) {
           try {
             await rm(transactionDirectory, {
@@ -1927,7 +1930,7 @@ export const apply = tool({
               force: true,
             });
           } catch {
-            // Rollback succeeded.
+            recoveryStatePreserved = true;
           }
         }
 
@@ -1940,7 +1943,7 @@ export const apply = tool({
                 errorMessage(error),
               ),
           rollback,
-          false,
+          recoveryStatePreserved,
         );
       }
 
