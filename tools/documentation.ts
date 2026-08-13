@@ -660,6 +660,114 @@ function transactionStateRoot(): string {
   return join(mentorStateRoot(), "documentation-transactions");
 }
 
+async function ensureSafeProposalDirectory(directory: string): Promise<void> {
+  const root = proposalStateRoot();
+
+  const relativePath = relative(root, directory);
+
+  if (
+    relativePath === ".." ||
+    relativePath.startsWith(`..${sep}`) ||
+    isAbsolute(relativePath)
+  ) {
+    throw new DocumentationError(
+      "PROPOSAL_STORAGE_FAILED",
+      "Proposal storage path escapes the Documentation Transaction state root.",
+    );
+  }
+
+  // Establish the Mentor-owned proposal root first.
+  await mkdir(root, {
+    recursive: true,
+    mode: 0o700,
+  });
+
+  const rootStat = await lstat(root);
+
+  if (rootStat.isSymbolicLink() || !rootStat.isDirectory()) {
+    throw new DocumentationError(
+      "PROPOSAL_STORAGE_FAILED",
+      "Documentation proposal state root is not a safe directory.",
+    );
+  }
+
+  if (relativePath === "") {
+    return;
+  }
+
+  let current = root;
+
+  for (const segment of relativePath.split(sep)) {
+    current = join(current, segment);
+
+    try {
+      await mkdir(current, {
+        mode: 0o700,
+      });
+    } catch (error) {
+      if (!isNodeError(error, "EEXIST")) {
+        throw error;
+      }
+    }
+
+    const stat = await lstat(current);
+
+    if (stat.isSymbolicLink() || !stat.isDirectory()) {
+      throw new DocumentationError(
+        "PROPOSAL_STORAGE_FAILED",
+        "Documentation proposal storage path contains an unsafe component.",
+      );
+    }
+  }
+}
+
+async function validateStoredProposalPath(
+  key: string,
+  proposalId: string,
+): Promise<string> {
+  const root = proposalStateRoot();
+  const projectDirectory = join(root, key);
+  const recordPath = join(projectDirectory, `${proposalId}.json`);
+
+  let rootStat;
+  let projectStat;
+  let recordStat;
+
+  try {
+    rootStat = await lstat(root);
+    projectStat = await lstat(projectDirectory);
+    recordStat = await lstat(recordPath);
+  } catch (error) {
+    if (isNodeError(error, "ENOENT")) {
+      throw new DocumentationError(
+        "PROPOSAL_NOT_FOUND",
+        "Documentation proposal was not found for the current project.",
+      );
+    }
+
+    throw new DocumentationError(
+      "INVALID_PROPOSAL",
+      `Unable to inspect documentation proposal storage: ${errorMessage(error)}`,
+    );
+  }
+
+  if (
+    rootStat.isSymbolicLink() ||
+    !rootStat.isDirectory() ||
+    projectStat.isSymbolicLink() ||
+    !projectStat.isDirectory() ||
+    recordStat.isSymbolicLink() ||
+    !recordStat.isFile()
+  ) {
+    throw new DocumentationError(
+      "INVALID_PROPOSAL",
+      "Documentation proposal storage contains an unsafe path component.",
+    );
+  }
+
+  return recordPath;
+}
+
 async function persistProposal(record: ProposalRecord): Promise<void> {
   const projectDirectory = join(
     proposalStateRoot(),
@@ -676,16 +784,36 @@ async function persistProposal(record: ProposalRecord): Promise<void> {
   const serialized = `${json(record)}\n`;
 
   try {
-    await mkdir(projectDirectory, {
-      recursive: true,
-      mode: 0o700,
-    });
+    await ensureSafeProposalDirectory(projectDirectory);
 
     await writeFile(temporaryPath, serialized, {
       encoding: "utf8",
       mode: 0o600,
       flag: "wx",
     });
+
+    try {
+      const existing = await lstat(finalPath);
+
+      if (existing.isSymbolicLink() || !existing.isFile()) {
+        throw new DocumentationError(
+          "PROPOSAL_STORAGE_FAILED",
+          "Proposal destination is not a safe regular file.",
+        );
+      }
+
+      throw new DocumentationError(
+        "PROPOSAL_STORAGE_FAILED",
+        "Proposal destination already exists.",
+      );
+    } catch (error) {
+      if (
+        error instanceof DocumentationError ||
+        !isNodeError(error, "ENOENT")
+      ) {
+        throw error;
+      }
+    }
 
     await rename(temporaryPath, finalPath);
   } catch (error) {
@@ -780,7 +908,7 @@ async function loadProposal(
     );
   }
 
-  const recordPath = join(proposalStateRoot(), key, `${proposalId}.json`);
+  const recordPath = await validateStoredProposalPath(key, proposalId);
 
   let rawText: string;
 
@@ -1532,6 +1660,15 @@ async function persistAppliedState(
     },
   };
 
+  const currentStat = await lstat(recordPath);
+
+  if (currentStat.isSymbolicLink() || !currentStat.isFile()) {
+    throw new DocumentationError(
+      "PROPOSAL_STATE_FAILED",
+      "Documentation proposal state path is no longer a safe regular file.",
+    );
+  }
+
   const temporaryPath = join(
     dirname(recordPath),
     `.${basename(recordPath)}.${randomUUID()}.tmp`,
@@ -1640,17 +1777,11 @@ type SequenceDiffEntry = [-1 | 0 | 1, string];
 
 const diffContextLines = 3;
 
-function diffLines(
-  actual: string[],
-  expected: string[],
-): SequenceDiffEntry[] {
+function diffLines(actual: string[], expected: string[]): SequenceDiffEntry[] {
   const rows = expected.length + 1;
   const columns = actual.length + 1;
 
-  const lengths = Array.from(
-    { length: rows },
-    () => new Uint32Array(columns),
-  );
+  const lengths = Array.from({ length: rows }, () => new Uint32Array(columns));
 
   for (let oldIndex = expected.length - 1; oldIndex >= 0; oldIndex -= 1) {
     for (let newIndex = actual.length - 1; newIndex >= 0; newIndex -= 1) {
@@ -1678,8 +1809,7 @@ function diffLines(
     }
 
     if (
-      lengths[oldIndex]![newIndex + 1]! >=
-      lengths[oldIndex + 1]![newIndex]!
+      lengths[oldIndex]![newIndex + 1]! >= lengths[oldIndex + 1]![newIndex]!
     ) {
       result.push([1, actual[newIndex]!]);
       newIndex += 1;
@@ -1826,10 +1956,7 @@ function buildUnifiedReview(target: ProposalTarget): UnifiedReview {
   for (const changedIndex of changedIndexes) {
     const start = Math.max(0, changedIndex - diffContextLines);
 
-    const end = Math.min(
-      lines.length,
-      changedIndex + diffContextLines + 1,
-    );
+    const end = Math.min(lines.length, changedIndex + diffContextLines + 1);
 
     const previous = ranges.at(-1);
 
@@ -1849,29 +1976,23 @@ function buildUnifiedReview(target: ProposalTarget): UnifiedReview {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]!;
 
-    oldPrefix[index + 1] =
-      oldPrefix[index]! + (line.kind === "add" ? 0 : 1);
+    oldPrefix[index + 1] = oldPrefix[index]! + (line.kind === "add" ? 0 : 1);
 
-    newPrefix[index + 1] =
-      newPrefix[index]! + (line.kind === "remove" ? 0 : 1);
+    newPrefix[index + 1] = newPrefix[index]! + (line.kind === "remove" ? 0 : 1);
   }
 
   for (const range of ranges) {
     const oldBefore = oldPrefix[range.start]!;
     const newBefore = newPrefix[range.start]!;
 
-    const oldCount =
-      oldPrefix[range.end]! - oldPrefix[range.start]!;
+    const oldCount = oldPrefix[range.end]! - oldPrefix[range.start]!;
 
-    const newCount =
-      newPrefix[range.end]! - newPrefix[range.start]!;
+    const newCount = newPrefix[range.end]! - newPrefix[range.start]!;
 
     const oldStart = oldCount === 0 ? oldBefore : oldBefore + 1;
     const newStart = newCount === 0 ? newBefore : newBefore + 1;
 
-    output.push(
-      `@@ -${oldStart},${oldCount} +${newStart},${newCount} @@`,
-    );
+    output.push(`@@ -${oldStart},${oldCount} +${newStart},${newCount} @@`);
 
     for (let index = range.start; index < range.end; index += 1) {
       const line = lines[index]!;
