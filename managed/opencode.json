@@ -7,6 +7,7 @@
     "external_directory": "deny",
     "git_state": "deny",
     "documentation_preview": "deny",
+    "documentation_apply": "deny",
     "skill": {
       "*": "deny"
     },
@@ -36,6 +37,7 @@
         "list": "allow",
         "git_state": "allow",
         "documentation_preview": "allow",
+        "documentation_apply": "ask",
         "bash": "ask",
         "task": {
           "*": "deny",

@@ -516,6 +516,7 @@ async function readUtf8Snapshot(
   try {
     content = new TextDecoder("utf-8", {
       fatal: true,
+      ignoreBOM: true,
     }).decode(bytes);
   } catch {
     throw new DocumentationError(
