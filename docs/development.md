@@ -8,7 +8,9 @@ should be developed safely.
 
 OpenCode Mentor uses a proposal-only development model in which the LLM guides,
 challenges, investigates, and reviews source changes while the user remains
-responsible for entering source modifications manually.
+responsible for entering source modifications manually. Documentation is the
+normal reviewed write exception and uses the constrained Documentation
+Transaction.
 
 ## Production Architecture
 
@@ -188,10 +190,12 @@ OpenCode Mentor may:
 - recommend validation commands.
 
 The user remains responsible for entering source modifications manually.
+Generic source editing remains denied.
 
-Documentation is the normal write exception. The Documentation Transaction
-workflow will use constrained preview and apply tools so reviewed documentation
-can be modified without enabling generic editing.
+Documentation is the normal reviewed write exception. The implemented
+Documentation Transaction uses deterministic `documentation_preview` and
+permission-gated `documentation_apply` tools to apply explicitly approved
+content without enabling generic editing.
 
 Later Git and vault workflows similarly use narrow deterministic tools where
 mutation or policy enforcement requires them.
@@ -223,6 +227,7 @@ Implemented project workflows currently include:
 /define
 /resume
 /develop
+/docs
 /state
 /milestone
 /decision
@@ -251,22 +256,24 @@ OpenCode configuration layer.
 Custom tools are used when a capability needs a narrow deterministic interface
 that should not depend on free-form shell execution or model interpretation.
 
-The current example is:
+Current custom tools include:
 
 ```text
 git_state
+documentation_preview
+documentation_apply
 ```
 
 `git_state` provides structured, read-only local Git repository state for
 Project State, Session Recovery, and later Git workflows.
 
-Its permission boundary is intentionally asymmetric:
+`documentation_preview` and `documentation_apply` provide the constrained
+Documentation Transaction. Preview is allowed for `lead`; Apply is separately
+permission-gated. Both tools remain denied by default and unavailable to
+`explore`.
 
-```text
-global default: deny
-lead:           allow
-explore:        deny
-```
+Their permission boundaries preserve the general pattern of granting each agent
+only the narrow custom capabilities required by its role.
 
 Future custom tools should follow the same principle: introduce a reviewed,
 purpose-specific interface only when it materially improves safety,
@@ -300,33 +307,6 @@ workflow semantics should be checked when relevant.
 
 The final diff for a coherent unit should be reviewed before it is committed.
 
-## Temporary Development Scaffolding
-
-During active development the repository may contain launchers, validators,
-test suites, temporary fixtures, or other scaffolding used to establish and
-verify the configuration model.
-
-These components are development aids, not production runtime dependencies.
-
-The current project has used isolated launchers and automated regression suites
-to validate:
-
-- managed permission precedence;
-- agent restrictions;
-- workflow discovery and routing;
-- project bootstrap behaviour;
-- deterministic Git-state handling;
-- semantic workflow behaviour.
-
-Their existence during development does not make them part of the final runtime
-architecture.
-
-Before the final release, development-only tests and scripts should be removed
-unless a specific component remains necessary for installation or bootstrap.
-
-An installation/bootstrap script may be retained if the Live Deployment and
-Dotfiles Integration milestone determines that one is required.
-
 ## OpenCode Compatibility
 
 OpenCode is an external dependency and its behaviour may evolve.
@@ -348,7 +328,7 @@ Managed policy must not be weakened merely to make a new OpenCode version work.
 If an upgrade changes a relevant capability boundary, the new behaviour should
 be understood first and the Mentor configuration adjusted deliberately.
 
-## Planned Workflow Layers
+## Workflow Layers
 
 OpenCode Mentor is implemented incrementally.
 
@@ -360,25 +340,56 @@ Implemented:
 /define
 /resume
 /develop
+/docs
 /state
 /milestone
 /decision
 ```
 
 These workflows establish project definition, durable state, guided
-development, session recovery, milestone transitions, and durable decisions.
+development, reviewed documentation mutation, session recovery, milestone
+transitions, and durable decisions.
 
 ### Documentation Transaction
 
-Planned capabilities include:
+The Documentation Transaction is implemented and validated.
 
-- documentation proposal generation;
-- reviewable previews and diffs;
-- proposal identifiers;
-- checksum and stale-target validation;
-- atomic multi-file application;
-- constrained documentation paths;
-- `/docs`.
+`/docs` owns ordinary project documentation, including supported root documents
+and Markdown under `docs/` outside `docs/project/`. Authoritative project
+artifacts retain semantic ownership: `/define`, `/milestone`, and `/decision`
+use the same constrained transaction for their owned updates.
+
+Supported workflow authorities are:
+
+```text
+docs
+project-definition
+milestone
+decision
+```
+
+The transaction operates as follows:
+
+- `documentation_preview` validates the complete requested change set and stores
+  an immutable proposal with exact before/after snapshots and checksums;
+- human review uses the deterministic unified diff derived from those exact
+  snapshots, as established by DEC-045;
+- revisions create new proposal identifiers rather than modifying an existing
+  proposal;
+- approval is bound to the exact reviewed proposal;
+- `documentation_apply` accepts only that exact proposal identifier and applies
+  the persisted complete content rather than reconstructed diff content;
+- Apply revalidates proposal integrity, project binding, recorded workflow
+  authority, path and operation authorisation, and target freshness before
+  mutation;
+- multi-file proposals are one all-target transaction: Apply prepares complete
+  staged content and backups, performs deterministic mutation, rolls back
+  handled failures, and records successful proposals as single-use;
+- proposal runtime state is stored outside the project repository;
+- proposal-state paths reject unsafe symbolic-link components.
+
+The transaction does not enable generic source editing. Source changes remain
+proposal-only and are manually applied by the user.
 
 ### Git Policy and Lifecycle
 
