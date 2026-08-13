@@ -546,40 +546,21 @@ async function buildTarget(
 
   switch (change.operation) {
     case "create": {
-      await ensureTargetParents(projectRoot, target.path, createdDirectories);
-
-      const staged = await readFile(item.staged_path!);
-
-      try {
-        await createWithContent(
-          item.absolute_path,
-          staged,
-          0o644,
-          target.after!.sha256,
-        );
-      } catch (error) {
+      if (inspected.exists) {
         throw new DocumentationError(
-          "APPLY_FAILED",
-          `Unable to create target: ${errorMessage(error)}`,
-          target.path,
+          "TARGET_EXISTS",
+          "Create requested but target already exists.",
+          change.path,
         );
       }
 
-      applied.push({
-        target,
-        absolute_path: item.absolute_path,
-        original_mode: null,
-      });
-
-      results.push({
-        path: target.path,
+      return {
+        path: change.path,
         operation: "create",
-        sha256: target.after!.sha256,
-      });
-
-      break;
+        before: null,
+        after: afterSnapshot(change.content!),
+      };
     }
-
     case "replace": {
       if (!inspected.exists) {
         throw new DocumentationError(
