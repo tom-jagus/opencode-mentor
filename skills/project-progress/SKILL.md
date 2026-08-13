@@ -1507,7 +1507,7 @@ needs clarification | inconsistent | unavailable | scope change
 - ...
 ````
 
-Do not include `Proposed progress.md Changes` when no safe transition proposal exists.
+Do not include `Documentation Transaction` when no safe durable update exists.
 
 ## Decision Procedure
 
@@ -1997,7 +1997,7 @@ scope change | operational change
 - ...
 ````
 
-Do not include `Proposed decisions.md Changes` when no safe durable update exists.
+Do not include `Documentation Transaction` when no safe transition proposal exists.
 
 ## State Completion Condition
 
