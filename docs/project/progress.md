@@ -29,11 +29,17 @@ updated_at: 2026-08-13
   the production trust boundary recorded in DEC-042. A dedicated
   `project-critic` is deferred by DEC-043. The Documentation Transaction is
   implemented and validated with authority-specific integration for `/docs`,
-  `/define`, `/milestone`, and `/decision`. Git Policy and Lifecycle is now
-  active.
+  `/define`, `/milestone`, and `/decision`. Git Policy and Lifecycle is active.
+  Its v1 global policy schema and deterministic read-only `git_policy` resolver
+  are implemented and validated against DEC-046, including strict global and
+  sparse project-policy validation, deterministic merge semantics, effective
+  policy validation, normal handling of an absent project policy, managed tool
+  permissions, focused automated tests, and successful runtime resolution of the
+  global policy without a project override.
 * **Blocking issues:** none
-* **Next action:** begin the Git Policy and Lifecycle milestone by resolving its
-  implementation questions and proposing its first coherent implementation unit.
+* **Next action:** implement deterministic branch-name and commit-message
+  validators using the effective `GitPolicy`, without adding Git mutation or
+  lifecycle command execution.
 
 ## Phase Transition
 
@@ -141,11 +147,21 @@ Delivered:
 
 Status: active
 
-Deliver:
+Delivered:
 
-- global Git schema;
-- project override schema;
-- deterministic merge logic;
+- v1 global Git policy schema in `policies/git-defaults.toml`;
+- architectural support for optional sparse `.opencode/git-policy.toml` project
+  overrides;
+- strict validation of global, project, and effective policy;
+- deterministic scalar replacement, array replacement, and recursive known-table
+  merge semantics;
+- deterministic read-only `git_policy` custom tool with managed access for
+  `lead` and denial for `explore`;
+- focused resolver tests outside the OpenCode tool-discovery directory;
+- successful runtime resolution with no project override.
+
+Remaining:
+
 - non-overridable guardrails;
 - branch and commit validation;
 - `/start`;
@@ -201,14 +217,8 @@ scope or constraints.
 
 ### Git Policy and Lifecycle
 
-- final TOML schema;
-- merge algorithm and precedence;
-- approved branch types;
-- Conventional Commit scope strategy;
-- default validation profile;
 - exact semantic-versioning implementation;
-- release-note structure;
-- treatment of repositories without releases.
+- release-note structure.
 
 ### Vault Curation
 
@@ -267,5 +277,6 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Begin the Git Policy and Lifecycle milestone by resolving its implementation
-questions and proposing its first coherent implementation unit.
+Implement deterministic branch-name and commit-message validators using the
+effective `GitPolicy`, without adding Git mutation or lifecycle command
+execution.
