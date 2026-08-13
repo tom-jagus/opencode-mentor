@@ -113,7 +113,12 @@ export class GitStartProposalError extends Error {
     | "PROPOSAL_INTEGRITY_FAILED"
     | "PROJECT_MISMATCH"
     | "PROPOSAL_ALREADY_APPLIED"
-    | "STALE_PROPOSAL";
+    | "STALE_PROPOSAL"
+    | "STALE_PROPOSAL"
+    | "APPLY_IN_PROGRESS"
+    | "APPLY_FAILED"
+    | "PROPOSAL_STATE_FAILED"
+    | "ROLLBACK_FAILED";
 
   constructor(code: GitStartProposalError["code"], message: string) {
     super(message);

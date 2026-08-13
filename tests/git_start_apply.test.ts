@@ -1,12 +1,16 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runGitStartPreflight } from "../lib/git_start";
-import { prepareGitStartApply } from "../lib/git_start_apply";
+import {
+  applyGitStartProposal,
+  prepareGitStartApply,
+} from "../lib/git_start_apply";
 import {
   buildGitStartProposal,
+  GitStartProposalError,
   persistGitStartProposal,
 } from "../lib/git_start_proposal";
 
@@ -276,5 +280,249 @@ describe("prepareGitStartApply", () => {
 
     expect(prepared.record.proposal.id).toBe(record.proposal.id);
     expect(prepared.preflight.state.root).toBe(repositoryRoot);
+  });
+
+  // Successful Apply
+  test("creates and switches to the reviewed target branch", async () => {
+    const targetBranch = "feature/successful-apply";
+
+    const record = await persistEligibleProposal(targetBranch);
+
+    const result = await applyGitStartProposal({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      proposal_id: record.proposal.id,
+      storage_root: storageRoot,
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error(`${result.error.code}: ${result.error.message}`);
+    }
+
+    expect(result.branch).toBe(targetBranch);
+    expect(result.base_branch).toBe("main");
+    expect(result.head_sha).toBe(record.proposal.operation.head_sha);
+
+    const currentBranch = await requireGit(repositoryRoot, [
+      "symbolic-ref",
+      "--short",
+      "HEAD",
+    ]);
+
+    expect(currentBranch.stdout.trim()).toBe(targetBranch);
+
+    const head = await requireGit(repositoryRoot, ["rev-parse", "HEAD"]);
+
+    expect(head.stdout.trim()).toBe(record.proposal.operation.head_sha);
+
+    const target = await runGit(repositoryRoot, [
+      "show-ref",
+      "--verify",
+      "--quiet",
+      `refs/heads/${targetBranch}`,
+    ]);
+
+    expect(target.exitCode).toBe(0);
+  });
+  // Applied state persistence
+  test("marks a successful proposal as applied", async () => {
+    const record = await persistEligibleProposal("feature/applied-state-test");
+
+    const result = await applyGitStartProposal({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      proposal_id: record.proposal.id,
+      storage_root: storageRoot,
+    });
+
+    expect(result.ok).toBe(true);
+
+    const proposalPath = join(
+      storageRoot,
+      record.proposal.project.key,
+      `${record.proposal.id}.json`,
+    );
+
+    const stored = JSON.parse(await readFile(proposalPath, "utf8"));
+
+    expect(stored.state.status).toBe("applied");
+    expect(typeof stored.state.applied_at).toBe("string");
+    expect(Number.isNaN(Date.parse(stored.state.applied_at))).toBe(false);
+  });
+  // Single-use enforcement
+  test("rejects a second Apply of the same proposal", async () => {
+    const record = await persistEligibleProposal("feature/single-use-test");
+
+    const first = await applyGitStartProposal({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      proposal_id: record.proposal.id,
+      storage_root: storageRoot,
+    });
+
+    expect(first.ok).toBe(true);
+
+    const second = await applyGitStartProposal({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      proposal_id: record.proposal.id,
+      storage_root: storageRoot,
+    });
+
+    expect(second).toMatchObject({
+      version: 1,
+      ok: false,
+      proposal_id: record.proposal.id,
+      error: {
+        code: "PROPOSAL_ALREADY_APPLIED",
+      },
+    });
+  });
+  // Persistence failure rollback
+  test("rolls back when applied-state persistence fails", async () => {
+    const targetBranch = "feature/persistence-rollback";
+
+    const record = await persistEligibleProposal(targetBranch);
+
+    const result = await applyGitStartProposal(
+      {
+        directory: repositoryRoot,
+        configuration_root: configurationRoot,
+        proposal_id: record.proposal.id,
+        storage_root: storageRoot,
+      },
+      {
+        persist: async () => {
+          throw new GitStartProposalError(
+            "PROPOSAL_STATE_FAILED",
+            "Injected proposal-state failure",
+          );
+        },
+      },
+    );
+
+    expect(result).toMatchObject({
+      version: 1,
+      ok: false,
+      error: {
+        code: "PROPOSAL_STATE_FAILED",
+        message: "Injected proposal-state failure",
+      },
+      rollback: {
+        succeeded: true,
+        errors: [],
+      },
+    });
+
+    const branch = await requireGit(repositoryRoot, [
+      "symbolic-ref",
+      "--short",
+      "HEAD",
+    ]);
+
+    expect(branch.stdout.trim()).toBe("main");
+
+    const target = await runGit(repositoryRoot, [
+      "show-ref",
+      "--verify",
+      "--quiet",
+      `refs/heads/${targetBranch}`,
+    ]);
+
+    expect(target.exitCode).toBe(1);
+  });
+  // Stale proposal performs no mutation
+  test("does not mutate a stale proposal", async () => {
+    const targetBranch = "feature/stale-apply-test";
+
+    const record = await persistEligibleProposal(targetBranch);
+
+    await writeFile(join(repositoryRoot, "dirty.txt"), "dirty\n", "utf8");
+
+    const result = await applyGitStartProposal({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      proposal_id: record.proposal.id,
+      storage_root: storageRoot,
+    });
+
+    expect(result).toMatchObject({
+      version: 1,
+      ok: false,
+      error: {
+        code: "STALE_PROPOSAL",
+      },
+    });
+
+    const branch = await requireGit(repositoryRoot, [
+      "symbolic-ref",
+      "--short",
+      "HEAD",
+    ]);
+
+    expect(branch.stdout.trim()).toBe("main");
+
+    const target = await runGit(repositoryRoot, [
+      "show-ref",
+      "--verify",
+      "--quiet",
+      `refs/heads/${targetBranch}`,
+    ]);
+
+    expect(target.exitCode).toBe(1);
+  });
+
+  test("rejects concurrent Apply while the proposal is locked", async () => {
+    const targetBranch = "feature/concurrent-apply-test";
+
+    const record = await persistEligibleProposal(targetBranch);
+
+    const proposalPath = join(
+      storageRoot,
+      record.proposal.project.key,
+      `${record.proposal.id}.json`,
+    );
+
+    const lockPath = `${proposalPath}.apply.lock`;
+
+    await writeFile(lockPath, "existing-apply\n", {
+      encoding: "utf8",
+      mode: 0o600,
+      flag: "wx",
+    });
+
+    const result = await applyGitStartProposal({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      proposal_id: record.proposal.id,
+      storage_root: storageRoot,
+    });
+
+    expect(result).toMatchObject({
+      version: 1,
+      ok: false,
+      error: {
+        code: "APPLY_IN_PROGRESS",
+      },
+    });
+
+    const branch = await requireGit(repositoryRoot, [
+      "symbolic-ref",
+      "--short",
+      "HEAD",
+    ]);
+
+    expect(branch.stdout.trim()).toBe("main");
+
+    const target = await runGit(repositoryRoot, [
+      "show-ref",
+      "--verify",
+      "--quiet",
+      `refs/heads/${targetBranch}`,
+    ]);
+
+    expect(target.exitCode).toBe(1);
   });
 });

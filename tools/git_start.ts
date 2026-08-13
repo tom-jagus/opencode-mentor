@@ -8,6 +8,7 @@ import {
   persistGitStartProposal,
 } from "../lib/git_start_proposal";
 import { PolicyError, policyFailure } from "../lib/git_policy";
+import { applyGitStartProposal } from "../lib/git_start_apply";
 
 function json(value: unknown): string {
   return JSON.stringify(value, null, 2);
@@ -98,5 +99,41 @@ export const preview = tool({
 
       return json(gitStartPreviewFailure(error));
     }
+  },
+});
+
+export const apply = tool({
+  description:
+    "Apply one exact reviewed Git start proposal. " +
+    "Revalidates project, policy, HEAD, working tree, and target branch before creating and switching to one local branch.",
+
+  args: {
+    proposal_id: tool.schema
+      .string()
+      .describe("Exact proposal identifier returned by git_start_preview."),
+  },
+
+  async execute(args, context) {
+    const directory = context.worktree || context.directory;
+
+    if (!directory) {
+      return json({
+        version: 1,
+        ok: false,
+        proposal_id: args.proposal_id,
+        error: {
+          code: "STALE_PROPOSAL",
+          message: "OpenCode did not provide a project directory",
+        },
+      });
+    }
+
+    return json(
+      await applyGitStartProposal({
+        directory,
+        configuration_root: resolve(import.meta.dir, ".."),
+        proposal_id: args.proposal_id,
+      }),
+    );
   },
 });
