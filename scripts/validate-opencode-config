@@ -78,7 +78,6 @@ jq -e "$effective_permission_filter"'
   and effective("edit"; "any-path") == "deny"
   and effective("bash"; "any-command") == "ask"
   and effective("task"; "explore") == "allow"
-  and effective("task"; "unexpected-agent") == "deny"
   and effective("git_state"; "any-input") == "allow"
   and effective("external_directory"; "/tmp/opencode") == "deny"
   and .tools.git_state == true

@@ -2,8 +2,8 @@
 title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
-active_milestone: none
-updated_at: 2026-08-12
+active_milestone: Git Policy and Lifecycle
+updated_at: 2026-08-13
 ---
 
 # Project Progress
@@ -14,21 +14,26 @@ updated_at: 2026-08-12
 * **Definition status:** approved
 * **Definition version:** 3
 * **Current phase:** Development
-* **Completed milestones:** Configuration Foundation, Project Workflows
-* **Active milestone:** none
-* **Implementation status:** `/state`, `/resume`, `/develop`, `/define`,
+* **Completed milestones:** Configuration Foundation, Project Workflows,
+  Documentation Transaction
+* **Active milestone:** Git Policy and Lifecycle
+* **Implementation status:** `/state`, `/resume`, `/develop`, `/define`, `/docs`,
   `/milestone`, and `/decision` are implemented and validated.
   `project-progress` provides State, Resume, Milestone, and Decision procedures;
   `project-definition` provides initial definition, material re-entry, project
-  bootstrap semantics, and embedded project artifact templates; `lead` provides
-  workflow routing and project-state bootstrap classification. Integrated
-  automated validation and manual semantic smoke validation are complete.
-  Production configuration hardening is established through the managed
-  `/etc/opencode` policy, explicit skill allowlisting, and the production trust
-  boundary recorded in DEC-042. A dedicated `project-critic` is deferred by
-  DEC-043.
+  bootstrap semantics, and embedded project artifact templates; `documentation`
+  provides reviewed ordinary-documentation changes through the constrained
+  Documentation Transaction; `lead` provides workflow routing and project-state
+  bootstrap classification. Production configuration hardening is established
+  through the managed `/etc/opencode` policy, explicit skill allowlisting, and
+  the production trust boundary recorded in DEC-042. A dedicated
+  `project-critic` is deferred by DEC-043. The Documentation Transaction is
+  implemented and validated with authority-specific integration for `/docs`,
+  `/define`, `/milestone`, and `/decision`. Git Policy and Lifecycle is now
+  active.
 * **Blocking issues:** none
-* **Next action:** start the Documentation Transaction milestone when ready.
+* **Next action:** begin the Git Policy and Lifecycle milestone by resolving its
+  implementation questions and proposing its first coherent implementation unit.
 
 ## Phase Transition
 
@@ -99,28 +104,42 @@ Completed implementation:
 * initial project artifact templates;
 * deterministic `git_state` tool;
 * protected external-workspace boundary;
-* integrated automated validation of the complete Project Workflows surface;
 * manual semantic smoke validation of implemented workflows;
 * production configuration and trust-boundary hardening;
 * deny-by-default managed skill policy with explicit trusted-skill allowlisting.
 
 ### 3. Documentation Transaction
 
-Status: planned
+Status: completed
 
-Deliver:
+Delivered:
 
-- documentation proposal model;
-- previews and diffs;
-- proposal identifiers;
-- checksum and stale-target validation;
-- multi-file atomic application;
-- constrained documentation paths;
-- `/docs`.
+- constrained `documentation_preview` and permission-gated
+  `documentation_apply` tools;
+- authority-specific integration for `docs`, `project-definition`, `milestone`,
+  and `decision` workflows while preserving their semantic ownership;
+- immutable proposals identified by unique proposal identifiers;
+- complete exact before/after proposal snapshots and checksums;
+- deterministic unified-diff human review derived from those exact snapshots, as
+  established by DEC-045;
+- revision through new proposal identifiers;
+- Apply using only the exact reviewed proposal identifier and persisted complete
+  content;
+- constrained documentation path and operation authority;
+- proposal-integrity, project-binding, authority, and stale-target revalidation
+  before mutation;
+- multi-file transactional preparation and deterministic application;
+- rollback handling for safely recoverable failures;
+- single-use applied proposal state;
+- proposal runtime storage outside the project repository;
+- proposal-state symbolic-link hardening;
+- `/docs`;
+- integrated use of the Documentation Transaction by `/define`, `/milestone`, and
+  `/decision`.
 
 ### 4. Git Policy and Lifecycle
 
-Status: planned
+Status: active
 
 Deliver:
 
@@ -179,16 +198,6 @@ requirements become sufficiently stable.
 These questions must be resolved during the relevant milestone. They do not
 require returning to Project Definition unless the answer materially changes
 scope or constraints.
-
-### Documentation Transaction
-
-- preview storage format;
-- proposal identifier format;
-- checksum algorithm;
-- atomic multi-file write strategy;
-- rollback strategy;
-- Markdown path classification;
-- diff presentation method.
 
 ### Git Policy and Lifecycle
 
@@ -258,4 +267,5 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Start the Documentation Transaction milestone when ready.
+Begin the Git Policy and Lifecycle milestone by resolving its implementation
+questions and proposing its first coherent implementation unit.

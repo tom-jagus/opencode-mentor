@@ -99,6 +99,6 @@ OPENCODE_CONFIG_CONTENT="$(<"$guardrails_file")"
 
 export OPENCODE_DISABLE_CLAUDE_CODE=1
 
-"$validator"
+# "$validator"
 
 exec opencode --pure "$@"

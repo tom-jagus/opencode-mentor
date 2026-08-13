@@ -26,11 +26,14 @@ The current implementation provides:
 
 - read-only **State**;
 - read-only **Resume**;
-- proposal-only **Milestone**;
-- proposal-only **Decision**.
+- transactional **Milestone**;
+- transactional **Decision**.
 
-Project Progress does not modify authoritative artifacts directly until the
-constrained documentation transaction is available.
+State and Resume are strictly read-only.
+
+Milestone and Decision may modify their owned authoritative artifact only through
+the constrained Documentation Transaction after exact Preview, explicit approval,
+and permission-gated Apply.
 
 ## Scope Boundary
 
@@ -128,10 +131,19 @@ must not be removed merely because a later decision supersedes them.
 - Do not silently repair contradictions.
 - Report conflicting values together and identify their sources.
 - Do not mutate files, Git state, GitHub state, or runtime configuration during
-  the State, Resume, Milestone, or Decision procedures.
+  State or Resume.
+- Milestone may modify only `docs/project/progress.md`, and only through
+  `documentation_preview` with `milestone` authority followed by explicit review,
+  approval, and permission-gated `documentation_apply`.
+- Decision may modify only `docs/project/decisions.md`, and only through
+  `documentation_preview` with `decision` authority followed by explicit review,
+  approval, and permission-gated `documentation_apply`.
 - Do not stage, commit, push, switch branches, fetch, pull, merge, rebase, tag,
   release, or create pull requests.
-- Do not invoke documentation or vault write tools.
+- State and Resume must not invoke documentation mutation tools.
+- Milestone and Decision may invoke only `documentation_preview` and
+  `documentation_apply` as specified by their procedures.
+- Do not invoke vault write tools.
 - Do not call the Bash tool anywhere in the State, Resume, Milestone, or Decision
   procedures.
 - Treat a milestone as currently complete only when completion is recorded
@@ -159,6 +171,10 @@ must not be removed merely because a later decision supersedes them.
 - Preserve historical decision entries when they are superseded or rejected.
 - Do not invent user motivations or rationale that are not established by the
   request, authoritative artifacts, or evidence available to the procedure.
+- Do not use generic editing as a substitute for the Documentation Transaction.
+- Never alter proposal content at Apply time; Apply receives only the exact
+  approved proposal identifier.
+- Do not automatically retry failed Apply operations.
 
 ## State Procedure
 
@@ -970,15 +986,17 @@ The Resume procedure is complete when:
 Use this procedure when the user invokes `/milestone` or explicitly asks to
 start, complete, block, unblock, or otherwise transition a project milestone.
 
-The procedure is proposal-only.
-
-It proposes operational changes to:
+The procedure owns transactional operational changes to:
 
 ```text
 docs/project/progress.md
 ```
 
-It does not modify the file.
+Milestone changes are previewed through the Documentation Transaction using
+`milestone` authority and are applied only after explicit review, approval, and
+the permission-gated Apply operation.
+
+No other project artifact may be mutated by this procedure.
 
 ### 1. Establish the requested transition
 
@@ -1335,44 +1353,90 @@ Do not silently correct unrelated stale information.
 
 Report unrelated inconsistencies separately.
 
-### 11. Prepare the milestone transition proposal
+### 11. Build and Preview the milestone transition
 
-Prepare an exact, reviewable proposal for `docs/project/progress.md`.
+Construct the complete intended resulting content of:
 
-For each affected location provide:
+```text
+docs/project/progress.md
+```
 
-- current value or section;
-- proposed value or replacement;
-- reason for the change.
+Preserve all unrelated operational state and history.
 
-Prefer targeted replacements or insertions over reproducing the entire file.
+Call `documentation_preview` with:
 
-Do not propose changes to:
+```text
+authority: milestone
+operation: replace
+path: docs/project/progress.md
+content: <complete resulting progress.md>
+```
 
-- `definition.md`;
-- `decisions.md`;
-- `AGENTS.md`;
-- source files;
-- configuration;
-- Git state.
+Milestone authority permits only replacement of this exact artifact.
 
-Identify follow-on work in those areas only when relevant.
+After Preview succeeds, present:
 
-### 12. Stop for review
+```text
+Milestone proposal: <proposal-id>
+Authority: milestone
+```
 
-Present the proposed transition and stop.
+Then present the exact deterministic unified diff returned in `review.diff`.
 
-Do not treat presentation as approval.
+Show:
 
-Do not modify `progress.md`.
+- `review.additions`;
+- `review.deletions`;
+- the exact unified diff.
 
-During the current proposal-only phase, even explicit approval does not authorize
-automatic artifact mutation.
+Do not reconstruct or modify the returned diff.
 
-If the user approves the proposal:
+The complete before/after snapshots remain authoritative and may be shown when
+the user explicitly requests the full proposal.
 
-- provide the final exact `progress.md` changes for manual application;
-- do not claim the milestone state changed until progress.md is updated and reread.
+State clearly that no project artifact has yet been modified.
+
+### 12. Review, revise, and apply
+
+Stop for explicit review.
+
+If the user requests a change:
+
+1. construct the new complete resulting `progress.md`;
+2. call `documentation_preview` again with `milestone` authority;
+3. present the new proposal and its exact content.
+
+A revision creates a new proposal identifier.
+
+After explicit approval of the exact current proposal, call:
+
+```text
+documentation_apply
+  proposal_id: <exact-current-proposal-id>
+```
+
+The Apply permission request is the final mutation gate.
+
+If permission is denied, leave `progress.md` unchanged and do not retry
+automatically.
+
+On successful Apply:
+
+- report the proposal identifier;
+- report `docs/project/progress.md — replace`;
+- state the resulting milestone transition;
+- report warnings when present.
+
+On `STALE_TARGET`, report that operational state changed since review and require
+a fresh Preview before any later application.
+
+On `PROPOSAL_ALREADY_APPLIED`, report the existing applied state and do not retry.
+
+For another safe failure, report the structured error and rollback result when
+provided.
+
+For `ROLLBACK_FAILED`, report unresolved paths and preserved recovery state,
+claim no successful milestone transition, and stop automatic mutation.
 
 ## Milestone Output Contract
 
@@ -1399,15 +1463,22 @@ For a valid transition, use:
 - Result: valid
 - Relevant findings: ...
 
-## Proposed `progress.md` Changes
+## Documentation Transaction
 
-### <location>
+- **Proposal:** <proposal-id>
+- **Authority:** milestone
+- **Status:** awaiting review
 
-Current:
-...
+### `docs/project/progress.md`
 
-Proposed:
-...
+**Operation:** replace  
+**Changes:** +<review.additions> -<review.deletions>
+
+```diff
+<exact review.diff returned by documentation_preview>
+```
+
+The milestone transition has not yet been durably recorded.
 
 ## Consequences
 
@@ -1437,7 +1508,7 @@ needs clarification | inconsistent | unavailable | scope change
 - ...
 ````
 
-Do not include `Proposed progress.md Changes` when no safe transition proposal exists.
+Do not include `Documentation Transaction` when no safe durable update exists.
 
 ## Decision Procedure
 
@@ -1445,15 +1516,17 @@ Use this procedure when the user invokes `/decision` or explicitly asks to
 record, accept, reject, supersede, partially supersede, or propose a durable
 project decision.
 
-The procedure is proposal-only.
-
-It proposes durable decision-history changes to:
+The procedure owns transactional durable decision-history changes to:
 
 ```text
 docs/project/decisions.md
 ```
 
-It does not modify the file.
+Decision changes are previewed through the Documentation Transaction using
+`decision` authority and are applied only after explicit review, approval, and
+permission-gated Apply.
+
+No other project artifact may be mutated by this procedure.
 
 ### 1. Establish the requested decision action
 
@@ -1758,65 +1831,101 @@ For `scope change`, explain why `/define` owns the requested change.
 
 For `operational change`, explain why `/milestone` owns the requested change.
 
-### 13. Prepare the decision proposal
+### 13. Build and Preview the decision proposal
 
-For a valid decision action, prepare the smallest coherent proposal for
-`docs/project/decisions.md`.
+For a valid decision action, construct the complete intended resulting content of:
 
-When relevant, propose:
+```text
+docs/project/decisions.md
+```
+
+Preserve all unrelated historical entries exactly in meaning and preserve the
+append-oriented decision-history contract.
+
+The resulting content may include when relevant:
 
 - frontmatter `updated_at`;
 - status change to an existing decision;
 - one appended decision entry.
 
-For each proposed change, provide:
+Call `documentation_preview` with:
 
-- current state when applicable;
-- proposed state;
-- reason for the change.
+```text
+authority: decision
+operation: replace
+path: docs/project/decisions.md
+content: <complete resulting decisions.md>
+```
 
-For a new decision entry, include:
+After Preview succeeds, present:
 
-- date;
-- status;
-- decision;
-- rationale;
-- consequences.
+```text
+Decision proposal: <proposal-id>
+Authority: decision
+```
 
-Include when materially relevant:
+Then present the exact deterministic unified diff returned in `review.diff`.
 
-- context;
-- rejected or considered alternatives;
-- related milestone;
-- supersession links.
+Show:
 
-Do not propose changes to:
+- `review.additions`;
+- `review.deletions`;
+- the exact unified diff.
 
-- `definition.md`;
-- `progress.md`;
-- `AGENTS.md`;
-- source files;
-- configuration;
-- Git state.
+Do not reconstruct or modify the returned diff.
 
-Identify follow-on work in those areas only when relevant.
+The complete before/after snapshots remain authoritative and may be shown when
+the user explicitly requests the full proposal.
 
-### 14. Stop for review
+Do not paraphrase or reconstruct the tool-returned content.
 
-Present the decision proposal and stop.
+State clearly that the decision has not yet been durably recorded.
+
+### 14. Review, revise, and apply
+
+Stop for explicit review.
 
 Do not treat presentation as approval.
 
-Do not modify `decisions.md`.
+If the user requests a revision:
 
-During the current proposal-only phase, even explicit approval does not authorize
-automatic artifact mutation.
+1. construct the new complete resulting `decisions.md`;
+2. call `documentation_preview` again with `decision` authority;
+3. receive a new proposal identifier;
+4. present the exact revised Preview.
 
-If the user approves the proposal:
+Do not mutate or later apply the superseded review candidate.
 
-- provide the final exact `decisions.md` changes for manual application;
-- do not claim the decision is durably recorded until `decisions.md` is updated
-and reread.
+After explicit approval of the exact current proposal, call:
+
+```text
+documentation_apply
+  proposal_id: <exact-current-proposal-id>
+```
+
+The Apply permission request is the final mutation gate.
+
+If permission is denied, leave the decision unapplied and do not retry
+automatically.
+
+On successful Apply:
+
+- report the proposal identifier;
+- report `docs/project/decisions.md — replace`;
+- state that the decision update is now durable;
+- report warnings when present.
+
+On `STALE_TARGET`, report that the decision register changed since review and
+require a fresh Preview before later application.
+
+On `PROPOSAL_ALREADY_APPLIED`, report that the proposal is already durable and do
+not retry.
+
+For another safely handled failure, report the structured failure and rollback
+status when available.
+
+For `ROLLBACK_FAILED`, report unresolved paths and recovery-state preservation,
+do not claim the decision was durably recorded, and stop automatic mutation.
 
 ## Decision Output Contract
 
@@ -1843,15 +1952,22 @@ For a valid decision proposal, use:
 - **Scope:** within approved project scope
 - **Relevant findings:** ...
 
-## Proposed `decisions.md` Changes
+## Documentation Transaction
 
-### <frontmatter, existing decision, or appended entry>
+- **Proposal:** <proposal-id>
+- **Authority:** decision
+- **Status:** awaiting review
 
-Current:
-...
+### `docs/project/decisions.md`
 
-Proposed:
-...
+**Operation:** replace  
+**Changes:** +<review.additions> -<review.deletions>
+
+```diff
+<exact review.diff returned by documentation_preview>
+```
+
+No project artifacts have been modified.
 
 ## Consequences
 
@@ -1885,23 +2001,7 @@ scope change | operational change
 - ...
 ````
 
-Do not include `Proposed decisions.md Changes` when no safe durable update exists.
-
-## Inactive Procedures
-
-The following Project Progress capabilities are planned but not active in this
-skill version:
-
-- constrained progress-file application;
-- constrained decision-file application;
-- coordinated project-artifact writes.
-
-Until constrained documentation transactions are implemented:
-
-- `/milestone` remains proposal-only;
-- `/decision` remains proposal-only;
-- no project artifact may be modified through this skill;
-- proposed updates must be shown in the conversation for manual review.
+Do not include `Documentation Transaction` when no safe transition proposal exists.
 
 ## State Completion Condition
 
