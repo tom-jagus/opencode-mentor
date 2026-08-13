@@ -1,5 +1,5 @@
 ---
-description: Propose, preview, review, and revise project documentation
+description: Propose, review, approve, and apply project documentation
 agent: lead
 ---
 
@@ -29,8 +29,12 @@ Present the exact current and proposed content returned by the preview tool.
 When the user requests revisions, create a new proposal and present the revised
 preview.
 
-During the current preview-only implementation stage, recognise explicit approval
-but do not modify project files.
+When the user explicitly approves the exact current proposal, continue the
+Documentation procedure and request permission-gated application through
+`documentation_apply` using only that proposal identifier.
+
+Use the structured Apply result to report success, safe failure, stale state, or
+recovery-required failure.
 
 Do not use generic editing or Bash as a substitute for the Documentation
 Transaction.
