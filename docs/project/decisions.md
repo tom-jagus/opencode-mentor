@@ -288,7 +288,7 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
 ## DEC-027 — Immutable Git Safety Rules
 
 - **Date:** 2026-08-03
-- **Status:** accepted
+- **Status:** partially superseded by DEC-046
 - **Decision:** Certain Git rules cannot be overridden by projects.
 - **Rules include:**
   - never commit directly to `main`;
@@ -610,3 +610,85 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
   - approval remains bound to the exact current proposal;
   - Apply continues to revalidate and apply persisted complete content rather
     than reconstructed diff content.
+
+## DEC-046 — Git Policy and Lifecycle Contract
+
+- **Date:** 2026-08-13
+- **Status:** accepted
+- **Partially supersedes:** DEC-027
+- **Decision:**
+  - use `policies/git-defaults.toml` as the normal source of configurable global
+    Git defaults and as the primary policy for the initial implementation;
+  - support configurable base branch, branch naming and types, commit-message
+    rules, merge strategy, branch update and rebase behaviour, validation
+    profile, GitHub pull-request behaviour, and release enablement and defaults;
+  - architecturally support optional sparse project overrides, without requiring
+    or using them initially;
+  - resolve policy deterministically: project scalars replace global scalars,
+    arrays replace rather than append, known tables merge recursively, missing
+    project values inherit global values, absence of project policy is valid,
+    and unknown keys, invalid values, or unsupported schema versions fail
+    validation;
+  - use `main` as the default base branch while allowing a repository eventually
+    to configure a different effective base branch;
+  - allow only configured branch types, initially `feature`, `fix`, `docs`,
+    `refactor`, `test`, and `chore`, with branch grammar
+    `<type>/<kebab-case-summary>` and a lowercase kebab-case summary;
+  - do not add `release`, `hotfix`, `ci`, `build`, or other branch categories
+    unless later requirements justify them;
+  - do not use Conventional Commits: commit subjects use clear, descriptive
+    natural language in sentence case, contain no trailing period, avoid generic
+    wording and unnecessary categorisation, and remain proportional to the
+    coherent change;
+  - reject known Conventional Commit-style type and scope prefixes
+    deterministically, while reviewing semantic descriptiveness explicitly;
+  - make commit bodies optional and use them only when they add material context,
+    rationale, implementation detail, or consequences rather than repeating the
+    subject;
+  - preview the proposed commit message before committing;
+  - use squash merge by default, rebase a working branch onto the effective base
+    branch when policy requires an update before finalisation, allow
+    `--force-with-lease` only after an approved rebase of an appropriate non-base
+    branch, and delete the merged working branch by default;
+  - keep immutable Git safety enforcement separate from configurable policy;
+  - enforce immutable invariants independently: never commit directly to or
+    force-push the effective protected base branch, never stage unrelated files
+    automatically, inspect the intended final diff before commit, require
+    explicit approval for mutating lifecycle operations, expose no arbitrary Git
+    commands through constrained lifecycle tooling, and never bypass effective
+    policy for convenience;
+  - make the initial `standard` validation profile responsible for deterministic
+    Git and lifecycle correctness, including current-branch validity, acceptable
+    working-tree state, explicit staging selection, absence of unresolved
+    conflicts, final staged-diff inspection, commit-message compliance, and
+    effective-policy compliance;
+  - keep arbitrary application-specific shell validation outside the initial Git
+    policy engine and within the existing Development workflow and shell
+    permission boundary;
+  - support explicit release-enabled and release-disabled modes; default enabled
+    releases use semantic versioning, `v` tags, and generated but reviewable
+    release notes, while disabled releases allow finalisation and merging without
+    assigning a semantic version, creating a release tag, or publishing a GitHub
+    release;
+  - never infer whether a repository should have releases; use the effective
+    policy setting;
+  - leave the next-version increment algorithm and exact release-note structure
+    to the `/release` implementation work rather than deciding them here;
+  - apply the implementation boundary: global Git defaults -> optional sparse
+    project overrides -> deterministic policy resolution and validation ->
+    effective Git policy -> immutable Git invariants -> allowed lifecycle
+    operation.
+- **Rationale:** The active milestone needs one deterministic contract for policy
+  resolution, lifecycle semantics, validation, release behaviour, and immutable
+  safety enforcement. Configurable defaults and non-overridable invariants have
+  different authority and must not be conflated.
+- **Consequences:**
+  - the deterministic policy resolver and `/start`, `/checkpoint`, `/finish`, and
+    `/release` implementations must follow this contract;
+  - DEC-026 remains effective and is made concrete by this decision;
+  - DEC-027 remains effective except that its hardcoded `main` protections are
+    replaced by protections targeting the effective configured base branch;
+  - the tentative Conventional Commits default in the approved definition is
+    resolved in favour of descriptive natural-language commit messages;
+  - project-specific overrides and sophisticated validation profiles remain
+    deferred until practical use demonstrates sufficient value.
