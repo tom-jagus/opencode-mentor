@@ -947,28 +947,25 @@ Project Definition proposal: <proposal-id>
 Authority: project-definition
 ```
 
-For every target, present the exact current and proposed content returned by the
-tool.
-
-For `replace`:
+For every target, present the deterministic review returned by the tool:
 
 ````markdown
 ### `docs/project/<artifact>.md`
 
-**Operation:** replace
+**Operation:** create | replace  
+**Changes:** +<review.additions> -<review.deletions>
 
-**Current:**
-
-```markdown
-<exact before.content>
-```
-
-**Proposed:**
-
-```markdown
-<exact after.content>
+```diff
+<exact review.diff returned by documentation_preview>
 ```
 ````
+
+Do not generate, reconstruct, shorten, or otherwise modify the returned diff.
+The complete before/after snapshots remain the authoritative coordinated proposal
+content.
+
+When the user explicitly requests the complete proposal, present the exact stored
+before/after content returned by Preview for the requested artifacts.
 
 For `create`, present the exact proposed content.
 
@@ -1105,16 +1102,10 @@ ready for approval | needs clarification | blocked
 
 **Operation:** create | replace
 
-**Current:**
+**Changes:** +<review.additions> -<review.deletions>
 
-```markdown
-<exact before.content when applicable>
-```
-
-**Proposed:**
-
-```markdown
-<exact after.content>
+```diff
+<exact review.diff>
 ```
 
 ### `docs/project/progress.md`
@@ -1170,6 +1161,12 @@ material | editorial | no-change | needs clarification | blocked
 - **Targets:** ...
 - **Status:** awaiting review | approved and awaiting Apply permission | applied |
   failed
+
+**Changes:** +<review.additions> -<review.deletions>
+
+```diff
+<exact review.diff>
+```
 
 ## Consequences
 

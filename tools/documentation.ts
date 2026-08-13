@@ -22,7 +22,7 @@ import {
   resolve,
   sep,
 } from "node:path";
-
+import { diff as sequenceDiff } from "node:util";
 import { tool } from "@opencode-ai/plugin";
 
 type DocumentationAuthority =
@@ -76,6 +76,19 @@ type PreviewChange = {
   path: string;
   operation: DocumentationOperation;
   content?: string;
+};
+
+type ReviewLine = {
+  kind: "context" | "add" | "remove";
+  value: string;
+};
+
+type UnifiedReview = {
+  format: "unified";
+  context_lines: number;
+  additions: number;
+  deletions: number;
+  diff: string;
 };
 
 type ErrorCode =
@@ -1624,11 +1637,206 @@ function applyFailure(
   });
 }
 
+const diffContextLines = 3;
+
+function splitDiffLines(content: string): string[] {
+  if (content.length === 0) {
+    return [];
+  }
+
+  const lines: string[] = [];
+  let start = 0;
+
+  for (let index = 0; index < content.length; index += 1) {
+    if (content.charCodeAt(index) === 10) {
+      lines.push(content.slice(start, index + 1));
+      start = index + 1;
+    }
+  }
+
+  if (start < content.length) {
+    lines.push(content.slice(start));
+  }
+
+  return lines;
+}
+
+function appendUnifiedLine(
+  output: string[],
+  prefix: " " | "+" | "-",
+  value: string,
+): void {
+  const hasNewline = value.endsWith("\n");
+
+  let body = hasNewline ? value.slice(0, -1) : value;
+
+  // Make CRLF visible without allowing a carriage return to affect terminal
+  // rendering. This is presentation only; stored proposal bytes are unchanged.
+  if (body.endsWith("\r")) {
+    body = `${body.slice(0, -1)}\\r`;
+  }
+
+  output.push(`${prefix}${body}`);
+
+  if (!hasNewline) {
+    output.push("\\ No newline at end of file");
+  }
+}
+
+function buildUnifiedReview(target: ProposalTarget): UnifiedReview {
+  const beforeLines = splitDiffLines(target.before?.content ?? "");
+  const afterLines = splitDiffLines(target.after?.content ?? "");
+
+  /*
+   * node:util.diff expresses entries relative to actual vs expected.
+   *
+   * Passing the proposed content as `actual` means:
+   *   +1 -> line exists only in proposed content -> addition
+   *   -1 -> line exists only in current content  -> deletion
+   */
+  const entries = sequenceDiff(afterLines, beforeLines) as Array<
+    [number, string]
+  >;
+
+  const lines: ReviewLine[] = [];
+
+  let additions = 0;
+  let deletions = 0;
+
+  for (const [operation, value] of entries) {
+    if (operation === 0) {
+      lines.push({
+        kind: "context",
+        value,
+      });
+
+      continue;
+    }
+
+    if (operation === 1) {
+      additions += 1;
+
+      lines.push({
+        kind: "add",
+        value,
+      });
+
+      continue;
+    }
+
+    deletions += 1;
+
+    lines.push({
+      kind: "remove",
+      value,
+    });
+  }
+
+  const oldLabel =
+    target.operation === "create" ? "/dev/null" : `a/${target.path}`;
+
+  const newLabel =
+    target.operation === "delete" ? "/dev/null" : `b/${target.path}`;
+
+  const output = [`--- ${oldLabel}`, `+++ ${newLabel}`];
+
+  const changedIndexes: number[] = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    if (lines[index]!.kind !== "context") {
+      changedIndexes.push(index);
+    }
+  }
+
+  if (changedIndexes.length === 0) {
+    return {
+      format: "unified",
+      context_lines: diffContextLines,
+      additions,
+      deletions,
+      diff: output.join("\n"),
+    };
+  }
+
+  const ranges: Array<{
+    start: number;
+    end: number;
+  }> = [];
+
+  for (const changedIndex of changedIndexes) {
+    const start = Math.max(0, changedIndex - diffContextLines);
+    const end = Math.min(lines.length, changedIndex + diffContextLines + 1);
+
+    const previous = ranges.at(-1);
+
+    if (previous && start <= previous.end) {
+      previous.end = Math.max(previous.end, end);
+    } else {
+      ranges.push({
+        start,
+        end,
+      });
+    }
+  }
+
+  const oldPrefix = new Array<number>(lines.length + 1).fill(0);
+  const newPrefix = new Array<number>(lines.length + 1).fill(0);
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]!;
+
+    oldPrefix[index + 1] = oldPrefix[index]! + (line.kind === "add" ? 0 : 1);
+
+    newPrefix[index + 1] = newPrefix[index]! + (line.kind === "remove" ? 0 : 1);
+  }
+
+  for (const range of ranges) {
+    const oldBefore = oldPrefix[range.start]!;
+    const newBefore = newPrefix[range.start]!;
+
+    const oldCount = oldPrefix[range.end]! - oldPrefix[range.start]!;
+
+    const newCount = newPrefix[range.end]! - newPrefix[range.start]!;
+
+    const oldStart = oldCount === 0 ? oldBefore : oldBefore + 1;
+    const newStart = newCount === 0 ? newBefore : newBefore + 1;
+
+    output.push(`@@ -${oldStart},${oldCount} +${newStart},${newCount} @@`);
+
+    for (let index = range.start; index < range.end; index += 1) {
+      const line = lines[index]!;
+
+      switch (line.kind) {
+        case "context":
+          appendUnifiedLine(output, " ", line.value);
+          break;
+
+        case "add":
+          appendUnifiedLine(output, "+", line.value);
+          break;
+
+        case "remove":
+          appendUnifiedLine(output, "-", line.value);
+          break;
+      }
+    }
+  }
+
+  return {
+    format: "unified",
+    context_lines: diffContextLines,
+    additions,
+    deletions,
+    diff: output.join("\n"),
+  };
+}
+
 export const preview = tool({
   description:
     "Create an immutable review proposal for allowed project documentation " +
     "without modifying project files. The proposal is bound to the current " +
-    "project and records exact before/after content and checksums.",
+    "project, records exact before/after content and checksums, and returns a " +
+    "deterministic unified diff for human review.",
 
   args: {
     authority: tool.schema
@@ -1753,6 +1961,7 @@ export const preview = tool({
           operation: target.operation,
           before: target.before,
           after: target.after,
+          review: buildUnifiedReview(target),
         })),
       });
     } catch (error) {

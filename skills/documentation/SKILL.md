@@ -20,7 +20,7 @@ The current implementation provides:
 
 - documentation drafting;
 - deterministic `documentation_preview`;
-- exact current/proposed review;
+- deterministic unified-diff review derived from exact current/proposed snapshots;
 - revision through new proposals;
 - explicit approval recognition;
 - permission-gated `documentation_apply`;
@@ -118,7 +118,7 @@ request
   -> inspect
   -> draft complete resulting content
   -> documentation_preview
-  -> present exact current/proposed content
+  -> present deterministic unified diff
   -> review
        -> revision -> new proposal -> review again
        -> approval
@@ -158,7 +158,12 @@ Do not use another authority merely to reach a path rejected by `docs`.
 - Use `replace` only when the target already exists.
 - Use `delete` only when removal of the complete target file is intended.
 - Call `documentation_preview` to create every reviewable proposal.
-- Present the exact before/after content returned by the preview tool.
+- Present the exact deterministic unified diff returned in `review.diff` by
+  default.
+- Do not generate, infer, reconstruct, shorten, or modify the review diff.
+- The complete before/after snapshots remain the authoritative proposal content.
+- Present complete before/after snapshots only when the user explicitly asks to
+  inspect the full proposal content.
 - Treat the proposal identifier returned by the tool as the identity of that
   exact review candidate.
 - A requested revision creates a new proposal.
@@ -319,57 +324,37 @@ Documentation proposal: <proposal-id>
 Authority: docs
 ```
 
-Then present every target in the proposal in the order returned by the tool.
+Then present every target in the order returned by the tool.
 
-For `replace`:
-
-````markdown
-### `path/to/file.md`
-
-**Operation:** replace
-
-**Current:**
-
-```markdown
-<exact before.content returned by documentation_preview>
-```
-
-**Proposed:**
-
-```markdown
-<exact after.content returned by documentation_preview>
-```
-````
-
-For `create`:
+Use:
 
 ````markdown
 ### `path/to/file.md`
 
-**Operation:** create
+**Operation:** create | replace | delete  
+**Changes:** +<review.additions> -<review.deletions>
 
-**Proposed:**
-
-```markdown
-<exact after.content returned by documentation_preview>
+```diff
+<exact review.diff returned by documentation_preview>
 ```
 ````
 
-For `delete`:
-````markdown
-### `path/to/file.md`
+For `create`, the unified diff naturally shows the complete new file as added
+content.
 
-**Operation:** delete
+For `delete`, the unified diff naturally shows the complete removed file as
+deleted content.
 
-**Current:**
+For `replace`, show only the deterministic diff hunks and their context.
 
-```markdown
-<exact before.content returned by documentation_preview>
-```
-````
+Do not generate or modify the diff yourself.
 
-Do not paraphrase, reconstruct, shorten, or silently correct the content returned
-by the tool.
+The persisted complete before/after snapshots remain the authoritative proposal
+content and Apply payload.
+
+When the user explicitly asks to inspect the complete proposal, show the exact
+`before.content` and `after.content` returned by documentation_preview for the
+requested targets.
 
 After the targets, state:
 
@@ -609,10 +594,15 @@ Before Apply, a review response must make these facts unambiguous:
 - authority;
 - target path or paths;
 - operation for every target;
-- exact current content when applicable;
-- exact proposed content when applicable;
+- deterministic unified diff for every target;
+- addition and deletion counts for every target;
+- complete before/after snapshots are available on explicit request;
 - that project files have not yet been modified;
 - that the workflow is awaiting revision or approval.
+
+Do not describe the diff as the proposal itself. The persisted complete
+before/after snapshots are the authoritative proposal; the unified diff is its
+default human-review representation.
 
 After Apply, report the result according to the structured tool response.
 

@@ -24,7 +24,11 @@ instructions governing the current conversation.
 Create review candidates only through `documentation_preview` with `docs`
 authority.
 
-Present the exact current and proposed content returned by the preview tool.
+Present the exact deterministic unified diff returned by the preview tool as the
+default review representation.
+
+Show complete before/after proposal content only when the user explicitly asks
+for it.
 
 When the user requests revisions, create a new proposal and present the revised
 preview.

@@ -1458,26 +1458,19 @@ For a valid transition, use:
 ## Documentation Transaction
 
 - **Proposal:** <proposal-id>
-- **Authority:** milestone
+- **Authority:** decision
 - **Status:** awaiting review
 
-### `docs/project/progress.md`
+### `docs/project/decisions.md`
 
-**Operation:** replace
+**Operation:** replace  
+**Changes:** +<review.additions> -<review.deletions>
 
-**Current:**
-
-```markdown
-<exact before.content returned by documentation_preview>
+```diff
+<exact review.diff returned by documentation_preview>
 ```
 
-**Proposed:**
-
-```markdown
-<exact after.content returned by documentation_preview>
-```
-
-No project artifacts have been modified.
+The decision has not yet been durably recorded.
 
 ## Consequences
 
@@ -1863,8 +1856,18 @@ Decision proposal: <proposal-id>
 Authority: decision
 ```
 
-Then present the exact current and proposed `decisions.md` content returned by
-the tool.
+Then present the exact deterministic unified diff returned in `review.diff`.
+
+Show:
+
+- `review.additions`;
+- `review.deletions`;
+- the exact unified diff.
+
+Do not reconstruct or modify the returned diff.
+
+The complete before/after snapshots remain authoritative and may be shown when
+the user explicitly requests the full proposal.
 
 Do not paraphrase or reconstruct the tool-returned content.
 
@@ -1944,26 +1947,19 @@ For a valid decision proposal, use:
 ## Documentation Transaction
 
 - **Proposal:** <proposal-id>
-- **Authority:** decision
+- **Authority:** milestone
 - **Status:** awaiting review
 
-### `docs/project/decisions.md`
+### `docs/project/progress.md`
 
-**Operation:** replace
+**Operation:** replace  
+**Changes:** +<review.additions> -<review.deletions>
 
-**Current:**
-
-```markdown
-<exact before.content returned by documentation_preview>
+```diff
+<exact review.diff returned by documentation_preview>
 ```
 
-**Proposed:**
-
-```markdown
-<exact after.content returned by documentation_preview>
-```
-
-The decision has not yet been durably recorded.
+No project artifacts have been modified.
 
 ## Consequences
 
