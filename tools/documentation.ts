@@ -1683,18 +1683,17 @@ function appendUnifiedLine(
 }
 
 function buildUnifiedReview(target: ProposalTarget): UnifiedReview {
-  const entries = diffLines(afterLines, beforeLines);
   const beforeLines = splitDiffLines(target.before?.content ?? "");
   const afterLines = splitDiffLines(target.after?.content ?? "");
 
-  /*
-   * node:util.diff expresses entries relative to actual vs expected.
-   *
-   * Passing the proposed content as `actual` means:
-   *   +1 -> line exists only in proposed content -> addition
-   *   -1 -> line exists only in current content  -> deletion
-   */
+  const entries = diffLines(afterLines, beforeLines);
+
+  const lines: ReviewLine[] = [];
+}
+
   type SequenceDiffEntry = [-1 | 0 | 1, string];
+
+  const diffContextLines = 3;
 
   function diffLines(
     actual: string[],
