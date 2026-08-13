@@ -3,7 +3,7 @@ import {
   expect,
   test,
 } from "bun:test";
-import type { GitPolicy } from "../tools/git_policy";
+import type { GitPolicy } from "../lib/git_policy";
 import {
   validateCommitMessage,
   validateWorkingBranchName,

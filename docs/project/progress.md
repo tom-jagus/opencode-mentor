@@ -35,11 +35,14 @@ updated_at: 2026-08-13
   sparse project-policy validation, deterministic merge semantics, effective
   policy validation, normal handling of an absent project policy, managed tool
   permissions, focused automated tests, and successful runtime resolution of the
-  global policy without a project override.
+  global policy without a project override. Pure deterministic branch-name and
+  commit-message validators using the effective `GitPolicy` are also implemented,
+  tested, committed, and pushed; semantic commit-message quality remains an
+  explicit review responsibility.
 * **Blocking issues:** none
-* **Next action:** implement deterministic branch-name and commit-message
-  validators using the effective `GitPolicy`, without adding Git mutation or
-  lifecycle command execution.
+* **Next action:** implement `/start` as a constrained, policy-aware lifecycle
+  operation with deterministic inspection, validation, preview, explicit
+  approval, and narrowly scoped branch creation.
 
 ## Phase Transition
 
@@ -158,12 +161,16 @@ Delivered:
 - deterministic read-only `git_policy` custom tool with managed access for
   `lead` and denial for `explore`;
 - focused resolver tests outside the OpenCode tool-discovery directory;
-- successful runtime resolution with no project override.
+- successful runtime resolution with no project override;
+- pure deterministic branch-name validation against effective configured branch
+  types and lowercase kebab-case grammar;
+- pure deterministic commit-message validation for mechanical policy rules with
+  semantic descriptiveness and body usefulness preserved for explicit review;
+- focused automated validator tests.
 
 Remaining:
 
 - non-overridable guardrails;
-- branch and commit validation;
 - `/start`;
 - `/checkpoint`;
 - `/finish`;
@@ -277,6 +284,6 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Implement deterministic branch-name and commit-message validators using the
-effective `GitPolicy`, without adding Git mutation or lifecycle command
-execution.
+Implement `/start` as a constrained, policy-aware lifecycle operation with
+deterministic inspection, validation, preview, explicit approval, and narrowly
+scoped branch creation.

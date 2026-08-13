@@ -1,5 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { resolvePolicyDocuments } from "../tools/git_policy";
+import { fileURLToPath } from "node:url";
+import {
+  resolveEffectiveGitPolicy,
+  resolvePolicyDocuments,
+} from "../lib/git_policy";
 
 const globalPolicy = `
 schema_version = 1
@@ -192,5 +196,21 @@ allowed_types = []
     expect(policy.base_branch).toBe("main");
     expect(policy.merge.strategy).toBe("squash");
     expect(policy.release.enabled).toBe(true);
+  });
+
+  test("resolves effective policy from fixed filesystem locations", async () => {
+    const configurationRoot = fileURLToPath(new URL("..", import.meta.url));
+
+    const resolution = await resolveEffectiveGitPolicy(
+      configurationRoot,
+      configurationRoot,
+    );
+
+    expect(resolution.project_root).toBe(configurationRoot.replace(/\/$/, ""));
+    expect(resolution.sources.global.path).toBe(
+      `${configurationRoot.replace(/\/$/, "")}/policies/git-defaults.toml`,
+    );
+    expect(resolution.sources.project.present).toBe(false);
+    expect(resolution.effective_policy.base_branch).toBe("main");
   });
 });

@@ -1,4 +1,4 @@
-import type { GitPolicy } from "../tools/git_policy";
+import type { GitPolicy } from "./git_policy";
 
 export type GitValidationIssue = {
   code:
