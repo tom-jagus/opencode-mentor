@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { resolvePolicyDocuments } from "./git_policy";
+import { resolvePolicyDocuments } from "../tools/git_policy";
 
 const globalPolicy = `
 schema_version = 1
