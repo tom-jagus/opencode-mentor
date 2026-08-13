@@ -30,10 +30,16 @@ The workflow covers:
 - material re-entry during Development;
 - coordinated definition, progress, and decision proposals.
 
-During the current Project Workflows milestone, Project Definition is
-proposal-only.
+Project Definition applies authoritative project-artifact changes only through the
+constrained Documentation Transaction.
 
-It does not modify project artifacts.
+Definition reasoning determines the coordinated artifact change set.
+`documentation_preview` validates and persists the exact review candidate under
+`project-definition` authority. Explicit user approval may then hand that exact
+proposal identifier to permission-gated `documentation_apply`.
+
+Project Definition never modifies project artifacts through generic editing,
+Bash, or another mutation path.
 
 ## Authoritative Project Artifacts
 
@@ -227,11 +233,19 @@ Do not manufacture documentation changes simply to produce visible work.
   because it becomes the preferred or default path.
 - Do not weaken or broaden another artifact category's mutation authority merely
   to contrast it with the category being changed.
-- Do not modify project artifacts.
-- Do not use Bash.
-- Do not stage, commit, push, merge, rebase, tag, release, or create pull
-  requests.
-- Do not invoke documentation or vault mutation tools.
+- Do not modify project artifacts directly.
+- Apply project-artifact changes only through `documentation_preview` followed by
+  explicit review, approval, and permission-gated `documentation_apply`.
+- Use `project-definition` authority for every Documentation Transaction created
+  by this procedure.
+- Pass complete resulting file content to Preview for every `create` or `replace`
+  target.
+- Never reconstruct or alter proposal content at Apply time; pass only the exact
+  approved proposal identifier to `documentation_apply`.
+- Do not use generic editing or Bash as a substitute for the Documentation
+  Transaction.
+- Do not automatically retry a failed Apply.
+- Do not invoke vault mutation tools.
 - Keep coordinated artifact changes internally consistent.
 - Minimize changes to only the artifacts affected by the definition outcome.
 
@@ -869,82 +883,188 @@ Do not silently repair unrelated stale information.
 
 Report unrelated inconsistencies separately.
 
-### 18. Prepare the coordinated artifact proposal
+### 18. Build the coordinated artifact change set
 
-When artifact changes are required, produce one coordinated proposal.
+When artifact changes are required, construct one coherent Documentation
+Transaction change set.
 
-For Initial Definition, use the Initial Project Artifact Templates as the
-structural baseline.
+For Initial Definition, use the Initial Project Artifact Templates as structural
+baselines.
 
-Adapt the templates to the actual project:
+Adapt them to the actual project:
 
 - preserve artifact ownership;
 - include only useful sections;
-- expand structure when the project genuinely requires it;
-- do not copy placeholder or empty boilerplate into the proposed artifact.
+- expand structure only when the project genuinely requires it;
+- do not copy placeholder or empty boilerplate into resulting artifacts.
 
-For a new artifact, provide complete proposed file content.
+For every affected artifact determine exactly one operation:
 
-For an existing artifact, provide:
+```text
+create
+replace
+```
 
-- the artifact path;
-- change classification;
-- exact affected section or frontmatter;
-- proposed replacement or insertion;
-- why the change is required.
+Project Definition does not delete authoritative project artifacts.
 
-When several artifacts must change together, present them as one change set.
+For each `create` or `replace`, construct the complete intended resulting UTF-8
+file content.
 
-Do not present one artifact as independently complete when the proposed
-definition depends on coordinated changes to another artifact.
+Allowed targets are:
 
-The proposal must remain reviewable and manually applicable.
+```text
+docs/project/definition.md
+docs/project/progress.md
+docs/project/decisions.md
+```
 
-### 19. Present consequences and unresolved issues
+When several artifacts must change together, include them in the same Preview
+request.
 
-Summarize:
+Do not send fragments, patches, section replacements, or editing instructions to
+`documentation_preview`.
 
-- what project meaning changes;
-- what remains unchanged;
-- important accepted choices;
-- important rejected alternatives;
-- unresolved implementation questions;
-- risks introduced or removed;
-- whether Development can proceed after approval.
+Before Preview, verify that the complete resulting artifacts remain coordinated
+and preserve unrelated authoritative state.
 
-Do not repeat the full artifact proposal.
+### 19. Create and present the coordinated Preview
 
-### 20. Stop for review and approval
+Call `documentation_preview` with:
 
-After presenting the coordinated proposal, stop.
+```text
+authority: project-definition
+```
+
+and the complete coordinated change set.
+
+The Preview must contain every artifact whose resulting state is required for the
+definition outcome.
+
+After a successful Preview, present:
+
+```text
+Project Definition proposal: <proposal-id>
+Authority: project-definition
+```
+
+For every target, present the exact current and proposed content returned by the
+tool.
+
+For `replace`:
+
+````markdown
+### `docs/project/<artifact>.md`
+
+**Operation:** replace
+
+**Current:**
+
+```markdown
+<exact before.content>
+```
+
+**Proposed:**
+
+```markdown
+<exact after.content>
+```
+````
+
+For `create`, present the exact proposed content.
+
+Do not paraphrase, reconstruct, shorten, or silently correct tool-returned content.
+
+State clearly:
+
+```text
+No project artifacts have been modified.
+```
+
+Then summarize the definition consequences and unresolved issues without
+replacing the exact artifacts review.
+
+## 20. Handle review and revision
+
+Stop for explicit review.
 
 Allow the user to:
 
-- accept it;
+- approve the exact current proposal;
 - reject it;
-- revise part of it;
+- request revisions;
 - answer unresolved questions;
 - request another alternative.
 
-Do not treat presentation of the proposal as approval.
+Do not treat presentation as approval.
 
-Do not modify project artifacts.
+When the user requests any artifact change:
 
-### 21. Handle approval during the proposal-only phase
+1. treat it as a revision;
+2. construct the new complete resulting artifact content;
+3. call `documentation_preview` again using `project-definition` authority;
+4. receive a new proposal identifier;
+5. present the complete revised Preview.
 
-During the current Project Workflows milestone, explicit user approval does not
-authorize automatic artifact mutation.
+A revision creates a new proposal.
 
-When the user approves the proposal:
+Do not mutate the previous proposal and do not apply an earlier proposal after a
+newer revision candidate becomes current.
 
-- state that the coordinated proposal is approved conceptually;
-- provide any final exact artifact changes needed for manual application;
-- let the user apply them manually;
-- do not claim that durable project state changed until the files are actually
-  updated and reread.
+### 21. Apply the approved definition proposal
 
-Once Documentation Transaction is implemented, this step will hand the approved
-change set to its constrained preview and atomic apply mechanism.
+Treat an unambiguous affirmative response to the exact currently displayed
+proposal as approval when it contains no requested change.
+
+Approval refers only to that exact proposal identifier.
+
+After approval, call:
+
+```text
+documentation_apply
+  proposal_id: <exact-current-proposal-id>
+```
+
+Pass only the proposal identifier.
+
+The permission request for `documentation_apply` is the final mutation gate.
+
+If Apply permission is denied:
+
+- leave the proposal unapplied;
+- do not use generic editing or Bash;
+- do not automatically retry;
+- report that durable project state has not changed.
+
+When Apply returns `ok: true`:
+
+- report the exact proposal identifier;
+- report each affected project artifact and operation;
+- report any warnings;
+- state that the coordinated project-artifact change was applied successfully.
+
+When Apply returns `STALE_TARGET`:
+
+- report the affected artifact and reason;
+- do not overwrite current state;
+- do not automatically create a replacement proposal;
+- return to artifact inspection and Preview only if the user wants to continue.
+
+When Apply returns `PROPOSAL_ALREADY_APPLIED`, report that the proposal is
+already durable and do not retry it.
+
+For another safely handled Apply failure:
+
+- report the structured failure;
+- report rollback status when supplied;
+- do not invent another mutation path;
+- do not automatically retry.
+
+For `ROLLBACK_FAILED`:
+
+- report every unresolved path;
+- report whether recovery state was preserved;
+- do not claim project artifacts are unchanged;
+- stop automatic Project Definition mutation activity for manual recovery.
 
 ## Initial Definition Output Contract
 
@@ -1037,31 +1157,13 @@ material | editorial | no-change | needs clarification | blocked
 
 - ...
 
-## Proposed Artifact Changes
+## Documentation Transaction
 
-### `docs/project/definition.md`
-
-Change: replace | insert | none
-
-```markdown
-...
-```
-
-### `docs/project/progress.md`
-
-Change: replace | insert | none
-
-```markdown
-...
-```
-
-### `docs/project/decisions.md`
-
-Change: append | none
-
-```markdown
-...
-```
+- **Proposal:** <proposal-id>
+- **Authority:** project-definition
+- **Targets:** ...
+- **Status:** awaiting review | approved and awaiting Apply permission | applied |
+  failed
 
 ## Consequences
 

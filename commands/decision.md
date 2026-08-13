@@ -1,5 +1,5 @@
 ---
-description: Propose a durable project decision update
+description: Review and apply a durable project decision update
 agent: lead
 ---
 
@@ -9,8 +9,16 @@ Treat the following text as the requested decision action:
 
 $ARGUMENTS
 
-This workflow is proposal-only. Do not create, edit, patch, delete, rename, or
-otherwise modify project artifacts.
+Apply decision-history changes only through the constrained Documentation
+Transaction.
+
+Create the review candidate through `documentation_preview` using `decision`
+authority.
+
+After explicit approval of the exact current proposal, continue through
+permission-gated `documentation_apply` using only that proposal identifier.
+
+Do not modify project artifacts through generic editing or Bash.
 
 Use the authoritative decision register and relevant project context before
 proposing a durable decision update.

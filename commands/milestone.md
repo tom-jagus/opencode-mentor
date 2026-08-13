@@ -1,5 +1,5 @@
 ---
-description: Propose a milestone state transition
+description: Review and apply a milestone state transition
 agent: lead
 ---
 
@@ -9,8 +9,15 @@ Treat the following text as the requested milestone transition:
 
 $ARGUMENTS
 
-This workflow is proposal-only. Do not create, edit, patch, delete, rename, or
-otherwise modify project artifacts.
+Apply milestone changes only through the constrained Documentation Transaction.
+
+Create the review candidate through `documentation_preview` using `milestone`
+authority.
+
+After explicit approval of the exact current proposal, continue through
+permission-gated `documentation_apply` using only that proposal identifier.
+
+Do not modify project artifacts through generic editing or Bash.
 
 Use authoritative project artifacts to understand the current milestone state
 before proposing a transition.

@@ -21,12 +21,20 @@ non-goals, and acceptance criteria rather than accepting them automatically.
 
 Distinguish desired outcomes from proposed implementation.
 
-During the current Project Workflows milestone, this workflow is proposal-only.
-Do not create, edit, patch, delete, rename, or otherwise modify project
-artifacts.
+When project artifacts need to change, prepare one coordinated Documentation
+Transaction proposal covering all affected artifacts.
 
-When project artifacts need to change, prepare one coordinated proposal covering
-all affected artifacts.
+Create that proposal only through `documentation_preview` using
+`project-definition` authority and complete resulting artifact content.
+
+Present the exact Preview for review.
+
+After explicit approval of the exact current proposal, continue the Project
+Definition procedure through permission-gated `documentation_apply` using only
+that proposal identifier.
+
+Do not create, edit, patch, delete, rename, or otherwise modify project artifacts
+through generic file-editing or Bash capabilities.
 
 Do not use Bash during Project Definition. Use approved read-only tools and
 bounded `explore` investigation when existing implementation evidence is
