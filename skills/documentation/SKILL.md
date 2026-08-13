@@ -1,6 +1,6 @@
 ---
 name: documentation
-description: Propose, preview, review, and revise general project documentation through the constrained Documentation Transaction.
+description: Propose, preview, review, revise and apply general project documentation through the constrained Documentation Transaction.
 compatibility: opencode
 metadata:
   workflow: documentation
