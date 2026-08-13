@@ -38,11 +38,16 @@ updated_at: 2026-08-13
   global policy without a project override. Pure deterministic branch-name and
   commit-message validators using the effective `GitPolicy` are also implemented,
   tested, committed, and pushed; semantic commit-message quality remains an
-  explicit review responsibility.
+  explicit review responsibility. `/start` is implemented and validated as a
+  policy-aware Preview/Apply workflow with deterministic eligibility checks,
+  immutable project-bound proposals, freshness revalidation, permission-gated
+  branch creation, post-mutation verification, single-use enforcement, and
+  constrained rollback. The integrated `/start` command and `git-lifecycle`
+  skill passed the expected fail-closed smoke test.
 * **Blocking issues:** none
-* **Next action:** implement `/start` as a constrained, policy-aware lifecycle
-  operation with deterministic inspection, validation, preview, explicit
-  approval, and narrowly scoped branch creation.
+* **Next action:** begin `/checkpoint` with explicit staging selection, staged-diff
+  inspection, commit-message preview and validation, permission-gated commit, and
+  a separately reviewed push boundary.
 
 ## Phase Transition
 
@@ -166,12 +171,21 @@ Delivered:
   types and lowercase kebab-case grammar;
 - pure deterministic commit-message validation for mechanical policy rules with
   semantic descriptiveness and body usefulness preserved for explicit review;
-- focused automated validator tests.
+- focused automated validator tests;
+- reusable typed policy, repository-state, and Git-start validation libraries;
+- deterministic `/start` preflight and local-branch existence inspection;
+- immutable, project-bound `git_start_preview` proposals with strict persisted
+  record validation and semantic policy checksums;
+- permission-gated `git_start_apply` with freshness checks, exclusive Apply
+  locking, constrained branch creation, post-mutation verification, applied-state
+  persistence, single-use enforcement, and rollback;
+- integrated `git-lifecycle` Start procedure, `/start` command, routing, and
+  managed permissions;
+- focused automated `/start` tests and expected fail-closed workflow smoke test.
 
 Remaining:
 
-- non-overridable guardrails;
-- `/start`;
+- non-overridable guardrails for later lifecycle operations;
 - `/checkpoint`;
 - `/finish`;
 - `/release`;
@@ -284,6 +298,6 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Implement `/start` as a constrained, policy-aware lifecycle operation with
-deterministic inspection, validation, preview, explicit approval, and narrowly
-scoped branch creation.
+Begin `/checkpoint` with explicit staging selection, staged-diff inspection,
+commit-message preview and validation, permission-gated commit, and a separately
+reviewed push boundary.

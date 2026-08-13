@@ -692,3 +692,40 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
     resolved in favour of descriptive natural-language commit messages;
   - project-specific overrides and sophisticated validation profiles remain
     deferred until practical use demonstrates sufficient value.
+
+## DEC-047 — Git Start Lifecycle Contract
+
+- **Date:** 2026-08-13
+- **Status:** accepted
+- **Decision:**
+  - `/start` may create a working branch only while the repository is on the
+    effective configured base branch with a valid named HEAD, no unresolved
+    conflicts, and a completely clean working tree;
+  - the target must be a new local branch that is not the effective base branch
+    and complies with the effective branch-name policy;
+  - `/start` uses an immutable, project-bound Preview/Apply transaction;
+  - Preview performs deterministic policy resolution and repository preflight,
+    persists the exact reviewed operation outside the repository, and performs no
+    Git mutation;
+  - Apply accepts only the exact reviewed proposal identifier, requires explicit
+    approval and a separate permission gate, and revalidates proposal integrity,
+    project binding, effective policy, current branch, HEAD, working-tree state,
+    conflicts, and target-branch absence before mutation;
+  - Apply creates and switches to only the reviewed local branch, verifies the
+    resulting branch, HEAD, and working tree, marks the proposal single-use, and
+    attempts constrained rollback after recoverable post-mutation failure;
+  - `/start` does not stage, commit, push, fetch, pull, rebase, merge, open a pull
+    request, tag, release, switch to an existing branch, or expose arbitrary Git
+    commands.
+- **Rationale:** Starting work from a clean effective base branch gives the new
+  unit a deterministic origin and prevents unrelated or unfinished work from
+  being carried implicitly into it. Immutable reviewed proposals preserve
+  explicit approval while freshness revalidation prevents stale conversational
+  intent from authorising a changed repository operation.
+- **Consequences:**
+  - repositories must clean or otherwise resolve existing work before `/start`;
+  - starting from another working branch or reusing an existing branch is rejected
+    rather than treated as a convenience shortcut;
+  - policy or repository changes after Preview require a fresh proposal;
+  - `/checkpoint`, `/finish`, and `/release` retain separate workflow and mutation
+    boundaries.
