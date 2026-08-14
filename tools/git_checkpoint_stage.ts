@@ -8,6 +8,7 @@ import {
   persistGitCheckpointStageProposal,
 } from "../lib/git_checkpoint_stage_proposal";
 import { PolicyError, policyFailure } from "../lib/git_policy";
+import { applyGitCheckpointStageProposal } from "../lib/git_checkpoint_stage_apply";
 
 function json(value: unknown): string {
   return JSON.stringify(value, null, 2);
@@ -123,5 +124,42 @@ export const preview = tool({
         },
       });
     }
+  },
+});
+export const apply = tool({
+  description:
+    "Apply one exact reviewed checkpoint Stage proposal. " +
+    "Revalidates project, policy, branch, HEAD, repository status, and selected content before staging only the reviewed paths.",
+
+  args: {
+    proposal_id: tool.schema
+      .string()
+      .describe(
+        "Exact proposal identifier returned by git_checkpoint_stage_preview.",
+      ),
+  },
+
+  async execute(args, context) {
+    const directory = context.worktree || context.directory;
+
+    if (!directory) {
+      return json({
+        version: 1,
+        ok: false,
+        proposal_id: args.proposal_id,
+        error: {
+          code: "STALE_PROPOSAL",
+          message: "OpenCode did not provide a project directory",
+        },
+      });
+    }
+
+    return json(
+      await applyGitCheckpointStageProposal({
+        directory,
+        configuration_root: resolve(import.meta.dir, ".."),
+        proposal_id: args.proposal_id,
+      }),
+    );
   },
 });

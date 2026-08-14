@@ -1,14 +1,24 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runGitCheckpointStagePreflight } from "../lib/git_checkpoint";
-import { prepareGitCheckpointStageApply } from "../lib/git_checkpoint_stage_apply";
+import {
+  prepareGitCheckpointStageApply,
+  verifyGitCheckpointStageResult,
+  applyGitCheckpointStageProposal,
+} from "../lib/git_checkpoint_stage_apply";
 import {
   buildGitCheckpointStageProposal,
   persistGitCheckpointStageProposal,
 } from "../lib/git_checkpoint_stage_proposal";
+import { inspectGitState } from "../lib/git_state";
+import { inspectGitCheckpointStageSnapshot } from "../lib/git_checkpoint_stage_snapshot";
+import {
+  rollbackGitCheckpointStage,
+  stageGitCheckpointPaths,
+} from "../lib/git_checkpoint_stage_mutation";
 
 type GitResult = {
   stdout: string;
@@ -70,6 +80,18 @@ async function requireGit(
   }
 
   return result;
+}
+
+async function stagedPaths(repositoryRoot: string): Promise<string[]> {
+  const result = await requireGit(repositoryRoot, [
+    "diff",
+    "--cached",
+    "--name-only",
+  ]);
+
+  const value = result.stdout.trim();
+
+  return value.length === 0 ? [] : value.split("\n").sort();
 }
 
 async function createRepository(repositoryRoot: string): Promise<void> {
@@ -215,5 +237,109 @@ describe("prepareGitCheckpointStageApply", () => {
         storage_root: storageRoot,
       }),
     ).rejects.toThrow("HEAD changed");
+  });
+  test("verifies the exact staged result", async () => {
+    const record = await persistEligibleProposal();
+
+    const backup = await stageGitCheckpointPaths(
+      repositoryRoot,
+      record.proposal.operation.staging_pathspecs,
+    );
+
+    try {
+      const state = await inspectGitState(repositoryRoot);
+
+      const snapshot = await inspectGitCheckpointStageSnapshot(
+        repositoryRoot,
+        record.proposal.operation.staging_pathspecs,
+      );
+
+      const verified = verifyGitCheckpointStageResult(record, state, snapshot);
+
+      expect(verified).toMatchObject({
+        repository_root: repositoryRoot,
+        branch: "feature/stage-apply-test",
+        staged_paths: ["README.md"],
+        snapshot_sha256: record.proposal.repository.snapshot.snapshot_sha256,
+      });
+    } finally {
+      await rollbackGitCheckpointStage(backup);
+    }
+  });
+  test("applies and marks an exact Stage proposal single-use", async () => {
+    const record = await persistEligibleProposal();
+
+    const result = await applyGitCheckpointStageProposal({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      proposal_id: record.proposal.id,
+      storage_root: storageRoot,
+    });
+
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error(result.error.message);
+    }
+
+    expect(result.staged_paths).toEqual(["README.md"]);
+    expect(await stagedPaths(repositoryRoot)).toEqual(["README.md"]);
+
+    const recordPath = join(
+      storageRoot,
+      record.proposal.project.key,
+      `${record.proposal.id}.json`,
+    );
+
+    const stored = JSON.parse(await readFile(recordPath, "utf8"));
+
+    expect(stored.state.status).toBe("applied");
+    expect(stored.state.applied_at).toBe(result.applied_at);
+
+    const repeated = await applyGitCheckpointStageProposal({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      proposal_id: record.proposal.id,
+      storage_root: storageRoot,
+    });
+
+    expect(repeated).toMatchObject({
+      ok: false,
+      error: {
+        code: "PROPOSAL_ALREADY_APPLIED",
+      },
+    });
+  });
+
+  test("rolls back staging when applied-state persistence fails", async () => {
+    const record = await persistEligibleProposal();
+
+    const result = await applyGitCheckpointStageProposal(
+      {
+        directory: repositoryRoot,
+        configuration_root: configurationRoot,
+        proposal_id: record.proposal.id,
+        storage_root: storageRoot,
+      },
+      {
+        persist: async () => {
+          throw new Error("Injected persistence failure");
+        },
+      },
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        code: "APPLY_FAILED",
+        message: "Injected persistence failure",
+      },
+      rollback: {
+        succeeded: true,
+        errors: [],
+      },
+    });
+
+    expect(await stagedPaths(repositoryRoot)).toEqual([]);
   });
 });

@@ -103,7 +103,11 @@ export class GitCheckpointStageProposalError extends Error {
     | "PROPOSAL_INTEGRITY_FAILED"
     | "PROJECT_MISMATCH"
     | "PROPOSAL_ALREADY_APPLIED"
-    | "STALE_PROPOSAL";
+    | "STALE_PROPOSAL"
+    | "APPLY_FAILED"
+    | "APPLY_IN_PROGRESS"
+    | "PROPOSAL_STATE_FAILED"
+    | "ROLLBACK_FAILED";
 
   constructor(code: GitCheckpointStageProposalError["code"], message: string) {
     super(message);
