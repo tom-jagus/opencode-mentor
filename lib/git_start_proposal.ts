@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import {
   lstat,
   mkdir,
@@ -8,11 +8,17 @@ import {
   unlink,
   writeFile,
 } from "node:fs/promises";
-import { homedir } from "node:os";
-import { basename, isAbsolute, join, relative, sep } from "node:path";
+import { isAbsolute, join, relative, sep } from "node:path";
 import type { EffectiveGitPolicyResolution, GitPolicy } from "./git_policy";
 import type { GitStartPreflight } from "./git_start";
 import { validateEffectiveGitPolicy } from "./git_policy";
+import {
+  canonicalJson,
+  gitProjectKey,
+  mentorStateRoot,
+  policyResolutionChecksum as lifecyclePolicyResolutionChecksum,
+  sha256,
+} from "./git_lifecycle_proposal";
 
 export type GitStartProposalState =
   | {
@@ -139,66 +145,14 @@ function isNodeError(error: unknown, code: string): boolean {
   );
 }
 
-function canonicalJson(value: unknown): string {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean"
-  ) {
-    return JSON.stringify(value);
-  }
-
-  if (typeof value === "number") {
-    if (!Number.isFinite(value)) {
-      throw new Error("Canonical JSON cannot contain non-finite numbers");
-    }
-
-    return JSON.stringify(value);
-  }
-
-  if (Array.isArray(value)) {
-    return `[${value.map(canonicalJson).join(",")}]`;
-  }
-
-  if (typeof value === "object") {
-    const record = value as Record<string, unknown>;
-
-    const entries = Object.keys(record)
-      .filter((key) => record[key] !== undefined)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonicalJson(record[key])}`);
-
-    return `{${entries.join(",")}}`;
-  }
-
-  throw new Error(`Unsupported canonical JSON value: ${typeof value}`);
-}
-
-function sha256(value: string): string {
-  return createHash("sha256").update(value, "utf8").digest("hex");
-}
-
 export function gitStartProjectKey(projectRoot: string): string {
-  const rawName = basename(projectRoot) || "project";
-
-  const safeName =
-    rawName.replace(/[^A-Za-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") ||
-    "project";
-
-  const pathHash = sha256(projectRoot).slice(0, 12);
-
-  return `${safeName}-${pathHash}`;
+  return gitProjectKey(projectRoot);
 }
 
 export function policyResolutionChecksum(
   resolution: EffectiveGitPolicyResolution,
 ): string {
-  return sha256(
-    canonicalJson({
-      sources: resolution.sources,
-      effective_policy: resolution.effective_policy,
-    }),
-  );
+  return lifecyclePolicyResolutionChecksum(resolution);
 }
 
 export function gitStartProposalIntegrity(
@@ -309,17 +263,6 @@ export function buildGitStartReview(
     policy_resolution_sha256: proposal.policy.resolution_sha256,
     project_policy_present: proposal.policy.sources.project.present,
   };
-}
-
-function mentorStateRoot(): string {
-  const configured = Bun.env.XDG_STATE_HOME;
-
-  const stateHome =
-    configured && isAbsolute(configured)
-      ? configured
-      : join(homedir(), ".local", "state");
-
-  return join(stateHome, "opencode-mentor");
 }
 
 export function gitStartProposalRoot(): string {

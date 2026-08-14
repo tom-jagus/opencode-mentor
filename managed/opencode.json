@@ -9,6 +9,7 @@
     "git_policy": "deny",
     "git_start_preview": "deny",
     "git_start_apply": "deny",
+    "git_checkpoint_stage_preview": "deny",
     "documentation_preview": "deny",
     "documentation_apply": "deny",
     "skill": {
@@ -42,6 +43,7 @@
         "git_policy": "allow",
         "git_start_preview": "allow",
         "git_start_apply": "ask",
+        "git_checkpoint_stage_preview": "allow",
         "documentation_preview": "allow",
         "documentation_apply": "ask",
         "bash": "ask",
@@ -79,6 +81,7 @@
         "git_policy": "deny",
         "git_start_preview": "deny",
         "git_start_apply": "deny",
+        "git_checkpoint_stage_preview": "deny",
         "edit": "deny",
         "bash": "deny",
         "task": "deny"

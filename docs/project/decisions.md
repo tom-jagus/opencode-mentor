@@ -1,7 +1,7 @@
 ---
 title: OpenCode Mentor Project Decisions
 status: active
-updated_at: 2026-08-13
+updated_at: 2026-08-14
 ---
 
 # Decision Register
@@ -729,3 +729,49 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
   - policy or repository changes after Preview require a fresh proposal;
   - `/checkpoint`, `/finish`, and `/release` retain separate workflow and mutation
     boundaries.
+
+## DEC-048 — Git Checkpoint Lifecycle Contract
+
+- **Date:** 2026-08-14
+- **Status:** accepted
+- **Decision:**
+  - `/checkpoint` handles one coherent validated unit through three separately
+    reviewed and permission-gated transactions: Stage, Commit, and Push;
+  - Stage Preview binds the effective policy, current working branch and HEAD,
+    inspected working-tree state, and exact explicitly selected changed paths;
+  - Stage Apply accepts only the exact reviewed proposal identifier, revalidates
+    freshness, and stages only the reviewed whole-path selection; it does not
+    commit or push;
+  - every already-staged path must be included in the explicit Stage selection,
+    while unselected unstaged changes may remain and must not be staged implicitly;
+  - Commit Preview occurs only after staging, shows the final staged diff and
+    proposed commit message, and binds their exact checksums together with the
+    effective policy, branch, and pre-commit HEAD;
+  - Commit Apply revalidates all bound state and commits exactly the reviewed
+    index with the reviewed message; it does not stage additional content or push;
+  - Push Preview occurs only after commit and binds the exact local commit,
+    working branch, explicitly supplied remote, and destination branch;
+  - the remote must always be supplied explicitly and must never be inferred as
+    `origin` or from another repository convention;
+  - Push Apply revalidates the reviewed local and remote state and performs only a
+    normal non-force push of the reviewed commit to the reviewed destination; it
+    does not establish or change upstream configuration implicitly;
+  - each Preview is read-only and persists an immutable project-bound proposal
+    outside the repository; each Apply requires explicit approval, a separate
+    permission gate, integrity and freshness revalidation, and single-use
+    enforcement;
+  - `/checkpoint` does not fetch, pull, rebase, merge, force-push, switch branches,
+    open a pull request, tag, release, or expose arbitrary Git commands.
+- **Rationale:** Staging must finish before the exact final staged diff can be
+  reviewed, committing must finish before the exact pushed commit exists, and a
+  remote must be deliberate rather than guessed. Separate transactions preserve
+  meaningful review and approval at each mutation boundary.
+- **Consequences:**
+  - a combined stage-and-commit Apply is prohibited;
+  - a combined commit-and-push Apply is prohibited;
+  - partial-hunk selection is outside the initial checkpoint implementation;
+  - changes to selected paths, policy, branch, HEAD, staged diff, commit message,
+    local commit, remote, or destination after the relevant Preview require a new
+    proposal;
+  - application-specific validation remains outside constrained Git tooling and
+    must be completed or explicitly assessed before checkpoint mutation begins.
