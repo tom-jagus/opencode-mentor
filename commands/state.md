@@ -1,5 +1,5 @@
 ---
-description: Report current project and repository state
+description: Mentor - Report current project and repository state
 agent: lead
 ---
 

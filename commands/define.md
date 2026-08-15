@@ -1,5 +1,5 @@
 ---
-description: Define a new project or materially revise approved project scope
+description: Mentor - Define a new project or materially revise approved project scope
 agent: lead
 ---
 

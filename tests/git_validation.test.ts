@@ -1,8 +1,4 @@
-import {
-  describe,
-  expect,
-  test,
-} from "bun:test";
+import { describe, expect, test } from "bun:test";
 import type { GitPolicy } from "../lib/git_policy";
 import {
   validateCommitMessage,
@@ -13,14 +9,7 @@ const policy: GitPolicy = {
   schema_version: 1,
   base_branch: "main",
   branch: {
-    allowed_types: [
-      "feature",
-      "fix",
-      "docs",
-      "refactor",
-      "test",
-      "chore",
-    ],
+    allowed_types: ["feature", "fix", "docs", "refactor", "test", "chore"],
     format: "<type>/<kebab-case-summary>",
   },
   commit_message: {
@@ -58,10 +47,7 @@ const policy: GitPolicy = {
 describe("validateWorkingBranchName", () => {
   test("accepts an approved branch name", () => {
     expect(
-      validateWorkingBranchName(
-        "feature/add-policy-validation",
-        policy,
-      ),
+      validateWorkingBranchName("feature/add-policy-validation", policy),
     ).toEqual({
       valid: true,
       issues: [],
@@ -77,8 +63,7 @@ describe("validateWorkingBranchName", () => {
     expect(validation.valid).toBe(false);
     expect(validation.issues).toContainEqual({
       code: "DISALLOWED_BRANCH_TYPE",
-      message:
-        'Branch type "hotfix" is not allowed',
+      message: 'Branch type "hotfix" is not allowed',
     });
   });
 
@@ -91,8 +76,7 @@ describe("validateWorkingBranchName", () => {
     expect(validation.valid).toBe(false);
     expect(validation.issues).toContainEqual({
       code: "INVALID_BRANCH_SUMMARY",
-      message:
-        "Branch summary must use lowercase kebab case",
+      message: "Branch summary must use lowercase kebab case",
     });
   });
 
@@ -102,9 +86,7 @@ describe("validateWorkingBranchName", () => {
       policy,
     );
 
-    expect(validation.issues[0]?.code).toBe(
-      "INVALID_BRANCH_GRAMMAR",
-    );
+    expect(validation.issues[0]?.code).toBe("INVALID_BRANCH_GRAMMAR");
   });
 
   test("uses project-overridden branch types", () => {
@@ -117,17 +99,13 @@ describe("validateWorkingBranchName", () => {
     };
 
     expect(
-      validateWorkingBranchName(
-        "feature/add-validation",
-        overriddenPolicy,
-      ).valid,
+      validateWorkingBranchName("feature/add-validation", overriddenPolicy)
+        .valid,
     ).toBe(false);
 
     expect(
-      validateWorkingBranchName(
-        "docs/explain-validation",
-        overriddenPolicy,
-      ).valid,
+      validateWorkingBranchName("docs/explain-validation", overriddenPolicy)
+        .valid,
     ).toBe(true);
   });
 });
@@ -140,9 +118,7 @@ describe("validateCommitMessage", () => {
     );
 
     expect(validation.valid).toBe(true);
-    expect(validation.subject).toBe(
-      "Implement deterministic Git validation",
-    );
+    expect(validation.subject).toBe("Implement deterministic Git validation");
     expect(validation.body_present).toBe(false);
     expect(validation.semantic_review).not.toHaveLength(0);
   });
@@ -153,15 +129,11 @@ describe("validateCommitMessage", () => {
       "fix(policy): reject invalid branch",
       "docs: explain policy",
     ]) {
-      const validation = validateCommitMessage(
-        subject,
-        policy,
-      );
+      const validation = validateCommitMessage(subject, policy);
 
       expect(
         validation.issues.some(
-          (issue) =>
-            issue.code === "FORBIDDEN_COMMIT_PREFIX",
+          (issue) => issue.code === "FORBIDDEN_COMMIT_PREFIX",
         ),
       ).toBe(true);
     }
@@ -175,8 +147,7 @@ describe("validateCommitMessage", () => {
 
     expect(validation.issues).toContainEqual({
       code: "SUBJECT_CASE",
-      message:
-        "Commit subject must begin with an uppercase letter",
+      message: "Commit subject must begin with an uppercase letter",
     });
   });
 
@@ -188,8 +159,7 @@ describe("validateCommitMessage", () => {
 
     expect(validation.issues).toContainEqual({
       code: "SUBJECT_TRAILING_PERIOD",
-      message:
-        "Commit subject must not end with a period",
+      message: "Commit subject must not end with a period",
     });
   });
 
@@ -214,8 +184,22 @@ describe("validateCommitMessage", () => {
     const validation = validateCommitMessage("", policy);
 
     expect(validation.valid).toBe(false);
-    expect(validation.issues[0]?.code).toBe(
-      "EMPTY_COMMIT_MESSAGE",
-    );
+    expect(validation.issues[0]?.code).toBe("EMPTY_COMMIT_MESSAGE");
+  });
+
+  test("rejects non-canonical commit message bytes", () => {
+    for (const message of [
+      "Implement validation\n",
+      "Implement validation\r\n\r\nExplain the change",
+      "Implement\0 validation",
+    ]) {
+      const validation = validateCommitMessage(message, policy);
+
+      expect(validation.issues).toContainEqual({
+        code: "NON_CANONICAL_COMMIT_MESSAGE",
+        message:
+          "Commit message must use LF line separators, contain no NUL bytes, and omit a trailing newline",
+      });
+    }
   });
 });

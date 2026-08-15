@@ -1,5 +1,5 @@
 ---
-description: Propose and review source changes without modifying source files
+description: Mentor - Propose and review source changes without modifying source files
 agent: lead
 ---
 Load the `development` skill and execute its Development procedure.

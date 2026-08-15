@@ -1,5 +1,5 @@
 ---
-description: Review and apply a durable project decision update
+description: Mentor - Review and apply a durable project decision update
 agent: lead
 ---
 

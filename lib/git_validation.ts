@@ -7,6 +7,7 @@ export type GitValidationIssue = {
     | "DISALLOWED_BRANCH_TYPE"
     | "INVALID_BRANCH_SUMMARY"
     | "EMPTY_COMMIT_MESSAGE"
+    | "NON_CANONICAL_COMMIT_MESSAGE"
     | "SUBJECT_WHITESPACE"
     | "SUBJECT_CASE"
     | "SUBJECT_TRAILING_PERIOD"
@@ -19,19 +20,15 @@ export type GitValidationResult = {
   issues: GitValidationIssue[];
 };
 
-export type CommitMessageValidationResult =
-  GitValidationResult & {
-    subject: string;
-    body_present: boolean;
-    semantic_review: string[];
-  };
+export type CommitMessageValidationResult = GitValidationResult & {
+  subject: string;
+  body_present: boolean;
+  semantic_review: string[];
+};
 
-const kebabCaseSummary =
-  /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const kebabCaseSummary = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-function result(
-  issues: GitValidationIssue[],
-): GitValidationResult {
+function result(issues: GitValidationIssue[]): GitValidationResult {
   return {
     valid: issues.length === 0,
     issues,
@@ -58,8 +55,7 @@ export function validateWorkingBranchName(
   if (parts.length !== 2) {
     issues.push({
       code: "INVALID_BRANCH_GRAMMAR",
-      message:
-        `Branch name must match ${policy.branch.format}`,
+      message: `Branch name must match ${policy.branch.format}`,
     });
 
     return result(issues);
@@ -70,16 +66,14 @@ export function validateWorkingBranchName(
   if (!policy.branch.allowed_types.includes(branchType)) {
     issues.push({
       code: "DISALLOWED_BRANCH_TYPE",
-      message:
-        `Branch type ${JSON.stringify(branchType)} is not allowed`,
+      message: `Branch type ${JSON.stringify(branchType)} is not allowed`,
     });
   }
 
   if (!kebabCaseSummary.test(summary)) {
     issues.push({
       code: "INVALID_BRANCH_SUMMARY",
-      message:
-        "Branch summary must use lowercase kebab case",
+      message: "Branch summary must use lowercase kebab case",
     });
   }
 
@@ -91,10 +85,7 @@ function firstLetter(value: string): string | null {
 }
 
 function isUppercaseLetter(value: string): boolean {
-  return (
-    value === value.toUpperCase() &&
-    value !== value.toLowerCase()
-  );
+  return value === value.toUpperCase() && value !== value.toLowerCase();
 }
 
 export function validateCommitMessage(
@@ -102,6 +93,18 @@ export function validateCommitMessage(
   policy: GitPolicy,
 ): CommitMessageValidationResult {
   const issues: GitValidationIssue[] = [];
+
+  if (
+    message.includes("\0") ||
+    message.includes("\r") ||
+    message.endsWith("\n")
+  ) {
+    issues.push({
+      code: "NON_CANONICAL_COMMIT_MESSAGE",
+      message:
+        "Commit message must use LF line separators, contain no NUL bytes, and omit a trailing newline",
+    });
+  }
 
   if (message.length === 0) {
     return {
@@ -133,8 +136,7 @@ export function validateCommitMessage(
   if (subject !== subject.trim()) {
     issues.push({
       code: "SUBJECT_WHITESPACE",
-      message:
-        "Commit subject must not have leading or trailing whitespace",
+      message: "Commit subject must not have leading or trailing whitespace",
     });
   }
 
@@ -144,8 +146,7 @@ export function validateCommitMessage(
   ) {
     issues.push({
       code: "SUBJECT_TRAILING_PERIOD",
-      message:
-        "Commit subject must not end with a period",
+      message: "Commit subject must not end with a period",
     });
   }
 
@@ -155,21 +156,16 @@ export function validateCommitMessage(
     if (letter === null || !isUppercaseLetter(letter)) {
       issues.push({
         code: "SUBJECT_CASE",
-        message:
-          "Commit subject must begin with an uppercase letter",
+        message: "Commit subject must begin with an uppercase letter",
       });
     }
   }
 
-  for (
-    const pattern of
-      policy.commit_message.forbidden_prefix_patterns
-  ) {
+  for (const pattern of policy.commit_message.forbidden_prefix_patterns) {
     if (new RegExp(pattern).test(subject)) {
       issues.push({
         code: "FORBIDDEN_COMMIT_PREFIX",
-        message:
-          "Commit subject uses a prohibited categorical prefix",
+        message: "Commit subject uses a prohibited categorical prefix",
       });
 
       break;

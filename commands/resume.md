@@ -1,5 +1,5 @@
 ---
-description: Restore durable project context for continued work
+description: Mentor - Restore durable project context for continued work
 agent: lead
 ---
 

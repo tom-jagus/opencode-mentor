@@ -1,5 +1,5 @@
 ---
-description: Propose, review, approve, and apply project documentation
+description: Mentor - Propose, review, approve, and apply project documentation
 agent: lead
 ---
 

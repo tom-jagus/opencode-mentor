@@ -13,7 +13,9 @@ metadata:
 Use this skill to execute policy-controlled Git lifecycle workflows through
 narrow deterministic tools.
 
-The current implementation provides the Start procedure:
+The current implementation provides the Start and Checkpoint procedures.
+
+The Start flow is:
 
 ```text
 request
@@ -40,8 +42,11 @@ It does not:
 - publish a release;
 - expose arbitrary Git commands.
 
-Later `/checkpoint`, `/finish`, and `/release` procedures remain outside the
-current implementation.
+Checkpoint stages, commits, and pushes one coherent validated unit through three
+separately reviewed transactions.
+
+Later `/finish` and `/release` procedures remain outside the current
+implementation.
 
 ## Scope Boundary
 
@@ -49,6 +54,9 @@ Git Lifecycle owns policy-controlled Git and GitHub lifecycle operations.
 
 Use Start when the user wants to begin a coherent unit of work on a new local
 working branch.
+
+Use Checkpoint when the user wants to stage, commit, and push one coherent
+validated unit through separately reviewed transactions.
 
 Do not use Start to:
 
@@ -66,7 +74,7 @@ Material project-scope changes belong to Project Definition.
 
 ## Effective Policy
 
-Start uses deterministic effective policy resolved from:
+Start and Checkpoint use deterministic effective policy resolved from:
 
 ```text
 global Git defaults
@@ -106,10 +114,15 @@ Do not weaken or reinterpret them conversationally.
 
 ## Source Ownership
 
-The Start workflow does not modify project source files.
+Git Lifecycle does not modify project source files.
 
-The only permitted project mutation is the exact local Git branch operation
-performed by `git_start_apply`.
+The only permitted repository mutations are the exact reviewed operations
+performed by the constrained lifecycle Apply tools:
+
+- local branch creation and switching through `git_start_apply`;
+- exact path staging through `git_checkpoint_stage_apply`;
+- exact reviewed-index commit through `git_checkpoint_commit_apply`;
+- exact normal non-force Push through `git_checkpoint_push_apply`.
 
 Do not use:
 
@@ -119,9 +132,9 @@ Do not use:
 - scripts;
 - another mutation tool
 
-as a substitute for the constrained Start transaction.
+as a substitute for the constrained lifecycle transactions.
 
-## Tool Boundary
+## Start Tool Boundary
 
 Start uses only:
 
@@ -397,3 +410,399 @@ Start is complete when:
 
 When Preview or Apply fails, the procedure is complete after the failure and
 required recovery information have been reported accurately.
+
+## Checkpoint Contract
+
+Checkpoint processes one coherent validated unit through three distinct
+transactions:
+
+```text
+Stage Preview
+  -> Stage approval
+  -> permission-gated Stage Apply
+  -> Commit Preview
+  -> Commit approval
+  -> permission-gated Commit Apply
+  -> Push Preview
+  -> Push approval
+  -> permission-gated Push Apply
+```
+
+Stage, Commit, and Push remain separate review and mutation boundaries.
+
+Checkpoint must not combine:
+
+- Stage Apply with Commit Apply;
+- Commit Apply with Push Apply;
+- multiple approvals into one approval;
+- a Preview and Apply permission gate;
+- inferred paths, messages, remotes, or destinations with reviewed input.
+
+Checkpoint does not:
+
+- fetch;
+- pull;
+- rebase;
+- merge;
+- force-push;
+- switch branches;
+- create a pull request;
+- configure upstream tracking;
+- tag;
+- release;
+- expose arbitrary Git commands.
+
+### Validation Boundary
+
+Application-specific validation remains outside constrained Git tooling.
+
+Before Stage Preview, establish whether relevant validation has:
+
+- passed;
+- been explicitly assessed as unnecessary; or
+- been explicitly accepted with a known limitation.
+
+When validation status is unavailable, ask for it before beginning mutation.
+
+Do not run application validation through Checkpoint tools.
+
+Do not treat successful Git preflight as application validation.
+
+### Tool Boundary
+
+Checkpoint uses only:
+
+```text
+git_state
+git_checkpoint_stage_preview
+git_checkpoint_stage_apply
+git_checkpoint_commit_preview
+git_checkpoint_commit_apply
+git_checkpoint_push_preview
+git_checkpoint_push_apply
+```
+
+`git_state` is optional and read-only. Use it only when the exact changed paths
+needed for Stage selection are not already established.
+
+Do not use Bash, direct Git commands, scripts, or generic mutation tools as a
+substitute.
+
+### Stage Contract
+
+Stage requires an explicit whole-path selection.
+
+Every already-staged path must be included in the selection.
+
+Unselected unstaged changes may remain and must not be staged implicitly.
+
+Partial-hunk selection is outside the initial Checkpoint implementation.
+
+Stage Apply:
+
+- accepts only the reviewed Stage proposal identifier;
+- stages only reviewed whole paths;
+- performs no commit or push;
+- verifies the resulting index;
+- restores the prior index after recoverable failure.
+
+### Commit Contract
+
+Commit Preview occurs only after Stage Apply.
+
+It binds:
+
+- effective policy;
+- project and repository;
+- working branch;
+- pre-commit HEAD;
+- exact staged diff and checksum;
+- exact canonical commit message and checksum.
+
+The commit message must be supplied explicitly.
+
+Mechanical message validation is deterministic. Semantic review remains the
+responsibility of `lead` and the user.
+
+Commit Apply:
+
+- accepts only the reviewed Commit proposal identifier;
+- stages no additional content;
+- commits only the reviewed index;
+- performs no push;
+- verifies the exact resulting commit, parent, message, and committed diff;
+- rolls back recoverable post-commit failure while preserving the reviewed index.
+
+### Push Contract
+
+Push Preview occurs only after Commit Apply returns the exact resulting commit
+identifier.
+
+It requires:
+
+- that exact local commit identifier;
+- an explicitly supplied configured remote;
+- an explicitly supplied destination branch.
+
+Never infer:
+
+- `origin`;
+- another remote;
+- an upstream remote;
+- the destination from the working branch;
+- the destination from upstream tracking.
+
+Push Preview contacts the explicit remote for read-only inspection.
+
+Push Apply:
+
+- accepts only the reviewed Push proposal identifier;
+- performs a normal non-force push;
+- pushes the exact reviewed commit to the exact reviewed destination;
+- uses the proposal-bound effective push URL;
+- does not configure or change upstream tracking;
+- verifies the exact remote result.
+
+A successful remote Push cannot be safely rolled back automatically. When
+verification or proposal-state persistence fails after remote mutation, report
+the returned remote result and required manual recovery accurately.
+
+## Checkpoint Procedure
+
+### 1. Establish the coherent unit
+
+Identify the exact whole paths belonging to the checkpoint.
+
+Do not infer unrelated paths merely because they are changed.
+
+If the path selection is unavailable, call `git_state` once and present the
+changed paths without inspecting their contents. Ask the user to select the exact
+paths.
+
+Also establish the application-validation status.
+
+Do not invoke Stage Preview until both the selection and validation status are
+explicit.
+
+### 2. Preview Stage
+
+Call:
+
+```text
+git_checkpoint_stage_preview
+  selected_paths:
+    - <exact selected path>
+```
+
+When Preview rejects the operation, report its structured error and every issue.
+Do not alter the selection automatically.
+
+When Preview succeeds, present:
+
+```markdown
+# Checkpoint Stage Proposal
+
+- **Proposal:** <proposal_id>
+- **Repository:** <project_root>
+- **Branch:** <review.current_branch>
+- **HEAD:** <review.head_sha>
+- **Selected changes:** <review.selected_changes>
+- **Unselected changes:** <review.unselected_changes>
+- **Staging pathspecs:** <review.staging_pathspecs>
+- **Snapshot checksum:** <review.snapshot_sha256>
+- **Policy resolution:** <review.policy_resolution_sha256>
+- **Status:** awaiting Stage approval
+```
+
+State clearly that no Git mutation has occurred.
+
+### 3. Apply Stage
+
+Stop for explicit approval of the exact Stage proposal.
+
+After approval, call:
+
+```text
+git_checkpoint_stage_apply
+  proposal_id: <exact Stage proposal identifier>
+```
+
+The Apply permission request is the Stage mutation gate.
+
+On failure:
+
+- report the exact error;
+- report rollback state when returned;
+- do not continue to Commit;
+- do not retry automatically.
+
+On success, report the exact staged paths and snapshot checksum.
+
+### 4. Establish the commit message
+
+Obtain the exact canonical commit message.
+
+Do not generate or silently rewrite an approved message.
+
+When the user asks for a recommendation, propose a descriptive natural-language
+message for review, but do not invoke Commit Preview until the exact message is
+accepted.
+
+### 5. Preview Commit
+
+Call:
+
+```text
+git_checkpoint_commit_preview
+  commit_message: <exact canonical message>
+```
+
+When Preview rejects the operation, report all mechanical issues.
+
+When Preview succeeds, present:
+
+```markdown
+# Checkpoint Commit Proposal
+
+- **Proposal:** <proposal_id>
+- **Repository:** <project_root>
+- **Branch:** <review.current_branch>
+- **Pre-commit HEAD:** <review.head_sha>
+- **Commit message:** <review.commit_message>
+- **Message checksum:** <review.commit_message_sha256>
+- **Staged changes:** <review.staged_changes>
+- **Remaining changes:** <review.remaining_changes>
+- **Staged-diff checksum:** <review.staged_diff_sha256>
+- **Policy resolution:** <review.policy_resolution_sha256>
+- **Status:** awaiting Commit approval
+```
+
+Then show `review.staged_diff` exactly as returned in a fenced `diff` block.
+
+Present every `review.semantic_review` item.
+
+State clearly that no commit has occurred.
+
+### 6. Apply Commit
+
+Stop for explicit approval of the exact Commit proposal.
+
+After approval, call:
+
+```text
+git_checkpoint_commit_apply
+  proposal_id: <exact Commit proposal identifier>
+```
+
+The Apply permission request is the Commit mutation gate.
+
+On failure:
+
+- report the exact error;
+- report rollback state when returned;
+- do not continue to Push;
+- do not retry automatically.
+
+On success, preserve the returned `commit_sha`. It is the only valid
+`local_commit_sha` for Push Preview.
+
+### 7. Establish Push inputs
+
+Obtain:
+
+- the exact configured remote name;
+- the exact destination branch.
+
+Never infer either value.
+
+When either is unavailable, ask the user.
+
+Do not substitute an upstream or `origin`.
+
+### 8. Preview Push
+
+Call:
+
+```text
+git_checkpoint_push_preview
+  local_commit_sha: <exact Commit Apply commit_sha>
+  remote: <exact explicit remote>
+  destination_branch: <exact explicit destination>
+```
+
+When Preview rejects the operation, report the structured error, disposition,
+and every issue.
+
+When Preview succeeds, present:
+
+```markdown
+# Checkpoint Push Proposal
+
+- **Proposal:** <proposal_id>
+- **Repository:** <project_root>
+- **Branch:** <review.current_branch>
+- **Local commit:** <review.local_commit_sha>
+- **Remote:** <review.remote>
+- **Push URL:** <review.push_url_display>
+- **Push URL checksum:** <review.push_url_sha256>
+- **Destination branch:** <review.destination_branch>
+- **Destination ref:** <review.destination_ref>
+- **Expected remote commit:** <review.expected_remote_commit_sha>
+- **Disposition:** <review.disposition>
+- **Policy resolution:** <review.policy_resolution_sha256>
+- **Status:** awaiting Push approval
+```
+
+Present every warning returned in `review.warnings`.
+
+State clearly that no Push has occurred.
+
+### 9. Apply Push
+
+Stop for explicit approval of the exact Push proposal.
+
+After approval, call:
+
+```text
+git_checkpoint_push_apply
+  proposal_id: <exact Push proposal identifier>
+```
+
+The Apply permission request is the Push mutation gate.
+
+On success, report:
+
+- proposal identifier;
+- local commit;
+- remote;
+- destination branch and ref;
+- verified remote commit;
+- whether the remote was updated;
+- applied timestamp.
+
+On failure, report:
+
+- error code and message;
+- whether remote mutation completed, failed, or is uncertain;
+- whether remote state was verified;
+- that automatic rollback is unavailable;
+- whether manual remote inspection is required.
+
+Never claim that a failed Push Apply left the remote unchanged unless the
+structured result establishes that fact.
+
+Do not retry automatically.
+
+## Checkpoint Completion Condition
+
+Checkpoint is complete only when:
+
+- application validation was completed or explicitly assessed;
+- Stage Preview was reviewed and Stage Apply succeeded;
+- Commit Preview was reviewed and Commit Apply succeeded;
+- Push Preview was reviewed and Push Apply succeeded;
+- each mutation received its own explicit approval and permission gate;
+- the final local and remote commit identifiers were reported.
+
+When any transaction fails, Checkpoint stops at that boundary after reporting
+the exact failure and recovery state.

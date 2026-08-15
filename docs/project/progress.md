@@ -3,7 +3,7 @@ title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
 active_milestone: Git Policy and Lifecycle
-updated_at: 2026-08-14
+updated_at: 2026-08-15
 ---
 
 # Project Progress
@@ -43,19 +43,28 @@ updated_at: 2026-08-14
   immutable project-bound proposals, freshness revalidation, permission-gated
   branch creation, post-mutation verification, single-use enforcement, and
   constrained rollback. The integrated `/start` command and `git-lifecycle`
-  skill passed the expected fail-closed smoke test. The `/checkpoint` Stage
-  transaction is implemented and validated against DEC-048 with deterministic
-  whole-path selection, selected-content snapshots, immutable project-bound
-  proposals, private strict storage, freshness revalidation, permission-gated
-  exact staging, index backup and rollback, post-stage verification, applied-state
-  persistence, single-use enforcement, managed permissions, and recognized
-  `git_checkpoint_stage_preview` and `git_checkpoint_stage_apply` runtime tools.
-  Commit and Push remain separate unimplemented checkpoint transaction boundaries.
+  skill passed the expected fail-closed smoke test. `/checkpoint` Stage, Commit,
+  and Push are implemented and validated against DEC-048 as three separately
+  reviewed and permission-gated transactions. Stage provides deterministic
+  whole-path selection, selected-content snapshots, exact staging, index backup,
+  post-stage verification, and rollback. Commit provides canonical message
+  validation, deterministic staged-diff review and checksum binding, active Git
+  operation rejection, exact reviewed-index mutation, resulting commit and diff
+  verification, applied-state persistence, and constrained rollback. Push requires
+  an explicit local commit, remote, and destination; performs bounded read-only
+  remote inspection; binds the exact effective push URL and expected destination
+  state; performs only a normal non-force push without upstream configuration;
+  verifies the exact remote result; and reports non-rollbackable remote outcomes
+  explicitly. All three boundaries use immutable project-bound proposals, strict
+  private storage, freshness revalidation, single-use enforcement, managed
+  permissions, focused automated tests, and recognized Preview/Apply runtime
+  tools. The integrated `git-lifecycle` Checkpoint procedure, `/checkpoint`
+  command, and `lead` routing are implemented. Integrated fail-closed and
+  successful `/checkpoint` workflow smoke validation remains outstanding.
 * **Blocking issues:** none
-* **Next action:** implement `/checkpoint` Commit Preview/Apply with exact final
-  staged-diff inspection and checksum binding, commit-message preview and
-  validation, freshness revalidation, permission-gated commit, and rollback;
-  then implement the separately reviewed Push boundary.
+* **Next action:** run integrated fail-closed and successful `/checkpoint` workflow
+  smoke validation through the separate Stage, Commit, and Push review, approval,
+  and permission gates; then implement `/finish`.
 
 ## Phase Transition
 
@@ -209,16 +218,39 @@ Delivered:
 - recognized `git_checkpoint_stage_preview` and
   `git_checkpoint_stage_apply` tools with deny-by-default managed permissions,
   Preview access for `lead`, permission-gated Apply, and denial for `explore`;
-- focused automated checkpoint Stage planning, snapshot, proposal, storage,
-  freshness, mutation, rollback, and Apply tests.
+- deterministic canonical commit-message and staged-diff inspection with exact
+  checksum binding and semantic review prompts;
+- active merge, cherry-pick, revert, rebase, and sequencer rejection before Commit;
+- immutable project-bound Commit proposals with strict schema, integrity, policy,
+  branch, HEAD, message, staged-diff, and single-use validation;
+- permission-gated Commit Apply with double freshness validation, exact
+  reviewed-index commit, hook and signing suppression, exact parent, message, and
+  committed-diff verification, applied-state persistence, and constrained
+  conditional rollback;
+- recognized `git_checkpoint_commit_preview` and
+  `git_checkpoint_commit_apply` tools with deny-by-default managed permissions,
+  Preview access for `lead`, permission-gated Apply, and denial for `explore`;
+- deterministic Push preflight with exact local branch-tip binding, explicit
+  remote and destination input, bounded remote inspection, fast-forward
+  classification, and protected-base enforcement;
+- immutable project-bound Push proposals with strict schema, integrity, policy,
+  local commit, effective push URL, expected remote state, destination, and
+  single-use validation;
+- constrained normal non-force Push mutation with exact commit-to-ref mapping,
+  no upstream configuration, exact bound-URL post-verification, applied-state
+  persistence, and explicit non-rollbackable remote-result reporting;
+- recognized `git_checkpoint_push_preview` and `git_checkpoint_push_apply` tools
+  with deny-by-default managed permissions, Preview access for `lead`,
+  permission-gated Apply, and denial for `explore`;
+- integrated `git-lifecycle` Checkpoint procedure, `/checkpoint` command, and
+  `lead` routing;
+- focused automated checkpoint Stage, Commit, and Push planning, snapshot, diff,
+  proposal, storage, freshness, mutation, verification, rollback, remote-state,
+  and Apply tests.
 
 Remaining:
 
-- `/checkpoint` Commit Preview/Apply with final staged-diff and commit-message
-  review;
-- `/checkpoint` separately reviewed Push Preview/Apply with an explicitly supplied
-  remote;
-- integrated `/checkpoint` command and Git Lifecycle procedure;
+- integrated fail-closed and successful `/checkpoint` workflow smoke validation;
 - non-overridable guardrails for later lifecycle operations;
 - `/finish`;
 - `/release`;
@@ -331,7 +363,6 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Implement `/checkpoint` Commit Preview/Apply with exact final staged-diff
-inspection and checksum binding, commit-message preview and validation, freshness
-revalidation, permission-gated commit, and rollback. Then implement the separately
-reviewed Push Preview/Apply boundary with an explicitly supplied remote.
+Run integrated fail-closed and successful `/checkpoint` workflow smoke validation
+through the separate Stage, Commit, and Push review, approval, and permission
+gates. Then implement `/finish`.
