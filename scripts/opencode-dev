@@ -55,6 +55,42 @@ reject_project_custom_tools() {
   done
 }
 
+configure_git_identity() {
+  local desired_name="${OPENCODE_DEV_GIT_USER_NAME:-Tom Jagus}"
+  local desired_email="${OPENCODE_DEV_GIT_USER_EMAIL:-168629725+tom-jagus@users.noreply.github.com}"
+  local configured_name=''
+  local configured_email=''
+
+  command -v git >/dev/null 2>&1 ||
+    fail "git is not available in PATH"
+
+  if [[ -n "${OPENCODE_DEV_GIT_USER_NAME:-}" ||
+    -n "${OPENCODE_DEV_GIT_USER_EMAIL:-}" ]]; then
+    [[ -n "${OPENCODE_DEV_GIT_USER_NAME:-}" ]] ||
+      fail "OPENCODE_DEV_GIT_USER_NAME must be set with OPENCODE_DEV_GIT_USER_EMAIL"
+
+    [[ -n "${OPENCODE_DEV_GIT_USER_EMAIL:-}" ]] ||
+      fail "OPENCODE_DEV_GIT_USER_EMAIL must be set with OPENCODE_DEV_GIT_USER_NAME"
+  fi
+
+  git config --global user.name "$desired_name"
+  git config --global user.email "$desired_email"
+
+  configured_name="$(git config --get user.name 2>/dev/null || true)"
+  configured_email="$(git config --get user.email 2>/dev/null || true)"
+
+  [[ "$configured_name" == "$desired_name" ]] ||
+    fail "Git user.name was not configured correctly"
+
+  [[ "$configured_email" == "$desired_email" ]] ||
+    fail "Git user.email was not configured correctly"
+
+  export GIT_AUTHOR_NAME="$configured_name"
+  export GIT_AUTHOR_EMAIL="$configured_email"
+  export GIT_COMMITTER_NAME="$configured_name"
+  export GIT_COMMITTER_EMAIL="$configured_email"
+}
+
 if ! command -v opencode >/dev/null 2>&1; then
   fail "opencode is not available in PATH"
 fi
@@ -79,6 +115,7 @@ for argument in "$@"; do
 done
 
 reject_project_custom_tools
+configure_git_identity
 
 mkdir -p \
   "$runtime_root/config" \
