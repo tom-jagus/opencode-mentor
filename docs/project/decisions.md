@@ -1,7 +1,7 @@
 ---
 title: OpenCode Mentor Project Decisions
 status: active
-updated_at: 2026-08-14
+updated_at: 2026-08-16
 ---
 
 # Decision Register
@@ -775,3 +775,54 @@ When a decision is replaced, mark it `superseded` and reference the replacement.
     proposal;
   - application-specific validation remains outside constrained Git tooling and
     must be completed or explicitly assessed before checkpoint mutation begins.
+
+## DEC-049 — Git Finish Lifecycle Contract
+
+- **Date:** 2026-08-16
+- **Status:** accepted
+- **Decision:**
+  - `/finish` finalises one working branch through three separately reviewed and
+    permission-gated transactions: Update, Publish, and Pull Request;
+  - all transactions require a valid non-base working branch, clean working tree,
+    named HEAD, no unresolved conflicts, no active Git operation, and valid
+    effective policy;
+  - Update requires an explicit remote, derives the base branch from effective
+    policy, and binds the exact remote URL, local HEAD, and advertised remote base
+    tip;
+  - Update Apply fetches only the reviewed base tip and rebases the current branch
+    onto that exact commit when required by policy;
+  - recoverable Update failures restore the original branch state, while
+    unresolved recovery state is reported explicitly;
+  - Publish targets the same-name remote branch and binds the exact local commit,
+    remote URL, and expected remote branch tip;
+  - Publish uses a normal push when possible and permits exact
+    `--force-with-lease` only when required by a successful approved Update;
+  - Publish never force-pushes the effective base branch and never creates or
+    changes upstream tracking;
+  - Pull Request binds repository identity, base and head branches, exact
+    published commit, title, body, and policy-controlled draft state;
+  - an existing matching pull request is returned rather than duplicated, while
+    conflicting or ambiguous existing pull-request state is rejected;
+  - Pull Request Apply creates through local `gh` and verifies the resulting pull
+    request;
+  - every Preview is read-only and persists an immutable project-bound proposal;
+    every Apply requires separate explicit approval, permission, integrity
+    validation, freshness revalidation, and single-use enforcement;
+  - remote Publish and Pull Request outcomes are non-rollbackable and must report
+    whether mutation and verification completed;
+  - `/finish` does not merge, delete branches, tag, release, modify the effective
+    base branch, or expose arbitrary Git or GitHub commands.
+- **Rationale:** Rebasing, publishing rewritten history, and creating a pull
+  request have different review requirements, mutation risks, and recovery
+  properties. Separate transactions preserve meaningful approval while binding
+  every local and remote mutation to exact reviewed state.
+- **Consequences:**
+  - Update, Publish, and Pull Request cannot share one combined Apply;
+  - the remote is always explicit, while the base branch comes only from
+    effective policy;
+  - force-with-lease requires persisted provenance from an approved Update;
+  - Pull Request title and body remain reviewable exact inputs;
+  - authentication must already be available to non-interactive Git and `gh`
+    subprocesses;
+  - `/release` retains separate merge, branch deletion, versioning, tagging, and
+    publication boundaries.
