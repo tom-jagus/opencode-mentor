@@ -3,7 +3,7 @@ title: OpenCode Mentor Project Progress
 status: active
 current_phase: development
 active_milestone: Git Policy and Lifecycle
-updated_at: 2026-08-15
+updated_at: 2026-08-16
 ---
 
 # Project Progress
@@ -59,12 +59,14 @@ updated_at: 2026-08-15
   private storage, freshness revalidation, single-use enforcement, managed
   permissions, focused automated tests, and recognized Preview/Apply runtime
   tools. The integrated `git-lifecycle` Checkpoint procedure, `/checkpoint`
-  command, and `lead` routing are implemented. Integrated fail-closed and
-  successful `/checkpoint` workflow smoke validation remains outstanding.
+  command, and `lead` routing are implemented. Integrated Stage and Commit smoke
+  validation succeeded. Push Preview succeeded, while Push Apply failed closed
+  because non-interactive HTTPS credentials were unavailable; the exact commit was
+  pushed manually. Successful constrained Push Apply validation is deferred to
+  Live Deployment so development does not require stored credentials.
 * **Blocking issues:** none
-* **Next action:** run integrated fail-closed and successful `/checkpoint` workflow
-  smoke validation through the separate Stage, Commit, and Push review, approval,
-  and permission gates; then implement `/finish`.
+* **Next action:** implement `/finish`; retain successful constrained Push Apply
+  smoke validation as a deferred Live Deployment task.
 
 ## Phase Transition
 
@@ -246,11 +248,15 @@ Delivered:
   `lead` routing;
 - focused automated checkpoint Stage, Commit, and Push planning, snapshot, diff,
   proposal, storage, freshness, mutation, verification, rollback, remote-state,
-  and Apply tests.
+  and Apply tests;
+- integrated successful Stage and Commit workflow smoke validation;
+- integrated Push Preview and fail-closed Push Apply validation when credentials
+  are unavailable, with successful constrained Push Apply validation deferred to
+  Live Deployment.
 
 Remaining:
 
-- integrated fail-closed and successful `/checkpoint` workflow smoke validation;
+- successful constrained Push Apply smoke validation deferred to Live Deployment;
 - non-overridable guardrails for later lifecycle operations;
 - `/finish`;
 - `/release`;
@@ -363,6 +369,5 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Run integrated fail-closed and successful `/checkpoint` workflow smoke validation
-through the separate Stage, Commit, and Push review, approval, and permission
-gates. Then implement `/finish`.
+Implement `/finish`. Keep successful constrained Push Apply smoke validation as a
+deferred Live Deployment task so development does not require stored credentials.
