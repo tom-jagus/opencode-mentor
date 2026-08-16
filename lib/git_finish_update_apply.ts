@@ -1,9 +1,5 @@
 import type { GitFinishUpdatePreflight } from "./git_finish_update";
 import { runGitFinishUpdatePreflight } from "./git_finish_update";
-import {
-  GitFinishUpdateProposalError,
-  type GitFinishUpdateProposalRecord,
-} from "./git_finish_update_proposal";
 import { loadGitFinishUpdateProposal } from "./git_finish_update_proposal_storage";
 import { policyResolutionChecksum, sha256 } from "./git_lifecycle_proposal";
 import { inspectGitState } from "./git_state";
@@ -20,6 +16,11 @@ import {
   type GitFinishUpdateReceipt,
 } from "./git_finish_update_mutation";
 import type { GitState } from "./git_state";
+import {
+  GitFinishUpdateProposalError,
+  type GitFinishUpdateAppliedResult,
+  type GitFinishUpdateProposalRecord,
+} from "./git_finish_update_proposal";
 
 export type GitFinishUpdateFreshnessValidation = {
   record: GitFinishUpdateProposalRecord;
@@ -350,6 +351,7 @@ export async function persistGitFinishUpdateAppliedState(
   recordPath: string,
   expectedRecord: GitFinishUpdateProposalRecord,
   appliedAt: string,
+  result: GitFinishUpdateAppliedResult,
 ): Promise<void> {
   const expected = `${JSON.stringify(expectedRecord, null, 2)}\n`;
 
@@ -376,6 +378,7 @@ export async function persistGitFinishUpdateAppliedState(
     state: {
       status: "applied",
       applied_at: appliedAt,
+      result,
     },
   };
 
@@ -414,6 +417,7 @@ export async function applyGitFinishUpdateProposal(
       recordPath: string,
       record: GitFinishUpdateProposalRecord,
       appliedAt: string,
+      result: GitFinishUpdateAppliedResult,
     ) => Promise<void>;
   } = {},
 ): Promise<GitFinishUpdateApplySuccess | GitFinishUpdateApplyFailure> {
@@ -470,7 +474,12 @@ export async function applyGitFinishUpdateProposal(
 
     const appliedAt = new Date().toISOString();
 
-    await persist(prepared.record_path, prepared.record, appliedAt);
+    await persist(prepared.record_path, prepared.record, appliedAt, {
+      previous_head_sha: verification.previous_head_sha,
+      resulting_head_sha: verification.resulting_head_sha,
+      base_commit_sha: verification.base_commit_sha,
+      rebased: verification.rebased,
+    });
 
     return {
       version: 1,

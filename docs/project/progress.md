@@ -63,10 +63,23 @@ updated_at: 2026-08-16
   validation succeeded. Push Preview succeeded, while Push Apply failed closed
   because non-interactive HTTPS credentials were unavailable; the exact commit was
   pushed manually. Successful constrained Push Apply validation is deferred to
-  Live Deployment so development does not require stored credentials.
+  Live Deployment so development does not require stored credentials. `/finish`
+  is implemented through its Update transaction and partially implemented through
+  Publish. Update provides deterministic eligibility and remote-base inspection,
+  immutable proposals, strict private storage, constrained fetch/rebase with
+  rollback, double freshness validation, applied-result provenance, recognized
+  Preview/Apply tools, managed permissions, and focused tests. Its implementation
+  is committed and pushed. Publish currently provides deterministic eligibility,
+  same-name remote-branch inspection, create, up-to-date, fast-forward, and exact
+  force-with-lease planning, immutable proposals, applied Update provenance
+  binding, strict private proposal storage, human review, and focused tests.
+  Publish mutation, Apply, runtime tools, permissions, integrated smoke validation,
+  and the Pull Request transaction remain unfinished.
 * **Blocking issues:** none
-* **Next action:** implement `/finish`; retain successful constrained Push Apply
-  smoke validation as a deferred Live Deployment task.
+* **Next action:** implement the `/finish` Publish mutation primitive and Apply
+  freshness/orchestration, then add its runtime tools and managed permissions;
+  retain successful constrained Push Apply smoke validation as a deferred Live
+  Deployment task.
 
 ## Phase Transition
 
@@ -252,13 +265,26 @@ Delivered:
 - integrated successful Stage and Commit workflow smoke validation;
 - integrated Push Preview and fail-closed Push Apply validation when credentials
   are unavailable, with successful constrained Push Apply validation deferred to
-  Live Deployment.
+  Live Deployment;
+- accepted Finish lifecycle contract in DEC-049 with separate Update, Publish,
+  and Pull Request review and mutation boundaries;
+- deterministic Finish Update eligibility, explicit remote-base inspection,
+  immutable proposals, strict private storage, fetch/rebase mutation, rollback,
+  freshness validation, Apply orchestration, applied-result provenance, runtime
+  tools, managed permissions, and focused tests;
+- deterministic Finish Publish eligibility, same-name remote-branch inspection,
+  create, up-to-date, fast-forward, and exact force-with-lease planning, immutable
+  proposals, applied Update provenance binding, strict private storage, human
+  review, and focused tests.
 
 Remaining:
 
 - successful constrained Push Apply smoke validation deferred to Live Deployment;
+- complete Finish Publish mutation, freshness validation, Apply orchestration,
+  runtime tools, managed permissions, and integrated smoke validation;
+- implement the Finish Pull Request transaction;
+- integrate the complete `/finish` command and `git-lifecycle` procedure;
 - non-overridable guardrails for later lifecycle operations;
-- `/finish`;
 - `/release`;
 - local GitHub CLI integration.
 
@@ -369,5 +395,7 @@ content to navigation and cross-project knowledge.
 
 ## Next Development Action
 
-Implement `/finish`. Keep successful constrained Push Apply smoke validation as a
-deferred Live Deployment task so development does not require stored credentials.
+Implement the `/finish` Publish mutation primitive and Apply
+freshness/orchestration, then add its runtime tools and managed permissions. Keep
+successful constrained Push Apply smoke validation as a deferred Live Deployment
+task so development does not require stored credentials.

@@ -10,6 +10,7 @@ import {
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import {
+  loadGitFinishUpdateAppliedProposal,
   loadGitFinishUpdateProposal,
   persistGitFinishUpdateProposal,
 } from "../lib/git_finish_update_proposal_storage";
@@ -165,6 +166,7 @@ describe("Git Finish Update proposal", () => {
       state: {
         status: "pending",
         applied_at: null,
+        result: null,
       },
     });
   });
@@ -353,5 +355,42 @@ describe("Git Finish Update proposal", () => {
     ).rejects.toMatchObject({
       code: "INVALID_PROPOSAL_ID",
     });
+  });
+
+  test("rejects pending state as applied provenance", async () => {
+    const temporaryRoot = await mkdtemp(
+      join(tmpdir(), "opencode-mentor-finish-update-pending-"),
+    );
+
+    try {
+      const projectRoot = join(temporaryRoot, "project");
+      const storageRoot = join(temporaryRoot, "proposals");
+
+      await mkdir(projectRoot);
+
+      const record = buildGitFinishUpdateProposal(
+        eligiblePreflight(projectRoot),
+        {
+          id: "git-finish-update-pending-test",
+        },
+      );
+
+      await persistGitFinishUpdateProposal(record, storageRoot);
+
+      await expect(
+        loadGitFinishUpdateAppliedProposal(
+          projectRoot,
+          record.proposal.id,
+          storageRoot,
+        ),
+      ).rejects.toMatchObject({
+        code: "PROPOSAL_NOT_APPLIED",
+      });
+    } finally {
+      await rm(temporaryRoot, {
+        recursive: true,
+        force: true,
+      });
+    }
   });
 });

@@ -1,16 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
-import { mkdir, mkdtemp, rm, writeFile, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { runGitFinishUpdatePreflight } from "../lib/git_finish_update";
 import { applyGitFinishUpdateProposal } from "../lib/git_finish_update_apply";
 import { buildGitFinishUpdateProposal } from "../lib/git_finish_update_proposal";
-import {
-  loadGitFinishUpdateAppliedProposal,
-  persistGitFinishUpdateProposal,
-} from "../lib/git_finish_update_proposal_storage";
-import { gitProjectKey } from "../lib/git_lifecycle_proposal";
+import { persistGitFinishUpdateProposal } from "../lib/git_finish_update_proposal_storage";
+import { runGitFinishPublishPreflight } from "../lib/git_finish_publish";
 
 type GitResult = {
   stdout: string;
@@ -57,7 +54,7 @@ async function requireGit(root: string, args: string[]): Promise<GitResult> {
   return result;
 }
 
-describe("Git Finish Update Apply execution", () => {
+describe("Git Finish Publish preflight", () => {
   const configurationRoot = fileURLToPath(
     new URL("..", import.meta.url),
   ).replace(/\/$/, "");
@@ -65,18 +62,17 @@ describe("Git Finish Update Apply execution", () => {
   let temporaryRoot: string;
   let repositoryRoot: string;
   let remoteRoot: string;
-  let storageRoot: string;
-  let proposalId: string;
-  let originalHead: string;
-  let remoteBaseCommit: string;
+  let updateStorageRoot: string;
+  let updateProposalId: string;
+  let previousHead: string;
 
   beforeEach(async () => {
     temporaryRoot = await mkdtemp(
-      join(tmpdir(), "opencode-mentor-finish-update-execution-"),
+      join(tmpdir(), "opencode-mentor-finish-publish-preflight-"),
     );
     repositoryRoot = join(temporaryRoot, "project");
     remoteRoot = join(temporaryRoot, "remote.git");
-    storageRoot = join(temporaryRoot, "proposals");
+    updateStorageRoot = join(temporaryRoot, "update-proposals");
 
     await mkdir(repositoryRoot);
     await mkdir(remoteRoot);
@@ -110,16 +106,22 @@ describe("Git Finish Update Apply execution", () => {
     await requireGit(repositoryRoot, [
       "switch",
       "-c",
-      "feature/finish-update-execution",
+      "feature/finish-publish-preflight",
     ]);
 
     await writeFile(join(repositoryRoot, "feature.txt"), "feature\n");
     await requireGit(repositoryRoot, ["add", "--", "feature.txt"]);
     await requireGit(repositoryRoot, ["commit", "-m", "Add feature work"]);
 
-    originalHead = (
+    previousHead = (
       await requireGit(repositoryRoot, ["rev-parse", "HEAD"])
     ).stdout.trim();
+
+    await requireGit(repositoryRoot, [
+      "push",
+      "review",
+      "HEAD:refs/heads/feature/finish-publish-preflight",
+    ]);
 
     const updaterRoot = join(temporaryRoot, "updater");
 
@@ -130,24 +132,31 @@ describe("Git Finish Update Apply execution", () => {
     await requireGit(updaterRoot, ["commit", "-m", "Advance base branch"]);
     await requireGit(updaterRoot, ["push", "origin", "main:refs/heads/main"]);
 
-    remoteBaseCommit = (
-      await requireGit(updaterRoot, ["rev-parse", "HEAD"])
-    ).stdout.trim();
-
-    const preflight = await runGitFinishUpdatePreflight({
+    const updatePreflight = await runGitFinishUpdatePreflight({
       directory: repositoryRoot,
       configuration_root: configurationRoot,
       remote: "review",
     });
 
-    const record = buildGitFinishUpdateProposal(preflight, {
-      id: "git-finish-update-execution-test",
-      created_at: "2026-08-16T14:00:00Z",
+    const updateRecord = buildGitFinishUpdateProposal(updatePreflight, {
+      id: "git-finish-update-for-publish-test",
+      created_at: "2026-08-16T16:00:00Z",
     });
 
-    proposalId = record.proposal.id;
+    updateProposalId = updateRecord.proposal.id;
 
-    await persistGitFinishUpdateProposal(record, storageRoot);
+    await persistGitFinishUpdateProposal(updateRecord, updateStorageRoot);
+
+    const updateResult = await applyGitFinishUpdateProposal({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      proposal_id: updateProposalId,
+      storage_root: updateStorageRoot,
+    });
+
+    if (!updateResult.ok) {
+      throw new Error(updateResult.error.message);
+    }
   });
 
   afterEach(async () => {
@@ -157,124 +166,81 @@ describe("Git Finish Update Apply execution", () => {
     });
   });
 
-  test("applies and records an exact reviewed rebase", async () => {
-    const result = await applyGitFinishUpdateProposal({
+  test("authorizes force-with-lease against the exact pre-rebase remote tip", async () => {
+    const result = await runGitFinishPublishPreflight({
       directory: repositoryRoot,
       configuration_root: configurationRoot,
-      proposal_id: proposalId,
-      storage_root: storageRoot,
+      remote: "review",
+      update_proposal_id: updateProposalId,
+      update_storage_root: updateStorageRoot,
     });
 
     expect(result.ok).toBe(true);
 
     if (!result.ok) {
-      throw new Error(result.error.message);
+      throw new Error(`Preflight failed at ${result.stage}`);
     }
 
-    expect(result.previous_head_sha).toBe(originalHead);
-    expect(result.resulting_head_sha).not.toBe(originalHead);
-    expect(result.base_commit_sha).toBe(remoteBaseCommit);
-    expect(result.rebased).toBe(true);
+    expect(result.eligibility.eligible).toBe(true);
+    expect(result.publish_plan).toMatchObject({
+      eligible: true,
+      disposition: "force-with-lease",
+      remote_commit_sha: previousHead,
+      force_with_lease_expected_sha: previousHead,
+      destination_branch: "feature/finish-publish-preflight",
+    });
+  });
 
-    const ancestry = await git(repositoryRoot, [
-      "merge-base",
-      "--is-ancestor",
-      remoteBaseCommit,
-      result.resulting_head_sha,
+  test("recognizes the exact branch as up to date", async () => {
+    const resultingHead = (
+      await requireGit(repositoryRoot, ["rev-parse", "HEAD"])
+    ).stdout.trim();
+
+    await requireGit(repositoryRoot, [
+      "push",
+      "--force-with-lease",
+      "review",
+      `HEAD:refs/heads/feature/finish-publish-preflight`,
     ]);
 
-    expect(ancestry.exitCode).toBe(0);
-
-    const stored = JSON.parse(
-      await readFile(
-        join(storageRoot, gitProjectKey(repositoryRoot), `${proposalId}.json`),
-        "utf8",
-      ),
-    );
-
-    expect(stored.state).toEqual({
-      status: "applied",
-      applied_at: result.applied_at,
-      result: {
-        previous_head_sha: result.previous_head_sha,
-        resulting_head_sha: result.resulting_head_sha,
-        base_commit_sha: result.base_commit_sha,
-        rebased: true,
-      },
+    const result = await runGitFinishPublishPreflight({
+      directory: repositoryRoot,
+      configuration_root: configurationRoot,
+      remote: "review",
+      update_proposal_id: updateProposalId,
+      update_storage_root: updateStorageRoot,
     });
 
-    const loaded = await loadGitFinishUpdateAppliedProposal(
-      repositoryRoot,
-      proposalId,
-      storageRoot,
-    );
+    expect(result.ok).toBe(true);
 
-    expect(loaded.record.state).toEqual({
-      status: "applied",
-      applied_at: result.applied_at,
-      result: {
-        previous_head_sha: result.previous_head_sha,
-        resulting_head_sha: result.resulting_head_sha,
-        base_commit_sha: result.base_commit_sha,
-        rebased: true,
-      },
-    });
-  });
-
-  test("rolls back when applied-state persistence fails", async () => {
-    const result = await applyGitFinishUpdateProposal(
-      {
-        directory: repositoryRoot,
-        configuration_root: configurationRoot,
-        proposal_id: proposalId,
-        storage_root: storageRoot,
-      },
-      {
-        persist: async () => {
-          throw new Error("simulated persistence failure");
-        },
-      },
-    );
-
-    expect(result.ok).toBe(false);
-
-    if (result.ok) {
-      throw new Error("Expected Apply failure");
+    if (!result.ok) {
+      throw new Error(`Preflight failed at ${result.stage}`);
     }
 
-    expect(result.rollback).toEqual({
-      attempted: true,
-      succeeded: true,
-      errors: [],
+    expect(result.publish_plan).toMatchObject({
+      eligible: true,
+      disposition: "up-to-date",
+      remote_commit_sha: resultingHead,
     });
-
-    expect(
-      (await requireGit(repositoryRoot, ["rev-parse", "HEAD"])).stdout.trim(),
-    ).toBe(originalHead);
   });
 
-  test("rejects proposal reuse", async () => {
-    const first = await applyGitFinishUpdateProposal({
+  test("rejects a different explicit remote before remote inspection", async () => {
+    const result = await runGitFinishPublishPreflight({
       directory: repositoryRoot,
       configuration_root: configurationRoot,
-      proposal_id: proposalId,
-      storage_root: storageRoot,
+      remote: "origin",
+      update_proposal_id: updateProposalId,
+      update_storage_root: updateStorageRoot,
     });
 
-    expect(first.ok).toBe(true);
+    expect(result.ok).toBe(true);
 
-    const second = await applyGitFinishUpdateProposal({
-      directory: repositoryRoot,
-      configuration_root: configurationRoot,
-      proposal_id: proposalId,
-      storage_root: storageRoot,
-    });
+    if (!result.ok) {
+      throw new Error(`Preflight failed at ${result.stage}`);
+    }
 
-    expect(second).toMatchObject({
-      ok: false,
-      error: {
-        code: "PROPOSAL_ALREADY_APPLIED",
-      },
-    });
+    expect(result.eligibility.eligible).toBe(false);
+    expect(result.remote_inspection).toBeNull();
+    expect(result.publish_plan).toBeNull();
   });
 });

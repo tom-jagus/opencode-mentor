@@ -1,7 +1,6 @@
 import { realpath } from "node:fs/promises";
 import { join } from "node:path";
 import {
-  canonicalJson,
   gitProjectKey,
   mentorStateRoot,
   policyResolutionChecksum,
@@ -15,14 +14,14 @@ import {
 import { validateEffectiveGitPolicy, type GitPolicy } from "./git_policy";
 import { validateWorkingBranchName } from "./git_validation";
 import {
-  GitFinishUpdateProposalError,
-  gitFinishUpdateProposalIntegrity,
-  type GitFinishUpdateAppliedResult,
-  type GitFinishUpdateProposalRecord,
-} from "./git_finish_update_proposal";
+  GitFinishPublishProposalError,
+  gitFinishPublishProposalIntegrity,
+  type GitFinishPublishAppliedResult,
+  type GitFinishPublishProposalRecord,
+} from "./git_finish_publish_proposal";
 
-export type LoadedGitFinishUpdateProposal = {
-  record: GitFinishUpdateProposalRecord;
+export type LoadedGitFinishPublishProposal = {
+  record: GitFinishPublishProposalRecord;
   record_path: string;
 };
 
@@ -31,7 +30,7 @@ function errorMessage(error: unknown): string {
 }
 
 function invalidProposal(message: string): never {
-  throw new GitFinishUpdateProposalError("INVALID_PROPOSAL", message);
+  throw new GitFinishPublishProposalError("INVALID_PROPOSAL", message);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -84,7 +83,7 @@ function isSafeRemoteName(value: unknown): value is string {
   );
 }
 
-function isSafeFetchUrl(value: unknown): value is string {
+function isSafePushUrl(value: unknown): value is string {
   return (
     typeof value === "string" &&
     value.length > 0 &&
@@ -96,25 +95,25 @@ function isSafeFetchUrl(value: unknown): value is string {
 }
 
 function validateProposalId(proposalId: string): void {
-  if (!/^git-finish-update-[A-Za-z0-9-]+$/.test(proposalId)) {
-    throw new GitFinishUpdateProposalError(
+  if (!/^git-finish-publish-[A-Za-z0-9-]+$/.test(proposalId)) {
+    throw new GitFinishPublishProposalError(
       "INVALID_PROPOSAL_ID",
-      "Git Finish Update proposal identifier is invalid",
+      "Git Finish Publish proposal identifier is invalid",
     );
   }
 }
 
-function parseGitFinishUpdateProposalRecord(
+function parseGitFinishPublishProposalRecord(
   value: unknown,
-): GitFinishUpdateProposalRecord {
+): GitFinishPublishProposalRecord {
   if (!isRecord(value)) {
-    invalidProposal("Git Finish Update proposal record must be an object");
+    invalidProposal("Git Finish Publish proposal record must be an object");
   }
 
   if (value.schema_version !== 1) {
-    throw new GitFinishUpdateProposalError(
+    throw new GitFinishPublishProposalError(
       "UNSUPPORTED_PROPOSAL_VERSION",
-      "Git Finish Update proposal schema version is unsupported",
+      "Git Finish Publish proposal schema version is unsupported",
     );
   }
 
@@ -130,7 +129,7 @@ function parseGitFinishUpdateProposalRecord(
     !isRecord(value.state)
   ) {
     invalidProposal(
-      "Git Finish Update proposal contains unknown or missing fields",
+      "Git Finish Publish proposal contains unknown or missing fields",
     );
   }
 
@@ -146,21 +145,24 @@ function parseGitFinishUpdateProposalRecord(
       "operation",
       "policy",
       "remote",
+      "update",
     ]) ||
     !hasExactKeys(integrity, ["proposal_sha256"]) ||
     !hasExactKeys(state, ["status", "applied_at", "result"]) ||
     !isRecord(proposal.project) ||
     !isRecord(proposal.operation) ||
     !isRecord(proposal.policy) ||
-    !isRecord(proposal.remote)
+    !isRecord(proposal.remote) ||
+    !isRecord(proposal.update)
   ) {
-    invalidProposal("Git Finish Update proposal payload is incomplete");
+    invalidProposal("Git Finish Publish proposal payload is incomplete");
   }
 
   const project = proposal.project;
   const operation = proposal.operation;
   const policy = proposal.policy;
   const remote = proposal.remote;
+  const update = proposal.update;
 
   if (
     !hasExactKeys(project, ["key", "root"]) ||
@@ -170,7 +172,10 @@ function parseGitFinishUpdateProposalRecord(
       "current_branch",
       "local_head_sha",
       "remote",
-      "action",
+      "destination_branch",
+      "destination_ref",
+      "disposition",
+      "force_with_lease_expected_sha",
     ]) ||
     !hasExactKeys(policy, [
       "resolution_sha256",
@@ -178,15 +183,23 @@ function parseGitFinishUpdateProposalRecord(
       "effective_policy",
     ]) ||
     !hasExactKeys(remote, [
-      "fetch_url",
-      "fetch_url_sha256",
-      "base_ref",
+      "push_url",
+      "push_url_sha256",
+      "expected_commit_sha",
+    ]) ||
+    !hasExactKeys(update, [
+      "proposal_id",
+      "proposal_sha256",
+      "applied_at",
+      "previous_head_sha",
+      "resulting_head_sha",
       "base_commit_sha",
+      "rebased",
     ]) ||
     !isRecord(policy.sources) ||
     !isRecord(policy.effective_policy)
   ) {
-    invalidProposal("Git Finish Update proposal payload is incomplete");
+    invalidProposal("Git Finish Publish proposal payload is incomplete");
   }
 
   const sources = policy.sources;
@@ -198,44 +211,69 @@ function parseGitFinishUpdateProposalRecord(
     !hasExactKeys(sources.global, ["path"]) ||
     !hasExactKeys(sources.project, ["present", "path"])
   ) {
-    invalidProposal("Git Finish Update proposal policy sources are invalid");
+    invalidProposal("Git Finish Publish proposal policy sources are invalid");
   }
 
   if (
     !isNonEmptyString(proposal.id) ||
-    !/^git-finish-update-[A-Za-z0-9-]+$/.test(proposal.id) ||
+    !/^git-finish-publish-[A-Za-z0-9-]+$/.test(proposal.id) ||
     !isIsoDate(proposal.created_at) ||
     !isNonEmptyString(project.key) ||
     !isNonEmptyString(project.root) ||
-    operation.kind !== "finish-update" ||
+    operation.kind !== "finish-publish" ||
     !isNonEmptyString(operation.base_branch) ||
     !isNonEmptyString(operation.current_branch) ||
     !isGitObjectId(operation.local_head_sha) ||
     !isSafeRemoteName(operation.remote) ||
-    (operation.action !== "fetch-and-rebase" &&
-      operation.action !== "not-required") ||
+    !isNonEmptyString(operation.destination_branch) ||
+    !isNonEmptyString(operation.destination_ref) ||
+    (operation.disposition !== "create" &&
+      operation.disposition !== "up-to-date" &&
+      operation.disposition !== "fast-forward" &&
+      operation.disposition !== "force-with-lease") ||
+    (operation.force_with_lease_expected_sha !== null &&
+      !isGitObjectId(operation.force_with_lease_expected_sha)) ||
     !isSha256(policy.resolution_sha256) ||
     !isNonEmptyString(sources.global.path) ||
     typeof sources.project.present !== "boolean" ||
     !isNonEmptyString(sources.project.path) ||
-    !isSafeFetchUrl(remote.fetch_url) ||
-    !isSha256(remote.fetch_url_sha256) ||
-    !isNonEmptyString(remote.base_ref) ||
-    !isGitObjectId(remote.base_commit_sha) ||
+    !isSafePushUrl(remote.push_url) ||
+    !isSha256(remote.push_url_sha256) ||
+    (remote.expected_commit_sha !== null &&
+      !isGitObjectId(remote.expected_commit_sha)) ||
+    !isNonEmptyString(update.proposal_id) ||
+    !/^git-finish-update-[A-Za-z0-9-]+$/.test(update.proposal_id) ||
+    !isSha256(update.proposal_sha256) ||
+    !isIsoDate(update.applied_at) ||
+    !isGitObjectId(update.previous_head_sha) ||
+    !isGitObjectId(update.resulting_head_sha) ||
+    !isGitObjectId(update.base_commit_sha) ||
+    typeof update.rebased !== "boolean" ||
     !isSha256(integrity.proposal_sha256)
   ) {
-    invalidProposal("Git Finish Update proposal contains invalid values");
+    invalidProposal("Git Finish Publish proposal contains invalid values");
+  }
+
+  if (
+    update.resulting_head_sha !== operation.local_head_sha ||
+    update.rebased !== (update.resulting_head_sha !== update.previous_head_sha)
+  ) {
+    invalidProposal(
+      "Git Finish Publish proposal contains inconsistent Update provenance",
+    );
   }
 
   if (state.status !== "pending" && state.status !== "applied") {
-    invalidProposal("Git Finish Update proposal state is invalid");
+    invalidProposal("Git Finish Publish proposal state is invalid");
   }
 
   if (
     state.status === "pending" &&
     (state.applied_at !== null || state.result !== null)
   ) {
-    invalidProposal("Pending Git Finish Update proposal state is inconsistent");
+    invalidProposal(
+      "Pending Git Finish Publish proposal state is inconsistent",
+    );
   }
 
   if (state.status === "applied") {
@@ -243,38 +281,26 @@ function parseGitFinishUpdateProposalRecord(
       !isIsoDate(state.applied_at) ||
       !isRecord(state.result) ||
       !hasExactKeys(state.result, [
-        "previous_head_sha",
-        "resulting_head_sha",
-        "base_commit_sha",
-        "rebased",
+        "published_commit_sha",
+        "remote_commit_sha",
+        "remote_updated",
       ]) ||
-      !isGitObjectId(state.result.previous_head_sha) ||
-      !isGitObjectId(state.result.resulting_head_sha) ||
-      !isGitObjectId(state.result.base_commit_sha) ||
-      typeof state.result.rebased !== "boolean"
+      !isGitObjectId(state.result.published_commit_sha) ||
+      !isGitObjectId(state.result.remote_commit_sha) ||
+      typeof state.result.remote_updated !== "boolean"
     ) {
-      invalidProposal("Applied Git Finish Update proposal result is invalid");
+      invalidProposal("Applied Git Finish Publish proposal result is invalid");
     }
 
-    const result = state.result as unknown as GitFinishUpdateAppliedResult;
+    const result = state.result as unknown as GitFinishPublishAppliedResult;
 
     if (
-      result.previous_head_sha !== operation.local_head_sha ||
-      result.base_commit_sha !== remote.base_commit_sha ||
-      result.rebased !==
-        (result.resulting_head_sha !== result.previous_head_sha)
+      result.published_commit_sha !== operation.local_head_sha ||
+      result.remote_commit_sha !== operation.local_head_sha ||
+      result.remote_updated !== (operation.disposition !== "up-to-date")
     ) {
       invalidProposal(
-        "Applied Git Finish Update proposal result is inconsistent",
-      );
-    }
-
-    if (
-      operation.action === "not-required" &&
-      (result.resulting_head_sha !== result.previous_head_sha || result.rebased)
-    ) {
-      invalidProposal(
-        "Policy-exempt Finish Update proposal contains a branch mutation",
+        "Applied Git Finish Publish proposal result is inconsistent",
       );
     }
   }
@@ -285,14 +311,9 @@ function parseGitFinishUpdateProposalRecord(
     effectivePolicy = validateEffectiveGitPolicy(policy.effective_policy);
   } catch (error) {
     invalidProposal(
-      `Git Finish Update proposal contains invalid effective policy: ${errorMessage(error)}`,
+      `Git Finish Publish proposal contains invalid effective policy: ${errorMessage(error)}`,
     );
   }
-
-  const expectedAction = effectivePolicy.branch_update
-    .require_before_finalization
-    ? "fetch-and-rebase"
-    : "not-required";
 
   if (
     project.key !== gitProjectKey(project.root) ||
@@ -300,16 +321,61 @@ function parseGitFinishUpdateProposalRecord(
     operation.current_branch === operation.base_branch ||
     !validateWorkingBranchName(operation.current_branch, effectivePolicy)
       .valid ||
-    operation.action !== expectedAction ||
-    remote.base_ref !== `refs/heads/${operation.base_branch}` ||
-    remote.fetch_url_sha256 !== sha256(remote.fetch_url)
+    operation.destination_branch !== operation.current_branch ||
+    operation.destination_ref !== `refs/heads/${operation.current_branch}` ||
+    remote.push_url_sha256 !== sha256(remote.push_url)
   ) {
     invalidProposal(
-      "Git Finish Update proposal contains inconsistent operation state",
+      "Git Finish Publish proposal contains inconsistent operation state",
     );
   }
 
-  const record = value as unknown as GitFinishUpdateProposalRecord;
+  switch (operation.disposition) {
+    case "create":
+      if (
+        remote.expected_commit_sha !== null ||
+        operation.force_with_lease_expected_sha !== null
+      ) {
+        invalidProposal("Git Finish Publish creation state is inconsistent");
+      }
+      break;
+
+    case "up-to-date":
+      if (
+        remote.expected_commit_sha !== operation.local_head_sha ||
+        operation.force_with_lease_expected_sha !== null
+      ) {
+        invalidProposal("Up-to-date Git Finish Publish state is inconsistent");
+      }
+      break;
+
+    case "fast-forward":
+      if (
+        remote.expected_commit_sha === null ||
+        remote.expected_commit_sha === operation.local_head_sha ||
+        operation.force_with_lease_expected_sha !== null
+      ) {
+        invalidProposal(
+          "Fast-forward Git Finish Publish state is inconsistent",
+        );
+      }
+      break;
+
+    case "force-with-lease":
+      if (
+        !update.rebased ||
+        remote.expected_commit_sha !== update.previous_head_sha ||
+        operation.force_with_lease_expected_sha !== update.previous_head_sha ||
+        effectivePolicy.branch_update.force_push !== "force-with-lease"
+      ) {
+        invalidProposal(
+          "Force-with-lease Git Finish Publish state is inconsistent",
+        );
+      }
+      break;
+  }
+
+  const record = value as unknown as GitFinishPublishProposalRecord;
 
   record.proposal.policy.effective_policy = effectivePolicy;
 
@@ -322,31 +388,33 @@ function parseGitFinishUpdateProposalRecord(
     })
   ) {
     invalidProposal(
-      "Git Finish Update proposal policy checksum is inconsistent",
+      "Git Finish Publish proposal policy checksum is inconsistent",
     );
   }
 
   return record;
 }
 
-export function gitFinishUpdateProposalRoot(): string {
-  return join(mentorStateRoot(), "git-finish-update-proposals");
+export function gitFinishPublishProposalRoot(): string {
+  return join(mentorStateRoot(), "git-finish-publish-proposals");
 }
 
-export async function persistGitFinishUpdateProposal(
-  record: GitFinishUpdateProposalRecord,
-  storageRoot = gitFinishUpdateProposalRoot(),
+export async function persistGitFinishPublishProposal(
+  record: GitFinishPublishProposalRecord,
+  storageRoot = gitFinishPublishProposalRoot(),
 ): Promise<string> {
-  const validated = parseGitFinishUpdateProposalRecord(structuredClone(record));
+  const validated = parseGitFinishPublishProposalRecord(
+    structuredClone(record),
+  );
 
   if (
     validated.state.status !== "pending" ||
     validated.integrity.proposal_sha256 !==
-      gitFinishUpdateProposalIntegrity(validated.proposal)
+      gitFinishPublishProposalIntegrity(validated.proposal)
   ) {
-    throw new GitFinishUpdateProposalError(
+    throw new GitFinishPublishProposalError(
       "INVALID_PROPOSAL",
-      "Git Finish Update proposal is not safe to persist",
+      "Git Finish Publish proposal is not safe to persist",
     );
   }
 
@@ -359,9 +427,9 @@ export async function persistGitFinishUpdateProposal(
     });
   } catch (error) {
     if (error instanceof GitLifecycleStorageError) {
-      throw new GitFinishUpdateProposalError(
+      throw new GitFinishPublishProposalError(
         "PROPOSAL_STORAGE_FAILED",
-        `Unable to persist Git Finish Update proposal: ${error.message}`,
+        `Unable to persist Git Finish Publish proposal: ${error.message}`,
       );
     }
 
@@ -369,11 +437,11 @@ export async function persistGitFinishUpdateProposal(
   }
 }
 
-async function loadGitFinishUpdateProposalRecord(
+async function loadGitFinishPublishProposalRecord(
   projectRoot: string,
   proposalId: string,
-  storageRoot = gitFinishUpdateProposalRoot(),
-): Promise<LoadedGitFinishUpdateProposal> {
+  storageRoot = gitFinishPublishProposalRoot(),
+): Promise<LoadedGitFinishPublishProposal> {
   validateProposalId(proposalId);
 
   let canonicalProjectRoot: string;
@@ -381,7 +449,7 @@ async function loadGitFinishUpdateProposalRecord(
   try {
     canonicalProjectRoot = await realpath(projectRoot);
   } catch (error) {
-    throw new GitFinishUpdateProposalError(
+    throw new GitFinishPublishProposalError(
       "PROJECT_MISMATCH",
       `Could not resolve current project: ${errorMessage(error)}`,
     );
@@ -402,25 +470,28 @@ async function loadGitFinishUpdateProposalRecord(
       error instanceof GitLifecycleStorageError &&
       error.code === "RECORD_NOT_FOUND"
     ) {
-      throw new GitFinishUpdateProposalError(
+      throw new GitFinishPublishProposalError(
         "PROPOSAL_NOT_FOUND",
-        "Git Finish Update proposal was not found for the current project",
+        "Git Finish Publish proposal was not found for the current project",
       );
     }
 
     if (error instanceof GitLifecycleStorageError) {
-      throw new GitFinishUpdateProposalError("INVALID_PROPOSAL", error.message);
+      throw new GitFinishPublishProposalError(
+        "INVALID_PROPOSAL",
+        error.message,
+      );
     }
 
     throw error;
   }
 
-  const record = parseGitFinishUpdateProposalRecord(loaded.value);
+  const record = parseGitFinishPublishProposalRecord(loaded.value);
 
   if (record.proposal.id !== proposalId) {
-    throw new GitFinishUpdateProposalError(
+    throw new GitFinishPublishProposalError(
       "INVALID_PROPOSAL",
-      "Git Finish Update proposal identifier does not match its storage path",
+      "Git Finish Publish proposal identifier does not match its storage path",
     );
   }
 
@@ -428,19 +499,19 @@ async function loadGitFinishUpdateProposalRecord(
     record.proposal.project.root !== canonicalProjectRoot ||
     record.proposal.project.key !== projectKey
   ) {
-    throw new GitFinishUpdateProposalError(
+    throw new GitFinishPublishProposalError(
       "PROJECT_MISMATCH",
-      "Git Finish Update proposal belongs to a different project",
+      "Git Finish Publish proposal belongs to a different project",
     );
   }
 
   if (
     record.integrity.proposal_sha256 !==
-    gitFinishUpdateProposalIntegrity(record.proposal)
+    gitFinishPublishProposalIntegrity(record.proposal)
   ) {
-    throw new GitFinishUpdateProposalError(
+    throw new GitFinishPublishProposalError(
       "PROPOSAL_INTEGRITY_FAILED",
-      "Git Finish Update proposal integrity validation failed",
+      "Git Finish Publish proposal integrity validation failed",
     );
   }
 
@@ -450,42 +521,42 @@ async function loadGitFinishUpdateProposalRecord(
   };
 }
 
-export async function loadGitFinishUpdateProposal(
+export async function loadGitFinishPublishProposal(
   projectRoot: string,
   proposalId: string,
-  storageRoot = gitFinishUpdateProposalRoot(),
-): Promise<LoadedGitFinishUpdateProposal> {
-  const loaded = await loadGitFinishUpdateProposalRecord(
+  storageRoot = gitFinishPublishProposalRoot(),
+): Promise<LoadedGitFinishPublishProposal> {
+  const loaded = await loadGitFinishPublishProposalRecord(
     projectRoot,
     proposalId,
     storageRoot,
   );
 
   if (loaded.record.state.status === "applied") {
-    throw new GitFinishUpdateProposalError(
+    throw new GitFinishPublishProposalError(
       "PROPOSAL_ALREADY_APPLIED",
-      "Git Finish Update proposal has already been applied",
+      "Git Finish Publish proposal has already been applied",
     );
   }
 
   return loaded;
 }
 
-export async function loadGitFinishUpdateAppliedProposal(
+export async function loadGitFinishPublishAppliedProposal(
   projectRoot: string,
   proposalId: string,
-  storageRoot = gitFinishUpdateProposalRoot(),
-): Promise<LoadedGitFinishUpdateProposal> {
-  const loaded = await loadGitFinishUpdateProposalRecord(
+  storageRoot = gitFinishPublishProposalRoot(),
+): Promise<LoadedGitFinishPublishProposal> {
+  const loaded = await loadGitFinishPublishProposalRecord(
     projectRoot,
     proposalId,
     storageRoot,
   );
 
   if (loaded.record.state.status !== "applied") {
-    throw new GitFinishUpdateProposalError(
+    throw new GitFinishPublishProposalError(
       "PROPOSAL_NOT_APPLIED",
-      "Git Finish Update proposal has not been applied",
+      "Git Finish Publish proposal has not been applied",
     );
   }
 

@@ -11,14 +11,23 @@ import {
   sha256,
 } from "./git_lifecycle_proposal";
 
+export type GitFinishUpdateAppliedResult = {
+  previous_head_sha: string;
+  resulting_head_sha: string;
+  base_commit_sha: string;
+  rebased: boolean;
+};
+
 export type GitFinishUpdateProposalState =
   | {
       status: "pending";
       applied_at: null;
+      result: null;
     }
   | {
       status: "applied";
       applied_at: string;
+      result: GitFinishUpdateAppliedResult;
     };
 
 export type GitFinishUpdateProposalPayload = {
@@ -92,7 +101,8 @@ export class GitFinishUpdateProposalError extends Error {
     | "APPLY_IN_PROGRESS"
     | "APPLY_FAILED"
     | "PROPOSAL_STATE_FAILED"
-    | "ROLLBACK_FAILED";
+    | "ROLLBACK_FAILED"
+    | "PROPOSAL_NOT_APPLIED";
 
   constructor(code: GitFinishUpdateProposalError["code"], message: string) {
     super(message);
@@ -247,6 +257,7 @@ export function buildGitFinishUpdateProposal(
     state: {
       status: "pending",
       applied_at: null,
+      result: null,
     },
   };
 }
